@@ -1,0 +1,532 @@
+{
+  "common": {
+    "app_title": "Evaluación de Calidad de Metadatos",
+    "app_title_short": "MQA-React",
+    "app_subtitle": "Evaluar la calidad de los metadatos RDF en función de los principios FAIR+C",
+    
+    "actions": {
+      "validate": "Validar",
+      "validating": "Validando...",
+      "download": "Descargar",
+      "export": "Exportar",
+      "upload": "Cargar",
+      "clear": "Limpiar",
+      "reset": "Restablecer",
+      "close": "Cerrar",
+      "open": "Abrir",
+      "save": "Guardar",
+      "cancel": "Cancelar",
+      "submit": "Enviar",
+      "search": "Buscar",
+      "filter": "Filtrar",
+      "expand": "Expandir",
+      "collapse": "Contraer",
+      "show": "Mostrar",
+      "hide": "Ocultar",
+      "show_more": "Mostrar más",
+      "show_less": "Mostrar menos"
+    },
+    
+    "states": {
+      "loading": "Cargando...",
+      "validating_detailed": "Analizando contenido, validando mediante SHACL y calculando métricas de calidad... Por favor espera.",
+      "processing": "Procesando...",
+      "complete": "Completado",
+      "error": "Error",
+      "warning": "Advertencia",
+      "success": "Éxito",
+      "info": "Información"
+    },
+    
+    "units": {
+      "points": "puntos",
+      "datasets": "conjuntos de datos",
+      "distributions": "distribuciones",
+      "triples": "tripletas",
+      "seconds": "segundos",
+      "of": "de"
+    },
+      
+    "performance": {
+      "very_fast": "Muy rápido",
+      "fast": "Rápido", 
+      "moderate": "Moderado",
+      "slow": "Lento"
+    },
+
+    "navigation": {
+      "home": "Inicio",
+      "validation_tab": "Validación",
+      "dashboard_tab": "Cuadro de mandos de calidad",
+      "results": "Resultados",
+      "about": "Acerca de"
+    },
+    
+    "ui": {
+      "theme_light": "Modo claro",
+      "theme_dark": "Modo oscuro",
+      "theme_toggle": "Cambiar tema",
+      "language_english": "English",
+      "language_spanish": "Español",
+      "language_select": "Seleccionar idioma"
+    }
+  },
+
+  "validation": {
+    "form": {
+      "profile_select": "Selecciona un perfil de validación",
+      "profile_label": "Perfil de validación",
+      "version_label": "Versión",
+      "input_method": "Método de entrada",
+      
+      "tabs": {
+        "url": "URL",
+        "text": "Texto directo",
+        "sparql": "Consulta SPARQL"
+      },
+      
+      "placeholders": {
+        "url": "Introduce URL RDF (ej. https://ejemplo.org/dataset.rdf)",
+        "text": "Pega tu contenido RDF aquí (RDF/XML, Turtle, JSON-LD, N-Triples)"
+      },
+      
+      "validation": {
+        "url_invalid": "Por favor introduce una URL válida",
+        "text_required": "El contenido RDF es requerido",
+        "validation_error": "La validación falló. Por favor verifica tu entrada e inténtalo de nuevo."
+      },
+      
+      "syntax": {
+        "check_syntax": "Verificar sintaxis",
+        "checking_syntax": "Verificando sintaxis...",
+        "syntax_valid": "La sintaxis RDF es válida",
+        "syntax_valid_description": "Tu contenido RDF tiene sintaxis correcta y puede ser procesado.",
+        "syntax_error": "Error de sintaxis RDF",
+        "at_line": "en la línea",
+        "format_detected": "Formato detectado",
+        "format_autodetect": "Detección automática"
+      },
+      
+      "samples": {
+        "use_sample": "Probar con datos de ejemplo",
+        "url_description": "Introduce una URL que apunte a contenido RDF",
+        "format_label": "Formato RDF",
+        "content_label": "Contenido RDF"
+      }
+    },
+    
+    "progress": {
+      "banner": {
+        "title": "Validación en progreso",
+        "datasets": "conjuntos de datos",
+        "distributions": "distribuciones",
+        "estimated_time": "Tiempo estimado"
+      }
+    },
+    
+    "profiles": {
+      "dcat_ap": "DCAT-AP",
+      "dcat_ap_description": "Perfil de aplicación DCAT para portales de datos en Europa",
+      "dcat_ap_es": "DCAT-AP-ES", 
+      "dcat_ap_es_description": "Perfil de aplicación DCAT-AP en España",
+      "nti_risp": "NTI-RISP",
+      "nti_risp_description": "Modelo de metadatos de la Norma Técnica de Interoperabilidad (2013)"
+    },
+    
+    "tabs": {
+      "new": "Nueva validación",
+      "validating": "Validando...",
+      "error": "Error",
+      "close": "Cerrar pestaña",
+      "max_tabs_reached": "Máximo {{max}} pestañas alcanzado"
+    },
+    
+    "overall_score": "Puntuación total"
+  },
+
+  "results": {
+    "title": "Resultados de validación",
+    "no_results": "Aún no hay resultados de validación. Por favor valida algún contenido RDF primero.",
+    
+    "quality": {
+      "overall_score": "Puntuación total",
+      "max_score": "Puntuación máxima", 
+      "percentage": "Porcentaje de calidad",
+      "summary": "Resumen de calidad",
+      "detailed_metrics": "Métricas detalladas",
+      "radar_chart_title": "Radar de calidad FAIR+C",
+      "chart_label": "Resultados",
+      "metrics_by_dimension": "Métricas por dimensión"
+    },
+    
+    "dimensions": {
+      "findability": "Descubrimiento",
+      "findability_description": "Qué tan fácil es encontrar el conjunto de datos",
+      "accessibility": "Accesibilidad",
+      "accessibility_description": "Qué tan accesibles son los datos",
+      "interoperability": "Interoperabilidad",
+      "interoperability_description": "Interoperabilidad técnica de los datos",
+      "reusability": "Reutilización", 
+      "reusability_description": "Qué tan fácil es reutilizar los datos",
+      "contextuality": "Contexto",
+      "contextuality_description": "Información contextual sobre los datos"
+    },
+    
+    "ratings": {
+      "excellent": "Excelente",
+      "good": "Bueno",
+      "sufficient": "Suficiente", 
+      "poor": "Deficiente"
+    },
+    
+    "metadata_info": {
+      "title": "Información de validación",
+      "profile": "Perfil de aplicación",
+      "triples": "Tripletas",
+      "subjects": "Sujetos",
+      "predicates": "Predicados",
+      "objects": "Objetos"
+    },
+    
+    "downloads": {
+      "csv_metrics": "Métricas (CSV)",
+      "csv_metrics_description": "Descargar métricas como CSV",
+      "json_results": "Resultados (JSON)",
+      "json_results_description": "Descargar resultados de validación como JSON",
+      "json_ld_dqv": "JSON-LD (DQV)",
+      "json_ld_dqv_description": "Descargar como JSON-LD con vocabulario DQV",
+      "radar_chart": "Descargar gráfico radar como PNG",
+      "source_rdf": "RDF de origen",
+      "source_rdf_description": "Ver contenido RDF de origen",
+      "validate_another": "Validar otro conjunto de datos"
+    },
+    
+    "expand_all": "Expandir todo",
+    "collapse_all": "Contraer todo"
+  },
+
+  "shacl": {
+    "compliance_report": "Reporte de conformidad SHACL",
+    "validation_results": "Resultados de validación",
+    "profile": "Perfil",
+    
+    "status": {
+      "conforms": "Conforme", 
+      "non_conforms": "No conforme",
+      "perfect_compliance": "¡Conformidad perfecta!",
+      "no_violations_found": "No se encontraron violaciones en los metadatos"
+    },
+    
+    "severity": {
+      "violations": "Violaciones",
+      "warnings": "Advertencias", 
+      "infos": "Información",
+      "all": "Todos",
+      "filter_by_severity": "Filtrar por severidad"
+    },
+    
+    "details": {
+      "focus_node": "Nodo de enfoque",
+      "path": "Ruta",
+      "value": "Valor",
+      "source_shape": "Forma de origen",
+      "no_path": "No se especificó ruta",
+      "entity_context": "Tipo de entidad", 
+      "affected_nodes": "Nodos afectados"
+    },
+    
+    "results": {
+      "no_results_for_filter": "No hay resultados para el filtro seleccionado",
+      "showing_results": "Mostrando {{count}} de {{total}} resultados",
+      "issues": "incidencias",
+      "occurrence": "ocurrencia",
+      "occurrences": "ocurrencias",
+      "additional_entities": "{{count}} entidades adicionales"
+    },
+    
+    "actions": {
+      "export_report": "Exportar Reporte SHACL",
+      "export_csv": "Exportar CSV",
+      "open_link": "Abrir enlace en nueva pestaña",
+      "show_details": "Mostrar detalles",
+      "hide_details": "Ocultar detalles", 
+      "expand_details": "Expandir detalles",
+      "collapse_details": "Contraer detalles",
+      "expand_all": "Expandir todo",
+      "collapse_all": "Contraer todo",
+      "expand_all_groups": "Expandir todos los grupos de mensajes",
+      "collapse_all_groups": "Contraer todos los grupos de mensajes",
+      "view_profile_documentation": "Ver documentación del perfil"
+    },
+    
+    "help": {
+      "more_info": "Más información"
+    }
+  },
+
+  "dashboard": {
+    "title": "Panel de calidad de metadatos",
+    "subtitle": "Visualiza métricas de calidad y resultados de validación SHACL",
+    
+    "tabs": {
+      "metrics": "Métricas de calidad",
+      "shacl": "Validación SHACL", 
+      "upload": "Cargar nuevos datos"
+    },
+    
+    "uploads": {
+      "upload_data": "Cargar datos",
+      "load_sample": "Cargar datos de ejemplo",
+      "load_data": "Cargar datos del cuadro de mandos",
+      "load_sample_description": "Carga datos de ejemplo para ver el cuadro de mandos en acción",
+      "upload_json": "Cargar archivo JSON",
+      "upload_ttl": "Cargar archivo TTL",
+      "json_description": "Cargar archivo JSON con métricas de calidad y puntuaciones por dimensión",
+      "ttl_description": "Cargar archivo TTL con resultados de validación SHACL",
+      "choose_file": "Elegir archivo",
+      "loading": "Cargando archivo..."
+    },
+    
+    "formats": {
+      "expected_formats": "Formatos de archivo esperados",
+      "json_metrics": "Métricas JSON:",
+      "json_format": "Contiene dimensiones (descubrimiento, accesibilidad, etc.) y métricas individuales con puntuaciones",
+      "ttl_shacl": "TTL SHACL",
+      "ttl_format": "Formato Turtle con resultados de validación SHACL incluyendo violaciones, advertencias y mensajes informativos"
+    },
+    
+    "overview": {
+      "total_score": "Puntuación total",
+      "max_score": "Puntuación máxima",
+      "rating": "Calificación", 
+      "dimensions": "Dimensiones",
+      "total_metrics": "Métricas totales",
+      "overall_score": "Puntuación total",
+      "violations": "Violaciones",
+      "warnings": "Advertencias",
+      "info_messages": "Mensajes informativos",
+      "total_issues": "Problemas totales"
+    },
+    
+    "visualizations": {
+      "dimension_scores": "Puntuaciones por dimensión",
+      "quality_radar": "Radar de calidad",
+      "detailed_metrics": "Métricas detalladas por dimensión", 
+      "dimension_specific_charts": "Gráficos de métricas por dimensión",
+      "metrics_breakdown": "Desglose de métricas",
+      "chart": "Gráfico"
+    },
+    
+    "table": {
+      "metric_id": "Identificador de métrica",
+      "score": "Puntuación",
+      "max_score": "Puntuación máxima",
+      "percentage": "Porcentaje", 
+      "weight": "Peso",
+      "found": "Encontrado",
+      "search_results": "Buscar resultados...",
+      "all_severities": "Todas las severidades",
+      "severity": "Severidad",
+      "entity_type": "Tipo",
+      "focus_node": "Nodo de enfoque", 
+      "path": "Ruta",
+      "value": "Valor",
+      "message": "Mensaje",
+      "no_results": "No se encontraron resultados",
+      "no_results_filter": "No hay resultados que coincidan con sus filtros"
+    },
+    
+    "downloads": {
+      "download_bar_chart": "Descargar gráfico de barras",
+      "download_radar_chart": "Descargar gráfico de radar",
+      "download_all_charts": "Descargar todos los gráficos (ZIP)"
+    },
+    
+    "files": {
+      "file_json_metrics": "Datos de métricas (JSON)",
+      "file_json_metrics_description": "Carga el fichero JSON con las métricas de calidad y las puntuaciones",
+      "file_ttl_shacl": "Validación SHACL (TTL)",
+      "file_ttl_shacl_description": "Carga el fichero TTL con el informe de validación SHACL",
+      "validation_profile": "Perfil de validación",
+      "version": "Versión",
+      "profile_description": "Perfil de validación utilizado para la evaluación de calidad"
+    }
+  },
+
+  "sparql": {
+    "custom_query": "Consulta SPARQL personalizada",
+    "endpoint": "Endpoint SPARQL",
+    "endpoint_help": "URL del endpoint SPARQL donde ejecutar la consulta",
+    "query": "Consulta SPARQL",
+    "query_help": "Escribe tu consulta SPARQL que devuelva contenido RDF válido",
+    "query_placeholder": "PREFIX dcat: <http://www.w3.org/ns/dcat#>\\nPREFIX dct: <http://purl.org/dc/terms/>\\n\\nDESCRIBE ?dataset\\nWHERE {\\n  ?dataset a dcat:Dataset .\\n  FILTER(?dataset = <http://ejemplo.org/dataset/1>)\\n}",
+    
+    "predefined": {
+      "predefined_queries": "Consultas predefinidas",
+      "select_query": "Seleccionar consulta",
+      "select_query_help": "Elige una consulta predefinida o escribe una personalizada abajo",
+      "loading_queries": "Cargando consultas...",
+      "no_queries_available": "No hay consultas predefinidas disponibles para este perfil",
+      "datasets": "Conjuntos de datos",
+      "datasets_description": "Obtener metadatos de conjuntos de datos",
+      "distributions": "Distribuciones", 
+      "distributions_description": "Obtener metadatos de distribuciones de datos",
+      "catalogs": "Catálogos",
+      "catalogs_description": "Obtener metadatos de catálogos de datos"
+    },
+    
+    "preview": {
+      "query_preview": "Vista previa de la consulta",
+      "show_preview": "Ver vista previa",
+      "hide_preview": "Ocultar vista previa",
+      "use_query": "Usar esta consulta"
+    },
+    
+    "parameters": {
+      "parameters": "Parámetros",
+      "parameter": "Parámetro",
+      "value": "Valor",
+      "no_parameters": "Esta consulta no requiere parámetros",
+      "fill_parameters": "Completa los parámetros requeridos:"
+    },
+    
+    "execution": {
+      "execute_query": "Ejecutar consulta",
+      "executing_query": "Ejecutando consulta SPARQL...",
+      "query_error": "Error en la consulta SPARQL",
+      "query_success": "Consulta ejecutada exitosamente",
+      "result_size": "{{count}} resultados obtenidos"
+    },
+    
+    "validation": {
+      "endpoint_required": "El endpoint SPARQL es requerido",
+      "query_required": "La consulta SPARQL es requerida",
+      "invalid_query": "La consulta SPARQL no es válida"
+    }
+  },
+
+  "metrics": {
+    "labels": {
+      "name": "Métrica",
+      "score": "Puntuación",
+      "max_score": "Máximo", 
+      "weight": "Peso",
+      "description": "Descripción",
+      "found": "Encontrado",
+      "not_found": "No Encontrado",
+      "valid": "Válido",
+      "invalid": "Inválido",
+      "present": "Presente",
+      "missing": "Faltante"
+    },
+    
+    "specific": {
+      "dcat_keyword": "Palabras clave",
+      "dcat_theme": "Temas/Categorías",
+      "dct_spatial": "Cobertura espacial",
+      "dct_temporal": "Cobertura temporal",
+      "dcat_access_url_status": "Disponibilidad de URL de acceso",
+      "dcat_download_url": "URL de descarga",
+      "dcat_download_url_status": "Disponibilidad de URL de descarga",
+      "dct_format": "Formato",
+      "dcat_media_type": "Tipo de medio",
+      "dct_format_vocabulary": "Vocabulario de formato",
+      "dcat_media_type_vocabulary": "Vocabulario de tipo de medio",
+      "dct_format_nonproprietary": "Formato no propietario", 
+      "dct_format_machine_readable": "Formato legible por máquina",
+      "dcat_ap_compliance": "Conformidad con DCAT-AP",
+      "dcat_ap_es_compliance": "Conformidad con DCAT-AP-ES",
+      "nti_risp_compliance": "Conformidad con NTI-RISP",
+      "dct_license": "Licencia",
+      "dct_license_nti_risp": "Licencia NTI-RISP (Dataset)",
+      "dct_license_vocabulary": "Vocabulario de licencia",
+      "dct_access_rights": "Derechos de acceso",
+      "dct_access_rights_vocabulary": "Vocabulario de derechos de acceso",
+      "dcat_contact_point": "Punto de contacto",
+      "dct_publisher": "Publicador",
+      "dct_rights": "Derechos",
+      "dcat_byte_size": "Tamaño en bytes",
+      "dct_issued": "Fecha de emisión",
+      "dct_modified": "Fecha de modificación",
+      "dct_format_vocabulary_nti_risp": "Vocabulario de formato (NTI-RISP)",
+      "dcat_media_type_vocabulary_nti_risp": "Vocabulario de tipo de medio (NTI-RISP)"
+    }
+  },
+
+  "sidebar": {
+    "expand": "Expandir barra lateral",
+    "collapse": "Contraer barra lateral",
+    "about_mqa": "Acerca de MQA",
+    "mqa_description": "Esta herramienta evalúa la calidad de metadatos basada en la metodología de Evaluación de Calidad de Metadatos (MQA) del Portal Europeo de Datos usando ",
+    "learn_more": "Saber más",
+    
+    "principles": {
+      "fairc_principles": "Principios FAIR+C",
+      "rating_scale": "Escala",
+      "rating": "Calificación",
+      "points": "Puntos",
+      "max_points": "Puntos máximos"
+    },
+    
+    "links": {
+      "quick_links": "Enlaces rápidos",
+      "mqa_methodology": "Metodología MQA",
+      "fair_principles": "Principios FAIR",
+      "shacl_docs": "Documentación SHACL",
+      "github_repository": "Repositorio GitHub"
+    },
+    
+    "current_validation": {
+      "current_validation": "Validación actual",
+      "total_score": "Puntuación total",
+      "validation_time": "Tiempo de validación",
+      "entity_statistics": "Entidades principales",
+      "triples": "Tripletas",
+      "datasets": "Conjuntos de datos",
+      "data_services": "Servicios de datos",
+      "distributions": "Distribuciones",
+      "datasets_help": "Número de conjuntos de datos (dcat:Dataset) encontrados en los metadatos RDF",
+      "data_services_help": "Número de servicios de datos (dcat:DataService) encontrados en los metadatos RDF",
+      "distributions_help": "Número de distribuciones (dcat:Distribution) encontradas en los metadatos RDF"
+    },
+    
+    "entities": {
+      "datasets": "Conjuntos de datos",
+      "data_services": "Servicios de datos",
+      "distributions": "Distribuciones",
+      "total_entities": "Total de entidades"
+    }
+  },
+
+  "errors": {
+    "fetch_failed": "Falló al obtener contenido RDF desde la URL",
+    "parse_failed": "Falló al analizar contenido RDF",
+    "validation_failed": "El proceso de validación falló",
+    "network_error": "Ocurrió un error de red",
+    "unknown_error": "Ocurrió un error desconocido",
+    "cors_error": "No se puede descargar el catálogo desde la URL debido a restricciones de seguridad del navegador.",
+    "cors_solution": "Solución: Descarga el archivo manualmente y usa la entrada de texto directo.",
+    "timeout_error": "Tiempo de espera agotado: El servidor tarda demasiado en responder.",
+    "timeout_retry": "Inténtalo de nuevo más tarde o descarga el archivo manualmente.",
+    "manual_download_step1": "1. Abre {{url}} en una nueva pestaña",
+    "manual_download_step2": "2. Guarda el archivo en tu computadora", 
+    "manual_download_step3": "3. Regresa aquí y usa la opción 'Texto directo'",
+    "manual_download_step4": "4. Copia y pega el contenido del archivo en el área de texto"
+  },
+
+  "time": {
+    "just_now": "ahora mismo",
+    "minutes_ago": "hace {{count}} minuto",
+    "minutes_ago_plural": "hace {{count}} minutos",
+    "hours_ago": "hace {{count}} hora",
+    "hours_ago_plural": "hace {{count}} horas", 
+    "days_ago": "hace {{count}} día",
+    "days_ago_plural": "hace {{count}} días"
+  },
+
+  "rdf_preprocessing": {
+    "title": "Procesamiento RDF Aplicado",
+    "description": "Se corrigieron automáticamente algunos problemas en tus datos RDF para permitir la validación:",
+    "note": "Estas correcciones no afectan tus datos originales, solo la copia utilizada para el análisis."
+  }
+}

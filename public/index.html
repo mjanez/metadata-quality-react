@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#000000" />
+    <meta
+      name="description"
+      content="Metadata Quality Assessment Tool - Evaluate RDF metadata quality based on FAIR+C principles using DCAT-AP, DCAT-AP-ES, and NTI-RISP profiles"
+    />
+    <meta name="keywords" content="metadata quality, FAIR principles, DCAT-AP, DCAT-AP-ES, NTI-RISP, RDF validation, SHACL, data quality assessment, open data, semantic web" />
+    <meta name="author" content="mjanez" />
+    <meta name="robots" content="index, follow" />
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://mjanez.github.io/metadata-quality-react/" />
+    <meta property="og:title" content="Metadata Quality Assessment Tool" />
+    <meta property="og:description" content="Evaluate RDF metadata quality based on FAIR+C principles using DCAT-AP, DCAT-AP-ES, and NTI-RISP profiles" />
+    <meta property="og:image" content="%PUBLIC_URL%/logo512.png" />
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content="https://mjanez.github.io/metadata-quality-react/" />
+    <meta property="twitter:title" content="Metadata Quality Assessment Tool" />
+    <meta property="twitter:description" content="Evaluate RDF metadata quality based on FAIR+C principles using DCAT-AP, DCAT-AP-ES, and NTI-RISP profiles" />
+    <meta property="twitter:image" content="%PUBLIC_URL%/logo512.png" />
+
+    <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
+    
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://mjanez.github.io/metadata-quality-react/" />
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Source+Code+Pro:ital,wght@0,200..900;1,200..900&display=swap" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    
+    <!-- Structured Data - Software Application -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "Metadata Quality Assessment Tool",
+      "description": "Comprehensive toolkit for analyzing metadata quality implementing the European Data Portal's MQA methodology, uses shacl-engine for SHACL validation and supports DCAT-AP, DCAT-AP-ES, and NTI-RISP profiles",
+      "url": "https://mjanez.github.io/metadata-quality-react/",
+      "applicationCategory": "DeveloperApplication",
+      "operatingSystem": "Web Browser",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      },
+      "author": {
+        "@type": "Person",
+        "name": "mjanez",
+        "url": "https://github.com/mjanez"
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "mjanez",
+        "url": "https://github.com/mjanez"
+      },
+      "softwareVersion": "1.1.0",
+      "datePublished": "2024-01-01",
+      "dateModified": "2025-01-01",
+      "license": "https://github.com/mjanez/metadata-quality-react/blob/main/LICENSE",
+      "codeRepository": "https://github.com/mjanez/metadata-quality-react",
+      "programmingLanguage": ["TypeScript", "JavaScript", "React"],
+      "runtimePlatform": "Web Browser",
+      "keywords": ["metadata quality", "FAIR principles", "DCAT-AP", "DCAT-AP-ES", "NTI-RISP", "RDF validation", "SHACL", "data quality", "open data", "semantic web"],
+      "featureList": [
+        "RDF metadata validation using DCAT-AP, DCAT-AP-ES, and NTI-RISP profiles",
+        "SHACL compliance checking",
+        "Quality metrics calculation based on FAIR+C principles", 
+        "Interactive radar and sunburst charts",
+        "CSV and JSON export functionality",
+        "DQV (Data Quality Vocabulary) export",
+        "Multilingual support (EN/ES)",
+        "Real-time validation feedback"
+      ]
+    }
+    </script>
+
+    <!-- Structured Data - Dataset Search -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "DataCatalog",
+      "name": "Metadata Quality Assessment Tool - Validation Results",
+      "description": "Tool for validating and assessing metadata quality of datasets using FAIR+C principles and European Data Portal methodology",
+      "url": "https://mjanez.github.io/metadata-quality-react/",
+      "publisher": {
+        "@type": "Organization",
+        "name": "mjanez",
+        "url": "https://github.com/mjanez"
+      },
+      "dataset": {
+        "@type": "Dataset",
+        "name": "Metadata Quality Metrics",
+        "description": "Quality assessment metrics for RDF metadata based on FAIR (Findability, Accessibility, Interoperability, Reusability) and Contextuality principles",
+        "keywords": ["metadata quality", "FAIR principles", "data quality assessment", "RDF validation", "DCAT-AP", "SHACL"],
+        "license": "https://creativecommons.org/licenses/by/4.0/",
+        "creator": {
+          "@type": "Organization", 
+          "name": "European Data Portal",
+          "url": "https://data.europa.eu/"
+        },
+        "distribution": [
+          {
+            "@type": "DataDownload",
+            "encodingFormat": "application/json",
+            "contentUrl": "https://mjanez.github.io/metadata-quality-react/",
+            "name": "Quality Assessment Results (JSON)"
+          },
+          {
+            "@type": "DataDownload", 
+            "encodingFormat": "text/csv",
+            "contentUrl": "https://mjanez.github.io/metadata-quality-react/",
+            "name": "Quality Metrics (CSV)"
+          },
+          {
+            "@type": "DataDownload",
+            "encodingFormat": "application/ld+json", 
+            "contentUrl": "https://mjanez.github.io/metadata-quality-react/",
+            "name": "DQV Quality Report (JSON-LD)"
+          }
+        ]
+      }
+    }
+    </script>
+
+    <!-- Structured Data - WebApplication for Search -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "Metadata Quality Assessment Tool",
+      "url": "https://mjanez.github.io/metadata-quality-react/",
+      "description": "Online tool for evaluating RDF metadata quality using FAIR+C principles and multiple validation profiles",
+      "applicationCategory": "BusinessApplication",
+      "browserRequirements": "Requires JavaScript. Requires HTML5.",
+      "operatingSystem": "All",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      },
+      "featureList": [
+        "Metadata validation",
+        "Quality assessment", 
+        "FAIR compliance checking",
+        "Interactive visualizations",
+        "Export capabilities"
+      ],
+      "potentialAction": {
+        "@type": "UseAction",
+        "target": {
+          "@type": "EntryPoint",
+          "urlTemplate": "https://mjanez.github.io/metadata-quality-react/",
+          "actionPlatform": [
+            "http://schema.org/DesktopWebPlatform",
+            "http://schema.org/MobileWebPlatform"
+          ]
+        }
+      }
+    }
+    </script>
+
+    <!-- Structured Data - Organization -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "Metadata Quality Assessment Project",
+      "url": "https://github.com/mjanez/metadata-quality-react",
+      "logo": "https://mjanez.github.io/metadata-quality-react/logo512.png",
+      "foundingDate": "2024",
+      "description": "Open source project for metadata quality assessment based on European Data Portal methodology",
+      "knowsAbout": [
+        "Metadata Quality Assessment",
+        "FAIR Principles", 
+        "DCAT-AP",
+        "DCAT-AP-ES",
+        "NTI-RISP",
+        "RDF Validation",
+        "SHACL",
+        "Data Quality",
+        "Semantic Web"
+      ],
+      "sameAs": [
+        "https://github.com/mjanez/metadata-quality-react"
+      ]
+    }
+    </script>
+    <!--
+      manifest.json provides metadata used when your web app is installed on a
+      user's mobile device or desktop. See https://developers.google.com/web/fundamentals/web-app-manifest/
+    -->
+    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+    <!--
+      Notice the use of %PUBLIC_URL% in the tags above.
+      It will be replaced with the URL of the `public` folder during the build.
+      Only files inside the `public` folder can be referenced from the HTML.
+
+      Unlike "/favicon.ico" or "favicon.ico", "%PUBLIC_URL%/favicon.ico" will
+      work correctly both with client-side routing and a non-root public URL.
+      Learn how to configure a non-root public URL by running `npm run build`.
+    -->
+    <title>Metadata Quality Assessment Tool</title>
+  </head>
+  <body>
+    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <div id="root"></div>
+    <!--
+      This HTML file is a template.
+      If you open it directly in the browser, you will see an empty page.
+
+      You can add webfonts, meta tags, or analytics to this file.
+      The build step will place the bundled scripts into the <body> tag.
+
+      To begin the development, run `npm start` or `yarn start`.
+      To create a production bundle, use `npm run build` or `yarn build`.
+    -->
+  </body>
+</html>
