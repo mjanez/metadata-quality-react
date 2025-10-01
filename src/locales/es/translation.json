@@ -58,6 +58,7 @@
       "home": "Inicio",
       "validation_tab": "Validación",
       "dashboard_tab": "Cuadro de mandos de calidad",
+      "data_quality_tab": "Calidad de Datos",
       "results": "Resultados",
       "about": "Acerca de"
     },
@@ -528,5 +529,196 @@
     "title": "Procesamiento RDF Aplicado",
     "description": "Se corrigieron automáticamente algunos problemas en tus datos RDF para permitir la validación:",
     "note": "Estas correcciones no afectan tus datos originales, solo la copia utilizada para el análisis."
+  },
+
+  "dataQuality": {
+    "title": "Análisis de Calidad de Datos",
+    "subtitle": "Evaluación basada en la norma ISO/IEC 25012 para distribuciones CSV y JSON",
+    "newAnalysis": "Nuevo Análisis",
+    "analyzeButton": "Analizar Calidad de Datos",
+    "analyzeHelp": "Se analizará la distribución seleccionada según los estándares ISO/IEC 25012",
+    "analyzing": "Analizando Calidad de Datos...",
+    
+    "steps": {
+      "selection": "Selección",
+      "analysis": "Análisis", 
+      "results": "Resultados"
+    },
+
+    "analysisInfo": {
+      "dataset": "Dataset",
+      "distribution": "Distribución",
+      "format": "Formato"
+    },
+
+    "progress": {
+      "downloading": "Descargando datos",
+      "parsing": "Analizando estructura",
+      "analyzing": "Evaluando calidad",
+      "generating": "Generando observaciones",
+      "completed": "Completado"
+    },
+
+    "selector": {
+      "title": "Buscar Datasets para Análisis de Calidad",
+      "searchQuery": "Buscar",
+      "searchPlaceholder": "Buscar por título, descripción o tema...",
+      "format": "Formato",
+      "allFormats": "Todos los formatos",
+      "limit": "Límite",
+      "loading": "Buscando datasets...",
+      "noResults": "No se encontraron datasets",
+      "noResultsHelp": "Prueba con términos de búsqueda diferentes o cambia los filtros.",
+      "distributions": "distribuciones",
+      "availableDistributions": "Distribuciones disponibles",
+      "untitledDistribution": "Distribución sin título",
+      "selected": "Seleccionado",
+      "selectedDistribution": "Distribución Seleccionada",
+      "dataset": "Dataset",
+      "noDataAvailable": "No hay distribuciones CSV o JSON disponibles en el catálogo en este momento.",
+      "trySearch": "Prueba buscando términos específicos como \"empresas\", \"población\", \"economía\", etc."
+    },
+
+    "report": {
+      "title": "Informe de Calidad de Datos",
+      "overallScore": "Puntuación Global de Calidad",
+      "basicInfo": "Información Básica",
+      "columns": "Columnas",
+      "records": "Registros",
+      "columnNames": "Nombres de columnas",
+      "indicators": "Indicadores de Calidad",
+      "category": "Categoría",
+      "indicator": "Indicador",
+      "result": "Resultado",
+      "sampleRecords": "Registros de Muestra",
+      "observations": "Observaciones y Recomendaciones",
+      "definition": "Definición",
+      "recommendations": "Recomendaciones",
+      "notAvailable": "N/A",
+      "true": "Verdadero",
+      "false": "Falso",
+      "noSampleData": "No hay datos de muestra disponibles",
+      "error": "Error en el análisis",
+      "analyzing": "Analizando datos..."
+    },
+
+    "characteristics": {
+      "accuracy": "Exactitud",
+      "completeness": "Completitud",
+      "consistency": "Consistencia",
+      "credibility": "Credibilidad",
+      "currentness": "Actualidad",
+      "precision": "Precisión",
+      "relevance": "Relevancia",
+      "accessibility": "Accesibilidad",
+      "portability": "Portabilidad",
+      "recoverability": "Recuperabilidad",
+      "security": "Seguridad",
+      "traceability": "Trazabilidad",
+      "understandability": "Comprensibilidad",
+      "compliance": "Conformidad",
+      "availability": "Disponibilidad"
+    },
+
+    "indicators": {
+      "outliersByColumn": "Valores atípicos por columna",
+      "completenessRatio": "Ratio de completitud por columna",
+      "overallCompleteness": "Ratio de completitud general",
+      "temporalCompleteness": "Completitud temporal",
+      "duplicatedRecords": "Registros duplicados",
+      "mostRecentDate": "Fecha más reciente",
+      "oldestDate": "Fecha más antigua",
+      "temporalCoverage": "Cobertura temporal",
+      "accessible": "Accesibilidad",
+      "provenance": "Procedencia",
+      "temporalInformation": "Información temporal",
+      "spatialInformation": "Información espacial",
+      "identification": "Identificación",
+      "confusingColumns": "Columnas confusas",
+      "uncommonColumns": "Columnas poco comunes",
+      "portable": "Portabilidad",
+      "machineReadable": "Legible por máquina",
+      "openFormat": "Formato abierto"
+    },
+
+    "score": {
+      "excellent": "Excelente calidad de datos",
+      "good": "Buena calidad de datos",
+      "fair": "Calidad de datos aceptable",
+      "poor": "Calidad de datos deficiente"
+    },
+
+    "about": {
+      "title": "Acerca del Análisis de Calidad de Datos",
+      "description": "Este análisis evalúa la calidad de distribuciones de datos CSV y JSON basándose en la norma ISO/IEC 25012, que define 15 características de calidad divididas en dos categorías principales:",
+      "inherent": "Calidad de datos inherente",
+      "systemDependent": "Calidad de datos dependiente del sistema"
+    },
+
+    "noValidationData": {
+      "title": "No hay datos de validación disponibles",
+      "description": "Para usar el análisis de calidad de datos, primero necesitas validar un catálogo RDF en la pestaña de Validación.",
+      "step1": "Ve a la pestaña 'Validación'",
+      "step2": "Carga un catálogo RDF (URL o texto directo)",
+      "step3": "Ejecuta la validación",
+      "step4": "Regresa aquí para analizar la calidad de las distribuciones",
+      "goToValidation": "Ir a Validación"
+    },
+
+    "checkingBackend": "Verificando disponibilidad del servicio...",
+    
+    "notAvailable": {
+      "title": "Funcionalidad no disponible",
+      "githubPages": "La funcionalidad de análisis de calidad de datos no está disponible en GitHub Pages debido a restricciones CORS.",
+      "backend": "El servidor backend no está disponible. Esta funcionalidad requiere un servidor backend para descargar y analizar datos."
+    },
+
+    "setup": {
+      "title": "Configuración para desarrollo:",
+      "step1": "Crear un servidor Node.js en el puerto 3001",
+      "step2": "Implementar endpoints: /api/health, /api/validate-url, /api/download-data",
+      "step3": "Habilitar CORS para el origen de la aplicación",
+      "step4": "Establecer backend_server.enabled = true en mqa-config.json",
+      "note": "Ver documentación del proyecto para más detalles sobre la configuración del backend."
+    },
+
+    "observations": {
+      "accuracy": {
+        "definition": "Grado en que los datos representan correctamente el valor verdadero.",
+        "withOutliers": "Se detectaron {{count}} valores atípicos. Aunque la cantidad es relativamente baja, se recomienda analizar estos registros para determinar si son errores o reflejan situaciones excepcionales.",
+        "noOutliers": "No se detectaron valores atípicos significativos en los datos numéricos.",
+        "recommendations": {
+          "reviewOutliers": "Revisar valores atípicos identificados",
+          "implementValidation": "Implementar validaciones en la entrada de datos"
+        }
+      },
+      "completeness": {
+        "definition": "Grado en que los datos necesarios están presentes.",
+        "general": "Completitud general del {{percentage}}%. ",
+        "perfect": "No hay valores ausentes, indicando una completitud excelente.",
+        "missing": "Se detectaron algunos valores ausentes que podrían afectar el análisis.",
+        "recommendations": {
+          "reviewMissing": "Revisar columnas con valores ausentes",
+          "implementImputation": "Implementar estrategias de imputación si es necesario"
+        }
+      },
+      "consistency": {
+        "definition": "Grado en que los datos son uniformes y libres de contradicciones.",
+        "noDuplicates": "No se encontraron registros duplicados, lo que indica una buena consistencia.",
+        "withDuplicates": "Se detectaron {{count}} registros duplicados que podrían afectar la calidad del análisis.",
+        "recommendations": {
+          "removeDuplicates": "Eliminar o consolidar registros duplicados",
+          "implementUniqueKeys": "Implementar claves únicas para prevenir duplicados"
+        }
+      },
+      "accessibility": {
+        "definition": "Facilidad con la que se puede acceder y utilizar los datos.",
+        "observation": "Los datos están disponibles en formato {{format}}, lo que facilita su procesamiento y análisis.",
+        "recommendations": {
+          "documentStructure": "Documentar la estructura de los datos",
+          "provideMetadata": "Proporcionar metadatos descriptivos"
+        }
+      }
+    }
   }
 }

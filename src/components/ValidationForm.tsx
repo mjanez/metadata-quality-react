@@ -237,7 +237,7 @@ const ValidationForm: React.FC<ValidationFormProps> = ({ onValidate, isLoading }
             id="profileSelector"
             className="form-select"
             value={profile}
-            onChange={(e) => setProfile(e.target.value as ValidationProfile)}
+            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setProfile(e.target.value as ValidationProfile)}
           >
             <option value="dcat_ap">{t('validation.profiles.dcat_ap')}</option>
             <option value="dcat_ap_es">{t('validation.profiles.dcat_ap_es')}</option>
@@ -252,7 +252,7 @@ const ValidationForm: React.FC<ValidationFormProps> = ({ onValidate, isLoading }
             id="versionSelector"
             className="form-select"
             value={version}
-            onChange={(e) => setVersion(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setVersion(e.target.value)}
             disabled={getAvailableVersions(profile).length <= 1}
           >
             {getAvailableVersions(profile).map((ver) => (
@@ -315,7 +315,7 @@ const ValidationForm: React.FC<ValidationFormProps> = ({ onValidate, isLoading }
                 className="form-control font-monospace"
                 rows={12}
                 value={textContent}
-                onChange={(e) => setTextContent(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setTextContent(e.target.value)}
                 placeholder={t('validation.form.placeholders.text')}
               />
               <div className="form-text d-flex justify-content-between align-items-center">
@@ -392,11 +392,11 @@ const ValidationForm: React.FC<ValidationFormProps> = ({ onValidate, isLoading }
                 type="url"
                 className="form-control"
                 value={url}
-                onChange={(e) => setUrl(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setUrl(e.target.value)}
                 placeholder={t('validation.form.placeholders.url')}
               />
               <div className="form-text">
-                {t('validation.form.url_description')}
+                {t('validation.form.samples.url_description')}
               </div>
             </div>
           </div>
@@ -430,7 +430,7 @@ const ValidationForm: React.FC<ValidationFormProps> = ({ onValidate, isLoading }
                   type="url"
                   className="form-control"
                   value={sparqlEndpoint}
-                  onChange={(e) => setSparqlEndpoint(e.target.value)}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSparqlEndpoint(e.target.value)}
                   placeholder="hhttps://datos.gob.es/virtuoso/sparql"
                 />
                 <div className="form-text">
@@ -449,7 +449,7 @@ const ValidationForm: React.FC<ValidationFormProps> = ({ onValidate, isLoading }
                   className="form-control font-monospace"
                   rows={12}
                   value={sparqlQuery}
-                  onChange={(e) => setSparqlQuery(e.target.value)}
+                  onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setSparqlQuery(e.target.value)}
                   placeholder={t('sparql.query_placeholder')}
                 />
                 <div className="form-text">
@@ -473,7 +473,7 @@ const ValidationForm: React.FC<ValidationFormProps> = ({ onValidate, isLoading }
             id="formatSelector"
             className="form-select"
             value={format}
-            onChange={(e) => setFormat(e.target.value as RDFFormat)}
+            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setFormat(e.target.value as RDFFormat)}
           >
             <option value="auto">{t('validation.form.syntax.format_autodetect')}</option>
             <option value="turtle">Turtle</option>

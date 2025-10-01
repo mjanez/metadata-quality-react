@@ -7,7 +7,7 @@
           "maxScore": 405,
           "icon": "img/icons/eur.svg",
           "url": "https://semiceu.github.io/DCAT-AP/",
-          "sample_url": "https://raw.githubusercontent.com/datosgobes/DCAT-AP-ES/refs/heads/develop/examples/ttl/1.0.0/E_DCAT-AP-ES_Catalog.ttl",
+          "sampleUrl": "https://raw.githubusercontent.com/datosgobes/DCAT-AP-ES/refs/heads/develop/examples/ttl/1.0.0/E_DCAT-AP-ES_Catalog.ttl",
             "shaclFiles": [
             "https://raw.githubusercontent.com/SEMICeu/DCAT-AP/refs/heads/master/releases/2.1.1/dcat-ap_2.1.1_shacl_imports.ttl",
             "https://raw.githubusercontent.com/SEMICeu/DCAT-AP/refs/heads/master/releases/2.1.1/dcat-ap_2.1.1_shacl_mdr_imports.ttl",
@@ -30,7 +30,7 @@
           "maxScore": 405,
           "icon": "img/icons/eur.svg",
           "url": "https://semiceu.github.io/DCAT-AP/",
-          "sample_url": "https://raw.githubusercontent.com/datosgobes/DCAT-AP-ES/refs/heads/develop/examples/ttl/1.0.0/E_DCAT-AP-ES_Catalog.ttl",
+          "sampleUrl": "https://raw.githubusercontent.com/datosgobes/DCAT-AP-ES/refs/heads/develop/examples/ttl/1.0.0/E_DCAT-AP-ES_Catalog.ttl",
           "shaclFiles": [
             "https://raw.githubusercontent.com/SEMICeu/DCAT-AP/refs/heads/master/releases/3.0.0/shacl/dcat-ap-SHACL.ttl"
           ],
@@ -81,15 +81,15 @@
           "maxScore": 305,
           "icon": "img/icons/esp.svg",
           "url": "https://datosgobes.github.io/NTI-RISP/",
-          "sample_url": "https://raw.githubusercontent.com/datosgobes/NTI-RISP/refs/heads/main/examples/rdf/E_NTI-RISP_Catalog.rdf",
+          "sampleUrl": "https://raw.githubusercontent.com/datosgobes/NTI-RISP/refs/heads/develop/examples/ttl/E_NTI-RISP_Catalog.ttl",
           "shaclFiles": [
-            "https://raw.githubusercontent.com/datosgobes/NTI-RISP/refs/heads/main/shacl/1.0.0/nti-risp_catalog_shape.ttl",
-            "https://raw.githubusercontent.com/datosgobes/NTI-RISP/refs/heads/main/shacl/1.0.0/nti-risp_common_shapes.ttl",
-            "https://raw.githubusercontent.com/datosgobes/NTI-RISP/refs/heads/main/shacl/1.0.0/nti-risp_dataset_shape.ttl",
-            "https://raw.githubusercontent.com/datosgobes/NTI-RISP/refs/heads/main/shacl/1.0.0/nti-risp_distribution_shape.ttl",
-            "https://raw.githubusercontent.com/datosgobes/NTI-RISP/refs/heads/main/shacl/1.0.0/nti-risp_shacl_imports.ttl",
-            "https://raw.githubusercontent.com/datosgobes/NTI-RISP/refs/heads/main/shacl/1.0.0/nti-risp_shacl_mdr_imports.ttl",
-            "https://raw.githubusercontent.com/datosgobes/NTI-RISP/refs/heads/main/shacl/1.0.0/nti-risp_vocabularies.shape.ttl"
+            "https://raw.githubusercontent.com/datosgobes/NTI-RISP/refs/heads/develop/shacl/1.0.0/nti-risp_catalog_shape.ttl",
+            "https://raw.githubusercontent.com/datosgobes/NTI-RISP/refs/heads/develop/shacl/1.0.0/nti-risp_common_shapes.ttl",
+            "https://raw.githubusercontent.com/datosgobes/NTI-RISP/refs/heads/develop/shacl/1.0.0/nti-risp_dataset_shape.ttl",
+            "https://raw.githubusercontent.com/datosgobes/NTI-RISP/refs/heads/develop/shacl/1.0.0/nti-risp_distribution_shape.ttl",
+            "https://raw.githubusercontent.com/datosgobes/NTI-RISP/refs/heads/develop/shacl/1.0.0/nti-risp_shacl_imports.ttl",
+            "https://raw.githubusercontent.com/datosgobes/NTI-RISP/refs/heads/develop/shacl/1.0.0/nti-risp_shacl_mdr_imports.ttl",
+            "https://raw.githubusercontent.com/datosgobes/NTI-RISP/refs/heads/develop/shacl/1.0.0/nti-risp_vocabularies.shape.ttl"
           ],
           "dimensions": {
             "findability": { "maxScore": 100 },
@@ -302,6 +302,45 @@
     "useProportionalEvaluation": true,
     "minimumEntityThreshold": 1,
     "description": "Proportional evaluation calculates metric scores based on the percentage of entities that comply with each metric, rather than binary all-or-nothing scoring"
+  },
+  "backend_server": {
+    "enabled": true,
+    "url": "http://localhost:3001",
+    "endpoints": {
+      "validate_url": "/api/validate-url",
+      "download_data": "/api/download-data",
+      "health": "/api/health"
+    },
+    "cors_proxy": {
+      "fallback_proxies": [
+        "https://corsproxy.io/?url=",
+        "https://api.allorigins.win/get?url=",
+        "https://cors-anywhere.herokuapp.com/",
+        "https://thingproxy.freeboard.io/fetch/"
+      ],
+      "enable_heuristics": true
+    }
+  },
+  "data_quality": {
+    "enabled": true,
+    "require_backend": true,
+    "iso_25012_metrics": {
+      "accuracy": { "weight": 0.15, "enabled": true },
+      "completeness": { "weight": 0.12, "enabled": true },
+      "consistency": { "weight": 0.10, "enabled": true },
+      "credibility": { "weight": 0.08, "enabled": true },
+      "currentness": { "weight": 0.08, "enabled": true },
+      "accessibility": { "weight": 0.07, "enabled": true },
+      "compliance": { "weight": 0.07, "enabled": true },
+      "confidentiality": { "weight": 0.06, "enabled": true },
+      "efficiency": { "weight": 0.06, "enabled": true },
+      "precision": { "weight": 0.05, "enabled": true },
+      "traceability": { "weight": 0.05, "enabled": true },
+      "understandability": { "weight": 0.04, "enabled": true },
+      "availability": { "weight": 0.03, "enabled": true },
+      "portability": { "weight": 0.02, "enabled": true },
+      "recoverability": { "weight": 0.02, "enabled": true }
+    }
   },
   "app_info": {
     "name": "Metadata Quality APP",

@@ -80,12 +80,13 @@ const ResponsiveSidebar: React.FC<ResponsiveSidebarProps> = ({
       {/* Mobile Overlay - Only show on mobile when sidebar is visible */}
       {isVisible && (
         <div 
-          className="position-fixed w-100 h-100 d-lg-none"
+          className="position-fixed w-100 d-lg-none"
           style={{
             backgroundColor: 'rgba(0, 0, 0, 0.5)',
             zIndex: 1045,
-            top: 0,
-            left: 0
+            top: '76px',
+            left: 0,
+            height: 'calc(100vh - 76px)'
           }}
           onClick={onToggle}
         />

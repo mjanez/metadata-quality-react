@@ -377,21 +377,21 @@ export class SHACLValidationService {
     // shacl-engine returns results in validationReport.results
     if (validationReport.results) {
       for (const result of validationReport.results) {
-        // Debug logging to understand shacl-engine result structure
-        console.debug('SHACL result structure:', {
-          resultKeys: Object.keys(result),
-          hasSourceConstraintComponent: !!result.sourceConstraintComponent,
-          hasSourceShape: !!result.sourceShape,
-          hasConstraint: !!result.constraint,
-          hasShape: !!result.shape,
-          hasValidator: !!result.validator,
-          hasValidation: !!result.validation,
-          constraintType: result.constraint ? typeof result.constraint : 'undefined',
-          shapeType: result.shape ? typeof result.shape : 'undefined',
-          validatorType: result.validator ? typeof result.validator : 'undefined',
-          validationType: result.validation ? typeof result.validation : 'undefined',
-          fullResult: result
-        });
+        // // Debug logging to understand shacl-engine result structure
+        // console.debug('SHACL result structure:', {
+        //   resultKeys: Object.keys(result),
+        //   hasSourceConstraintComponent: !!result.sourceConstraintComponent,
+        //   hasSourceShape: !!result.sourceShape,
+        //   hasConstraint: !!result.constraint,
+        //   hasShape: !!result.shape,
+        //   hasValidator: !!result.validator,
+        //   hasValidation: !!result.validation,
+        //   constraintType: result.constraint ? typeof result.constraint : 'undefined',
+        //   shapeType: result.shape ? typeof result.shape : 'undefined',
+        //   validatorType: result.validator ? typeof result.validator : 'undefined',
+        //   validationType: result.validation ? typeof result.validation : 'undefined',
+        //   fullResult: result
+        // });
 
         const violation: SHACLViolation = {
           focusNode: this.extractTermValue(result.focusNode),

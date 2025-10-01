@@ -67,8 +67,12 @@ const AppStateContext = createContext<{
   setSidebarVisible: () => {}
 });
 
+interface AppStateProviderProps {
+  children?: React.ReactNode;
+}
+
 // Provider component
-export const AppStateProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+export const AppStateProvider: React.FC<AppStateProviderProps> = ({ children }) => {
   const [state, setState] = useState<AppState>(defaultAppState);
 
   const updateTabState = (updates: Partial<TabState>) => {

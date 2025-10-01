@@ -2,6 +2,7 @@ import { Parser as N3Parser, Writer as N3Writer, Store as N3Store } from 'n3';
 import { RdfXmlParser } from 'rdfxml-streaming-parser';
 import { RDFFormat, ValidationProfile, SHACLReport, ProfileSelection } from '../types';
 import { SHACLValidationService } from './SHACLValidationService';
+import { backendService } from './BackendService';
 
 export class RDFService {
   /**
@@ -216,14 +217,29 @@ export class RDFService {
   }
 
   /**
-   * Fetch content from URL (simplified - no CORS proxy)
+   * Fetch RDF content from URL with backend support and CORS fallback
    */
   public static async fetchFromUrl(url: string): Promise<string> {
+    console.debug(`🌐 Fetching content from URL: ${url}`);
+    
+    // First try: Use backend service if available
     try {
-      console.debug(`🌐 Fetching content from URL: ${url}`);
-      
+      const isBackendAvailable = await backendService.isBackendAvailable();
+      if (isBackendAvailable) {
+        console.debug('🔧 Using backend service for RDF download');
+        const content = await backendService.downloadData(url);
+        console.debug(`✅ Content successfully fetched via backend (${content.length} chars)`);
+        return content;
+      }
+    } catch (backendError) {
+      console.warn('⚠️ Backend fetch failed, falling back to direct methods:', backendError);
+    }
+
+    // Second try: Direct fetch (might fail due to CORS)
+    try {
+      console.debug('📡 Attempting direct fetch');
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
       
       const response = await fetch(url, {
         signal: controller.signal,
@@ -241,20 +257,20 @@ export class RDFService {
       }
       
       const content = await response.text();
-      console.debug(`✅ Content successfully fetched from URL (${content.length} chars)`);
+      console.debug(`✅ Content successfully fetched directly (${content.length} chars)`);
       return content;
       
-    } catch (error) {
-      console.warn('⚠️ Failed to fetch from URL:', error);
+    } catch (directError) {
+      console.warn('⚠️ Direct fetch failed:', directError);
       
       // Create user-friendly error for CORS issues
-      if (error instanceof Error) {
-        if (error.name === 'AbortError') {
+      if (directError instanceof Error) {
+        if (directError.name === 'AbortError') {
           throw new Error('TIMEOUT: Request timeout (>15s). The server may be slow or unreachable.');
-        } else if (error.message.includes('CORS') || error.message.includes('ERR_FAILED') || error.message.includes('Failed to fetch')) {
+        } else if (directError.message.includes('CORS') || directError.message.includes('ERR_FAILED') || directError.message.includes('Failed to fetch')) {
           throw new Error('CORS_ERROR: Cross-origin restrictions prevent automatic download.');
         } else {
-          throw new Error(`NETWORK_ERROR: ${error.message}`);
+          throw new Error(`NETWORK_ERROR: ${directError.message}`);
         }
       } else {
         throw new Error('UNKNOWN_ERROR: An unknown network error occurred.');

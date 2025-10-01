@@ -115,7 +115,7 @@ const ValidationTabs: React.FC<ValidationTabsProps> = ({
             {tabs.length > 1 && (
               <button
                 className="btn btn-sm btn-outline-secondary border-start-0"
-                onClick={(e) => {
+                onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
                   e.stopPropagation();
                   onTabClose(tab.id);
                 }}

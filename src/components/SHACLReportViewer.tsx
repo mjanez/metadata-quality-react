@@ -694,7 +694,7 @@ const SHACLReportViewer: React.FC<SHACLReportViewerProps> = ({
                             className="form-select form-select-sm"
                             style={{ width: 'auto' }}
                             value={selectedSeverity}
-                            onChange={(e) => setSelectedSeverity(e.target.value as SHACLSeverity | 'all')}
+                            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSelectedSeverity(e.target.value as SHACLSeverity | 'all')}
                           >
                             <option value="all">{t('shacl.severity.all')} ({totalIssues})</option>
                             <option value="Violation">{t('shacl.severity.violations')} ({report.violations.length})</option>

@@ -5,6 +5,7 @@ import { RDFService } from './RDFService';
 import { detectRDFFormat } from '../utils/formatDetection';
 import mqaConfig from '../config/mqa-config.json';
 import i18n from '../i18n';
+import { backendService } from './BackendService';
 
 export class MQAService {
   private static instance: MQAService;
@@ -1442,7 +1443,7 @@ export class MQAService {
     accessibleUrls: number;
     successRate: number;
     score: number;
-    details: Array<{ url: string; accessible: boolean; method: 'direct' | 'pattern' | 'failed' | 'proxy' | 'heuristic'; }>;
+    details: Array<{ url: string; accessible: boolean; method: 'direct' | 'pattern' | 'failed' | 'proxy' | 'heuristic' | 'backend'; }>;
   }> {
     if (!urls || urls.length === 0) {
       return {
@@ -1485,23 +1486,48 @@ export class MQAService {
       console.debug(`Sampling ${maxSample} URLs out of ${validUrls.length} for accessibility check`);
     }
 
+    // Check if backend is available
+    const isBackendAvailable = await backendService.isBackendAvailable();
+    console.debug(`Backend availability for URL checking: ${isBackendAvailable}`);
+
     let accessibleCount = 0;
-    const details: Array<{ url: string; accessible: boolean; method: 'direct' | 'pattern' | 'failed' | 'proxy' | 'heuristic'; }> = [];
+    const details: Array<{ url: string; accessible: boolean; method: 'direct' | 'pattern' | 'failed' | 'proxy' | 'heuristic' | 'backend'; }> = [];
 
     for (const url of urlsToCheck) {
       let accessible = false;
-      let method: 'direct' | 'pattern' | 'failed' | 'proxy' | 'heuristic' = 'failed';
+      let method: 'direct' | 'pattern' | 'failed' | 'proxy' | 'heuristic' | 'backend' = 'failed';
       
-      // Strategy 1: Try public CORS proxy services
-      const proxyResult = await this.checkUrlViaProxy(url);
-      if (proxyResult.accessible) {
-        accessible = true;
-        method = 'proxy';
-      } else {
-        // Strategy 2: Enhanced heuristic analysis
+      if (isBackendAvailable) {
+        // Strategy 1: Use backend server for accurate validation (preferred when available)
+        try {
+          const backendResult = await backendService.validateURLAccessibility(url);
+          accessible = backendResult.accessible;
+          method = 'backend';
+          
+          if (!accessible && backendResult.error) {
+            console.debug(`Backend validation failed for ${url}: ${backendResult.error}`);
+          }
+        } catch (error) {
+          console.warn(`Backend validation error for ${url}:`, error);
+          // Fall through to heuristic methods if backend fails
+        }
+      }
+
+      // Fallback strategies if backend not available or failed
+      if (!accessible) {
+        // Strategy 2: Enhanced heuristic analysis (faster and more reliable)
         const heuristicResult = this.enhancedUrlHeuristics(url);
-        accessible = heuristicResult.accessible;
-        method = heuristicResult.accessible ? 'heuristic' : 'failed';
+        if (heuristicResult.accessible) {
+          accessible = true;
+          method = 'heuristic';
+        } else {
+          // Strategy 3: Try public CORS proxy services (only if heuristics fail)
+          const proxyResult = await this.checkUrlViaProxy(url);
+          if (proxyResult.accessible) {
+            accessible = true;
+            method = 'proxy';
+          }
+        }
       }
       
       if (accessible) accessibleCount++;
@@ -1509,7 +1535,8 @@ export class MQAService {
     }
 
     const successRate = urlsToCheck.length > 0 ? (accessibleCount / urlsToCheck.length) : 0;
-    console.info(`Enhanced URL Accessibility: ${accessibleCount}/${urlsToCheck.length} accessible (${(successRate * 100).toFixed(1)}%)`);
+    const methodSummary = this.getMethodSummary(details);
+    console.info(`URL Accessibility Check: ${accessibleCount}/${urlsToCheck.length} accessible (${(successRate * 100).toFixed(1)}%) - Methods: ${methodSummary}`);
 
     return {
       totalUrls: urls.length,
@@ -1519,6 +1546,20 @@ export class MQAService {
       score: successRate,
       details
     };
+  }
+
+  /**
+   * Get summary of methods used for URL accessibility checking
+   */
+  private getMethodSummary(details: Array<{ url: string; accessible: boolean; method: string; }>): string {
+    const methodCounts = details.reduce((acc, detail) => {
+      acc[detail.method] = (acc[detail.method] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    return Object.entries(methodCounts)
+      .map(([method, count]) => `${method}: ${count}`)
+      .join(', ');
   }
 
   /**
@@ -1583,48 +1624,59 @@ export class MQAService {
    * Check URL accessibility via public CORS proxy services
    */
   private async checkUrlViaProxy(url: string): Promise<{ accessible: boolean; proxy?: string; error?: string }> {
+    // Skip proxy checks in GitHub Pages environment due to CORS limitations
+    if (window.location.hostname.includes('github.io')) {
+      console.info('ℹ️ GitHub Pages detected: Using heuristic analysis instead of proxy verification for URL accessibility');
+      console.debug('🚫 Skipping proxy checks in GitHub Pages environment for:', url);
+      return { accessible: false, error: 'GitHub Pages CORS limitations - using heuristic analysis' };
+    }
+
     // Lista de proxies públicos gratuitos (con limitaciones)
-    const publicProxies = [
-      // Proxy simple y rápido para verificación
-      (url: string) => `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`,
-      // Backup proxy
-      (url: string) => `https://corsproxy.io/?${encodeURIComponent(url)}`,
-    ];
+    // Get CORS proxies from configuration
+    const configProxies = backendService.getBackendConfig().cors_proxy.fallback_proxies;
+    const publicProxies = configProxies.map(proxy => {
+      if (proxy.includes('allorigins')) {
+        return (url: string) => `${proxy}${encodeURIComponent(url)}`;
+      } else if (proxy.includes('corsproxy.io')) {
+        return (url: string) => `${proxy}${url}`;
+      } else {
+        return (url: string) => `${proxy}${url}`;
+      }
+    });
 
     for (let index = 0; index < publicProxies.length; index++) {
       const proxyFn = publicProxies[index];
       try {
         const proxyUrl = proxyFn(url);
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 8000); // Más tiempo para proxies
+        const timeoutId = setTimeout(() => controller.abort(), 5000); // Reduced timeout for better performance
 
         console.debug(`🔄 Trying proxy ${index + 1} for: ${url}`);
         
         const response = await fetch(proxyUrl, {
-          method: 'GET',
+          method: 'HEAD', // Use HEAD instead of GET for faster response
           signal: controller.signal,
           headers: {
-            'Accept': 'application/json, text/plain, */*'
+            'Accept': '*/*',
+            'Cache-Control': 'no-cache'
           }
         });
         
         clearTimeout(timeoutId);
         
         if (response.ok) {
-          // Verificar que el proxy devolvió contenido válido
-          const data = await response.text();
-          if (data && data.length > 10) { // Contenido mínimo
-            console.debug(`✅ Proxy verification successful: ${url} via proxy ${index + 1}`);
-            return { accessible: true, proxy: `proxy-${index + 1}` };
-          }
+          console.debug(`✅ Proxy verification successful: ${url} via proxy ${index + 1}`);
+          return { accessible: true, proxy: `proxy-${index + 1}` };
         }
-      } catch (error) {
-        console.debug(`❌ Proxy ${index + 1} failed for ${url}:`, error);
+      } catch (error: any) {
+        console.debug(`❌ Proxy ${index + 1} failed for ${url}:`, error?.message || 'Unknown error');
+        // Don't break immediately, try next proxy
         continue;
       }
     }
 
-    return { accessible: false, error: 'All proxies failed' };
+    console.debug(`🚫 All proxies failed for: ${url}`);
+    return { accessible: false, error: 'All proxies failed or CORS blocked' };
   }
 
   /**
@@ -1845,11 +1897,12 @@ export class MQAService {
     details: Array<{ 
       url: string; 
       accessible: boolean; 
-      method: 'direct' | 'pattern' | 'failed' | 'proxy' | 'heuristic';
+      method: 'direct' | 'pattern' | 'failed' | 'proxy' | 'heuristic' | 'backend';
       confidence?: number;
       reasons?: string[];
     }>;
     summary: {
+      backendSuccess: number;
       proxySuccess: number;
       heuristicSuccess: number;
       failed: number;
@@ -1871,7 +1924,7 @@ export class MQAService {
         successRate: 0,
         score: 0,
         details: [],
-        summary: { proxySuccess: 0, heuristicSuccess: 0, failed: 0, avgConfidence: 0 }
+        summary: { backendSuccess: 0, proxySuccess: 0, heuristicSuccess: 0, failed: 0, avgConfidence: 0 }
       };
     }
 
@@ -1893,7 +1946,7 @@ export class MQAService {
         successRate: 0,
         score: 0,
         details: [],
-        summary: { proxySuccess: 0, heuristicSuccess: 0, failed: 0, avgConfidence: 0 }
+        summary: { backendSuccess: 0, proxySuccess: 0, heuristicSuccess: 0, failed: 0, avgConfidence: 0 }
       };
     }
 
@@ -1913,44 +1966,75 @@ export class MQAService {
     const details: Array<{ 
       url: string; 
       accessible: boolean; 
-      method: 'direct' | 'pattern' | 'failed' | 'proxy' | 'heuristic';
+      method: 'direct' | 'pattern' | 'failed' | 'proxy' | 'heuristic' | 'backend';
       confidence?: number;
       reasons?: string[];
     }> = [];
 
+    // Check if backend is available
+    const isBackendAvailable = await backendService.isBackendAvailable();
+    let backendSuccess = 0;
+
     for (const url of urlsToCheck) {
       let accessible = false;
-      let method: 'direct' | 'pattern' | 'failed' | 'proxy' | 'heuristic' = 'failed';
+      let method: 'direct' | 'pattern' | 'failed' | 'proxy' | 'heuristic' | 'backend' = 'failed';
       let confidence = 0;
       let reasons: string[] = [];
 
-      if (useProxyFirst) {
-        // Try proxy first for better accuracy
-        const proxyResult = await this.checkUrlViaProxy(url);
-        if (proxyResult.accessible) {
-          accessible = true;
-          method = 'proxy';
-          confidence = 95; // High confidence for successful proxy checks
-          proxySuccess++;
+      // Strategy 1: Use backend server for accurate validation (preferred when available)
+      if (isBackendAvailable) {
+        try {
+          const backendResult = await backendService.validateURLAccessibility(url);
+          if (backendResult.accessible) {
+            accessible = true;
+            method = 'backend';
+            confidence = 95; // High confidence for backend validation
+            reasons = ['Validated via backend server'];
+            backendSuccess++;
+          } else if (backendResult.error) {
+            reasons = [`Backend validation failed: ${backendResult.error}`];
+          }
+        } catch (error) {
+          reasons = [`Backend error: ${error}`];
+          console.warn(`Backend validation error for ${url}:`, error);
         }
       }
 
+      // Fallback strategies if backend not available or failed
       if (!accessible) {
-        // Fall back to enhanced heuristics
+        // Strategy 2: Enhanced heuristic analysis (faster and more reliable in CORS-restricted environments)
         const heuristicResult = this.enhancedUrlHeuristics(url);
-        accessible = heuristicResult.confidence >= confidenceThreshold;
-        confidence = heuristicResult.confidence;
-        reasons = heuristicResult.reasons;
-        
-        if (accessible) {
+        if (heuristicResult.accessible) {
+          accessible = true;
           method = 'heuristic';
+          confidence = heuristicResult.confidence || 0;
+          reasons = heuristicResult.reasons || [];
           heuristicSuccess++;
         } else {
-          failed++;
+          // Strategy 3: Only try proxy if heuristics fail AND proxy is specifically requested AND not in GitHub Pages
+          if (useProxyFirst && !window.location.hostname.includes('github.io')) {
+            const proxyResult = await this.checkUrlViaProxy(url);
+            if (proxyResult.accessible) {
+              accessible = true;
+              method = 'proxy';
+              confidence = 85; // Slightly lower confidence due to proxy limitations
+              reasons = ['Accessible via CORS proxy'];
+              proxySuccess++;
+            }
+          }
         }
       }
 
-      if (accessible) accessibleCount++;
+      // Update success counters
+      if (accessible) {
+        accessibleCount++;
+      } else {
+        failed++;
+        if (reasons.length === 0) {
+          reasons = ['URL not accessible via any method'];
+        }
+      }
+
       totalConfidence += confidence;
       
       details.push({ url, accessible, method, confidence, reasons });
@@ -1960,7 +2044,7 @@ export class MQAService {
     const avgConfidence = urlsToCheck.length > 0 ? (totalConfidence / urlsToCheck.length) : 0;
 
     console.info(`Enhanced URL Accessibility Summary: ${accessibleCount}/${urlsToCheck.length} accessible (${(successRate * 100).toFixed(1)}%)`);
-    console.info(`   Methods: ${proxySuccess} proxy, ${heuristicSuccess} heuristic, ${failed} failed`);
+    console.info(`   Methods: ${backendSuccess} backend, ${proxySuccess} proxy, ${heuristicSuccess} heuristic, ${failed} failed`);
     console.info(`   Average confidence: ${avgConfidence.toFixed(1)}%`);
 
     return {
@@ -1971,6 +2055,7 @@ export class MQAService {
       score: successRate,
       details,
       summary: {
+        backendSuccess,
         proxySuccess,
         heuristicSuccess,
         failed,

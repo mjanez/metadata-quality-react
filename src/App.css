@@ -229,6 +229,19 @@ html, body {
   color: var(--bs-secondary) !important;
 }
 
+/* Fixed navbar positioning and background */
+.navbar.fixed-top {
+  background-color: var(--bs-light) !important;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  z-index: 1030;
+}
+
+/* Body padding to account for fixed navbar */
+body {
+  padding-top: 76px;
+}
+
 /* Enhanced dark theme support for navbar and buttons */
 [data-bs-theme="dark"] .navbar {
   background-color: var(--bs-dark) !important;

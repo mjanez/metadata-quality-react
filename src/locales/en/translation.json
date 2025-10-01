@@ -58,6 +58,7 @@
       "home": "Home",
       "validation_tab": "Validation",
       "dashboard_tab": "Quality Dashboard",
+      "data_quality_tab": "Data Quality",
       "results": "Results",
       "about": "About"
     },
@@ -528,5 +529,196 @@
     "title": "RDF Preprocessing Applied",
     "description": "Some issues in your RDF data were automatically corrected to allow validation:",
     "note": "These corrections do not affect your original data, only the copy used for analysis."
+  },
+
+  "dataQuality": {
+    "title": "Data Quality Analysis",
+    "subtitle": "Assessment based on ISO/IEC 25012 standard for CSV and JSON distributions",
+    "newAnalysis": "New Analysis",
+    "analyzeButton": "Analyze Data Quality",
+    "analyzeHelp": "The selected distribution will be analyzed according to ISO/IEC 25012 standards",
+    "analyzing": "Analyzing Data Quality...",
+    
+    "steps": {
+      "selection": "Selection",
+      "analysis": "Analysis", 
+      "results": "Results"
+    },
+
+    "analysisInfo": {
+      "dataset": "Dataset",
+      "distribution": "Distribution",
+      "format": "Format"
+    },
+
+    "progress": {
+      "downloading": "Downloading data",
+      "parsing": "Analyzing structure",
+      "analyzing": "Evaluating quality",
+      "generating": "Generating observations",
+      "completed": "Completed"
+    },
+
+    "selector": {
+      "title": "Search Datasets for Quality Analysis",
+      "searchQuery": "Search",
+      "searchPlaceholder": "Search by title, description or theme...",
+      "format": "Format",
+      "allFormats": "All formats",
+      "limit": "Limit",
+      "loading": "Searching datasets...",
+      "noResults": "No datasets found",
+      "noResultsHelp": "Try different search terms or change filters.",
+      "distributions": "distributions",
+      "availableDistributions": "Available Distributions",
+      "untitledDistribution": "Untitled Distribution",
+      "selected": "Selected",
+      "selectedDistribution": "Selected Distribution",
+      "dataset": "Dataset",
+      "noDataAvailable": "No CSV or JSON distributions available in the catalog at this time.",
+      "trySearch": "Try searching for specific terms like \"companies\", \"population\", \"economy\", etc."
+    },
+
+    "report": {
+      "title": "Data Quality Report",
+      "overallScore": "Overall Quality Score",
+      "basicInfo": "Basic Information",
+      "columns": "Columns",
+      "records": "Records",
+      "columnNames": "Column names",
+      "indicators": "Quality Indicators",
+      "category": "Category",
+      "indicator": "Indicator",
+      "result": "Result",
+      "sampleRecords": "Sample Records",
+      "observations": "Observations and Recommendations",
+      "definition": "Definition",
+      "recommendations": "Recommendations",
+      "notAvailable": "N/A",
+      "true": "True",
+      "false": "False",
+      "noSampleData": "No sample data available",
+      "error": "Analysis error",
+      "analyzing": "Analyzing data..."
+    },
+
+    "characteristics": {
+      "accuracy": "Accuracy",
+      "completeness": "Completeness",
+      "consistency": "Consistency",
+      "credibility": "Credibility",
+      "currentness": "Currentness",
+      "precision": "Precision",
+      "relevance": "Relevance",
+      "accessibility": "Accessibility",
+      "portability": "Portability",
+      "recoverability": "Recoverability",
+      "security": "Security",
+      "traceability": "Traceability",
+      "understandability": "Understandability",
+      "compliance": "Compliance",
+      "availability": "Availability"
+    },
+
+    "indicators": {
+      "outliersByColumn": "Outliers by column",
+      "completenessRatio": "Completeness ratio by column",
+      "overallCompleteness": "Overall completeness ratio",
+      "temporalCompleteness": "Temporal completeness",
+      "duplicatedRecords": "Duplicated records",
+      "mostRecentDate": "Most recent date",
+      "oldestDate": "Oldest date",
+      "temporalCoverage": "Temporal coverage",
+      "accessible": "Accessibility",
+      "provenance": "Provenance",
+      "temporalInformation": "Temporal information",
+      "spatialInformation": "Spatial information",
+      "identification": "Identification",
+      "confusingColumns": "Confusing columns",
+      "uncommonColumns": "Uncommon columns",
+      "portable": "Portability",
+      "machineReadable": "Machine readable",
+      "openFormat": "Open format"
+    },
+
+    "score": {
+      "excellent": "Excellent data quality",
+      "good": "Good data quality",
+      "fair": "Acceptable data quality",
+      "poor": "Poor data quality"
+    },
+
+    "about": {
+      "title": "About Data Quality Analysis",
+      "description": "This analysis evaluates the quality of CSV and JSON data distributions based on the ISO/IEC 25012 standard, which defines 15 quality characteristics divided into two main categories:",
+      "inherent": "Inherent data quality",
+      "systemDependent": "System-dependent data quality"
+    },
+
+    "noValidationData": {
+      "title": "No validation data available",
+      "description": "To use data quality analysis, you first need to validate an RDF catalog in the Validation tab.",
+      "step1": "Go to the 'Validation' tab",
+      "step2": "Load an RDF catalog (URL or direct text)",
+      "step3": "Run the validation",
+      "step4": "Return here to analyze the quality of distributions",
+      "goToValidation": "Go to Validation"
+    },
+
+    "checkingBackend": "Checking service availability...",
+    
+    "notAvailable": {
+      "title": "Functionality not available",
+      "githubPages": "Data quality analysis functionality is not available on GitHub Pages due to CORS restrictions.",
+      "backend": "Backend server is not available. This functionality requires a backend server to download and analyze data."
+    },
+
+    "setup": {
+      "title": "Development setup:",
+      "step1": "Create a Node.js server on port 3001",
+      "step2": "Implement endpoints: /api/health, /api/validate-url, /api/download-data",
+      "step3": "Enable CORS for the application origin",
+      "step4": "Set backend_server.enabled = true in mqa-config.json",
+      "note": "See project documentation for more details about backend configuration."
+    },
+
+    "observations": {
+      "accuracy": {
+        "definition": "Degree to which data correctly represents the true value.",
+        "withOutliers": "{{count}} outliers detected. Although the quantity is relatively low, it is recommended to analyze these records to determine if they are errors or reflect exceptional situations.",
+        "noOutliers": "No significant outliers detected in numerical data.",
+        "recommendations": {
+          "reviewOutliers": "Review identified outliers",
+          "implementValidation": "Implement data entry validations"
+        }
+      },
+      "completeness": {
+        "definition": "Degree to which necessary data is present.",
+        "general": "Overall completeness of {{percentage}}%. ",
+        "perfect": "No missing values, indicating excellent completeness.",
+        "missing": "Some missing values were detected that could affect the analysis.",
+        "recommendations": {
+          "reviewMissing": "Review columns with missing values",
+          "implementImputation": "Implement imputation strategies if necessary"
+        }
+      },
+      "consistency": {
+        "definition": "Degree to which data is uniform and free of contradictions.",
+        "noDuplicates": "No duplicate records found, indicating good consistency.",
+        "withDuplicates": "{{count}} duplicate records detected that could affect analysis quality.",
+        "recommendations": {
+          "removeDuplicates": "Remove or consolidate duplicate records",
+          "implementUniqueKeys": "Implement unique keys to prevent duplicates"
+        }
+      },
+      "accessibility": {
+        "definition": "Ease with which data can be accessed and used.",
+        "observation": "Data is available in {{format}} format, facilitating processing and analysis.",
+        "recommendations": {
+          "documentStructure": "Document data structure",
+          "provideMetadata": "Provide descriptive metadata"
+        }
+      }
+    }
   }
 }

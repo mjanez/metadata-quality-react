@@ -1,7 +1,8 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Routes, Route, Link, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { AppStateProvider, useAppState } from './contexts/AppStateContext';
+import { backendService } from './services/BackendService';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap/dist/js/bootstrap.bundle.min.js';
 import './App.css';
@@ -13,6 +14,7 @@ import LanguageSelector from './components/LanguageSelector';
 import ThemeToggle from './components/ThemeToggle';
 import ResponsiveSidebar from './components/ResponsiveSidebar';
 import { Dashboard } from './components/Dashboard';
+import { DataQualityAnalysis } from './components/DataQuality';
 import RDFService from './services/RDFService';
 import { MQAService } from './services/MQAService';
 import { SHACLValidationService } from './services/SHACLValidationService';
@@ -28,7 +30,7 @@ function ValidationApp() {
 
   // Debug: Log sidebar state changes
   React.useEffect(() => {
-    console.log('Sidebar state changed:', { 
+    console.debug('Sidebar state changed:', { 
       sidebarVisible, 
       timestamp: new Date().toLocaleTimeString(),
       classes: sidebarVisible ? 'sidebar-open' : 'sidebar-collapsed'
@@ -687,11 +689,27 @@ function ValidationApp() {
 function InternalAppRouter() {
   const { t } = useTranslation();
   const location = useLocation();
+  const [showDataQualityTab, setShowDataQualityTab] = useState(false);
+
+  // Check if data quality functionality should be enabled
+  useEffect(() => {
+    const checkDataQualityAvailability = async () => {
+      try {
+        const isEnabled = await backendService.shouldEnableDataQuality();
+        setShowDataQualityTab(isEnabled);
+      } catch (error) {
+        console.error('Failed to check data quality availability:', error);
+        setShowDataQualityTab(false);
+      }
+    };
+    
+    checkDataQualityAvailability();
+  }, []);
 
   return (
     <div className="App">
       {/* Navigation Bar */}
-      <nav className="navbar navbar-expand-lg border-bottom">
+      <nav className="navbar navbar-expand-lg border-bottom fixed-top">
         <div className="container-fluid">
           <div className="d-flex align-items-center">
             <Link to="/" className="navbar-brand mb-0 h1 text-decoration-none">
@@ -714,6 +732,15 @@ function InternalAppRouter() {
               <i className="bi bi-speedometer2 me-1"></i>
               {t('common.navigation.dashboard_tab')}
             </Link>
+            {showDataQualityTab && (
+              <Link 
+                to="/data-quality" 
+                className={`nav-link ${location.pathname === '/data-quality' ? 'active fw-bold text-primary' : ''}`}
+              >
+                <i className="bi bi-graph-up me-1"></i>
+                {t('common.navigation.data_quality_tab', 'Calidad de Datos')}
+              </Link>
+            )}
           </div>
           <div className="d-flex align-items-center">
             <div className="me-2">
@@ -740,6 +767,9 @@ function InternalAppRouter() {
       <Routes>
         <Route path="/" element={<ValidationApp />} />
         <Route path="/dashboard" element={<Dashboard />} />
+        {showDataQualityTab && (
+          <Route path="/data-quality" element={<DataQualityAnalysis />} />
+        )}
       </Routes>
     </div>
   );

@@ -247,3 +247,6 @@ export interface SHACLReport {
 export interface ExtendedValidationResult extends ValidationResult {
   shaclReport?: SHACLReport;
 }
+
+// Re-export data quality types
+export * from './dataQuality';

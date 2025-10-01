@@ -106,7 +106,8 @@ const DimensionCharts: React.FC<DimensionChartsProps> = ({ metricsData, showProf
 
   const downloadAllCharts = async () => {
     try {
-      const { zip } = await import('fflate');
+      // Dynamic import to reduce bundle size
+      const { zip } = await import(/* webpackChunkName: "fflate" */ 'fflate');
       
       // Collect all files to zip
       const files: { [key: string]: Uint8Array } = {};
