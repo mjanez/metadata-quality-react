@@ -617,3 +617,46 @@ body {
     border: 1px solid var(--bs-border-color);
   }
 }
+
+/* Dataset list container with custom scrollbar */
+.dataset-list-container {
+  scrollbar-width: thin;
+  scrollbar-color: var(--bs-primary) var(--bs-tertiary-bg);
+  padding-right: 8px;
+}
+
+.dataset-list-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.dataset-list-container::-webkit-scrollbar-track {
+  background: var(--bs-tertiary-bg);
+  border-radius: 4px;
+}
+
+.dataset-list-container::-webkit-scrollbar-thumb {
+  background-color: var(--bs-primary);
+  border-radius: 4px;
+  border: 2px solid var(--bs-tertiary-bg);
+}
+
+.dataset-list-container::-webkit-scrollbar-thumb:hover {
+  background-color: var(--bs-primary-border-subtle);
+}
+
+/* Theme badge hover effect */
+.badge.bg-info:hover {
+  opacity: 0.85;
+  transform: translateY(-1px);
+  transition: all 0.2s ease;
+}
+
+/* Distribution card hover effect */
+.distribution-card {
+  transition: all 0.2s ease;
+}
+
+.distribution-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}

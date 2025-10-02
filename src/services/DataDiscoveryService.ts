@@ -226,7 +226,7 @@ export class DataDiscoveryService {
       const title = getProperty('http://purl.org/dc/terms/title') || 'Distribution';
       const description = getProperty('http://purl.org/dc/terms/description');
       const accessURL = getProperty('http://www.w3.org/ns/dcat#accessURL');
-      const downloadURL = getProperty('http://www.w3.org/ns/dcat#downloadURL') || accessURL;
+      const downloadURL = getProperty('http://www.w3.org/ns/dcat#downloadURL');
       
       // Handle complex format objects (dct:IMT with rdf:value)
       const formatUri = getProperty('http://purl.org/dc/terms/format') || 
@@ -236,8 +236,21 @@ export class DataDiscoveryService {
       const mediaType = getProperty('http://www.w3.org/ns/dcat#mediaType');
       const byteSize = getProperty('http://www.w3.org/ns/dcat#byteSize');
       
-      if (!accessURL) {
-        return null; // Distribution must have access URL
+      // Only use downloadURL, or accessURL if it points to a .csv or .json file
+      let primaryURL: string | undefined = downloadURL;
+      
+      if (!primaryURL && accessURL) {
+        // Check if accessURL ends with .csv or .json (case insensitive)
+        const urlLower = accessURL.toLowerCase();
+        const hasValidExtension = urlLower.endsWith('.csv') || urlLower.endsWith('.json');
+        
+        if (hasValidExtension) {
+          primaryURL = accessURL;
+        }
+      }
+      
+      if (!primaryURL) {
+        return null; // No valid URL for data download
       }
       
       // Determine format with fallback chain
@@ -247,16 +260,19 @@ export class DataDiscoveryService {
         finalFormat = mediaType ? this.normalizeFormatValue(mediaType) : 'unknown';
       }
       if (!finalFormat || finalFormat === 'unknown') {
-        // Fallback to URL-based detection
-        finalFormat = accessURL ? this.extractFormatFromUrl(accessURL) : 'unknown';
+        // Fallback to URL-based detection, using primary URL
+        finalFormat = this.extractFormatFromUrl(primaryURL);
       }
+      
+      // Skip validation here to avoid blocking the UI with multiple HTTP requests
+      // Validation will be done when user selects a distribution for analysis
       
       return {
         id: distributionUri,
         title,
         description,
-        accessURL,
-        downloadURL,
+        accessURL: accessURL || '',
+        downloadURL: downloadURL,
         format: finalFormat,
         mediaType,
         byteSize: byteSize ? parseInt(byteSize) : undefined,
@@ -533,6 +549,94 @@ export class DataDiscoveryService {
    */
   public hasValidationResults(): boolean {
     return this.validatedResults.length > 0;
+  }
+  
+  /**
+   * Validate that a URL returns actual data (CSV/JSON) and not HTML
+   * This is now only called on-demand when user selects a distribution
+   */
+  async validateDataURL(url: string, expectedFormat: string): Promise<boolean> {
+    // Skip validation for unknown formats
+    if (expectedFormat === 'unknown') {
+      return false;
+    }
+    
+    try {
+      // Use backend service for validation if available
+      const backendAvailable = await backendService.isBackendAvailable();
+      
+      if (backendAvailable) {
+        // Let backend handle validation
+        const validation = await backendService.validateURLAccessibility(url);
+        return validation.accessible;
+      }
+      
+      // For client-side validation, do a HEAD request first
+      try {
+        const headResponse = await fetch(url, { 
+          method: 'HEAD',
+          mode: 'cors',
+          cache: 'no-cache'
+        });
+        
+        if (!headResponse.ok) {
+          return false;
+        }
+        
+        const contentType = headResponse.headers.get('content-type')?.toLowerCase() || '';
+        
+        // Check if content-type matches expected format
+        if (expectedFormat === 'csv') {
+          return contentType.includes('csv') || contentType.includes('text/plain');
+        } else if (expectedFormat === 'json') {
+          return contentType.includes('json');
+        }
+        
+        // If content-type is HTML, reject immediately
+        if (contentType.includes('text/html')) {
+          return false;
+        }
+        
+        // For ambiguous content-types, fetch first few bytes to check
+        const partialResponse = await fetch(url, {
+          method: 'GET',
+          mode: 'cors',
+          cache: 'no-cache',
+          headers: {
+            'Range': 'bytes=0-1024' // Get first 1KB
+          }
+        });
+        
+        const partialText = await partialResponse.text();
+        const trimmedText = partialText.trim();
+        
+        // Check if it starts with HTML markers
+        if (trimmedText.startsWith('<!DOCTYPE') || 
+            trimmedText.startsWith('<html') || 
+            trimmedText.startsWith('<HTML')) {
+          return false;
+        }
+        
+        // For JSON, check if it starts with { or [
+        if (expectedFormat === 'json') {
+          return trimmedText.startsWith('{') || trimmedText.startsWith('[');
+        }
+        
+        // For CSV, assume valid if not HTML
+        return true;
+        
+      } catch (corsError) {
+        // CORS errors are common, assume URL might be valid
+        // but needs backend or proxy to access
+        console.debug(`CORS validation failed for ${url}, assuming valid:`, corsError);
+        return true;
+      }
+      
+    } catch (error) {
+      console.debug(`URL validation error for ${url}:`, error);
+      // In case of errors, be permissive and allow the URL
+      return true;
+    }
   }
 }
 

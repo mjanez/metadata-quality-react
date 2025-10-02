@@ -1,6 +1,13 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { QualityAnalysisResult, DataQualityReport, QualityObservation } from '../../types/dataQuality';
+import {
+  exportIndicatorsCSV,
+  exportSampleRecordsCSV,
+  exportObservationsCSV,
+  exportAllCSVs,
+  downloadCSV
+} from '../../utils/DataQualityCsvExport';
 
 interface DataQualityReportViewerProps {
   result: QualityAnalysisResult;
@@ -12,7 +19,7 @@ const DataQualityReportViewer: React.FC<DataQualityReportViewerProps> = ({ resul
   if (result.status === 'error') {
     return (
       <div className="alert alert-danger">
-        <h4>{t('dataQuality.report.error', 'Error en el análisis')}</h4>
+        <h4>{t('data_quality.report.error')}</h4>
         <p>{result.error}</p>
       </div>
     );
@@ -24,21 +31,87 @@ const DataQualityReportViewer: React.FC<DataQualityReportViewerProps> = ({ resul
         <div className="spinner-border" role="status">
           <span className="visually-hidden">Loading...</span>
         </div>
-        <p className="mt-2">{t('dataQuality.report.analyzing', 'Analizando datos...')}</p>
+        <p className="mt-2">{t('data_quality.report.analyzing')}</p>
       </div>
     );
   }
 
   const { report, observations, score } = result;
 
+  // Export handlers
+  const handleExportIndicators = () => {
+    const csv = exportIndicatorsCSV(report);
+    downloadCSV(csv, 'quality-indicators.csv');
+  };
+
+  const handleExportSamples = () => {
+    const csv = exportSampleRecordsCSV(report);
+    downloadCSV(csv, 'sample-records.csv');
+  };
+
+  const handleExportObservations = () => {
+    const csv = exportObservationsCSV(observations);
+    downloadCSV(csv, 'quality-observations.csv');
+  };
+
+  const handleExportAll = async () => {
+    await exportAllCSVs(report, observations, 'data-quality-report');
+  };
+
   return (
     <div className="data-quality-report">
+      {/* Export Actions Bar */}
+      <div className="card mb-3 border-primary">
+        <div className="card-body py-2">
+          <div className="d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <div className="d-flex align-items-center">
+              <i className="bi bi-download me-2 text-primary"></i>
+              <strong className="text-primary">{t('common.actions.export')}</strong>
+            </div>
+            <div className="btn-group" role="group">
+              <button 
+                className="btn btn-sm btn-primary"
+                onClick={handleExportAll}
+                title={t('data_quality.report.downloadAll')}
+              >
+                <i className="bi bi-file-earmark-zip me-1"></i>
+                {t('data_quality.report.downloadAll')}
+              </button>
+              <button 
+                className="btn btn-sm btn-outline-primary"
+                onClick={handleExportIndicators}
+                title={t('data_quality.report.exportIndicators')}
+              >
+                <i className="bi bi-table me-1"></i>
+                {t('data_quality.report.exportIndicators')}
+              </button>
+              <button 
+                className="btn btn-sm btn-outline-primary"
+                onClick={handleExportSamples}
+                title={t('data_quality.report.exportSamples')}
+              >
+                <i className="bi bi-collection me-1"></i>
+                {t('data_quality.report.exportSamples')}
+              </button>
+              <button 
+                className="btn btn-sm btn-outline-primary"
+                onClick={handleExportObservations}
+                title={t('data_quality.report.exportObservations')}
+              >
+                <i className="bi bi-chat-left-text me-1"></i>
+                {t('data_quality.report.exportObservations')}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Overall Score */}
       <div className="card mb-4">
         <div className="card-header">
           <h4 className="mb-0">
             <i className="bi bi-clipboard-data me-2"></i>
-            {t('dataQuality.report.title', 'Informe de Calidad de Datos')}
+            {t('data_quality.report.title')}
           </h4>
         </div>
         <div className="card-body">
@@ -49,7 +122,7 @@ const DataQualityReportViewer: React.FC<DataQualityReportViewerProps> = ({ resul
               </div>
             </div>
             <div className="col">
-              <h5>{t('dataQuality.report.overallScore', 'Puntuación Global de Calidad')}</h5>
+              <h5>{t('data_quality.report.overallScore')}</h5>
               <div className="progress" style={{ height: '8px' }}>
                 <div 
                   className={`progress-bar ${getScoreColor(score)}`}
@@ -69,7 +142,7 @@ const DataQualityReportViewer: React.FC<DataQualityReportViewerProps> = ({ resul
         <div className="card-header">
           <h5 className="mb-0">
             <i className="bi bi-info-circle me-2"></i>
-            {t('dataQuality.report.basicInfo', 'Información Básica')}
+            {t('data_quality.report.basicInfo')}
           </h5>
         </div>
         <div className="card-body">
@@ -78,18 +151,18 @@ const DataQualityReportViewer: React.FC<DataQualityReportViewerProps> = ({ resul
               <table className="table table-sm">
                 <tbody>
                   <tr>
-                    <td><strong>{t('dataQuality.report.columns', 'Columnas')}:</strong></td>
+                    <td><strong>{t('data_quality.report.columns')}:</strong></td>
                     <td>{report.basicInfo.columns.length}</td>
                   </tr>
                   <tr>
-                    <td><strong>{t('dataQuality.report.records', 'Registros')}:</strong></td>
+                    <td><strong>{t('data_quality.report.records')}:</strong></td>
                     <td>{report.basicInfo.records.toLocaleString()}</td>
                   </tr>
                 </tbody>
               </table>
             </div>
             <div className="col-md-6">
-              <h6>{t('dataQuality.report.columnNames', 'Nombres de columnas')}:</h6>
+              <h6>{t('data_quality.report.columnNames')}:</h6>
               <div className="d-flex flex-wrap gap-1">
                 {report.basicInfo.columns.map((col: string) => (
                   <span key={col} className="badge bg-light text-dark">
@@ -119,7 +192,7 @@ const DataQualityReportViewer: React.FC<DataQualityReportViewerProps> = ({ resul
         <div className="card-header">
           <h5 className="mb-0">
             <i className="bi bi-chat-left-text me-2"></i>
-            {t('dataQuality.report.observations', 'Observaciones y Recomendaciones')}
+            {t('data_quality.report.observations')}
           </h5>
         </div>
         <div className="card-body">
@@ -141,7 +214,7 @@ const QualityMetricsTable: React.FC<{ report: DataQualityReport }> = ({ report }
       <div className="card-header">
         <h5 className="mb-0">
           <i className="bi bi-table me-2"></i>
-          {t('dataQuality.report.indicators', 'Indicadores de Calidad')}
+          {t('data_quality.report.indicators')}
         </h5>
       </div>
       <div className="card-body">
@@ -149,18 +222,18 @@ const QualityMetricsTable: React.FC<{ report: DataQualityReport }> = ({ report }
           <table className="table table-hover">
             <thead>
               <tr>
-                <th>{t('dataQuality.report.category', 'Categoría')}</th>
-                <th>{t('dataQuality.report.indicator', 'Indicador')}</th>
-                <th>{t('dataQuality.report.result', 'Resultado')}</th>
+                <th>{t('data_quality.report.category')}</th>
+                <th>{t('data_quality.report.indicator')}</th>
+                <th>{t('data_quality.report.result')}</th>
               </tr>
             </thead>
             <tbody>
               {/* Accuracy */}
               <tr>
                 <td rowSpan={1} className="fw-bold text-primary">
-                  {t('dataQuality.characteristics.accuracy', 'Exactitud')}
+                  {t('data_quality.characteristics.accuracy')}
                 </td>
-                <td>{t('dataQuality.indicators.outliersByColumn', 'Valores atípicos por columna')}</td>
+                <td>{t('data_quality.indicators.outliersByColumn')}</td>
                 <td>
                   <pre className="mb-0 small">
                     {JSON.stringify(report.accuracy.outliersByColumn, null, 2)}
@@ -171,9 +244,9 @@ const QualityMetricsTable: React.FC<{ report: DataQualityReport }> = ({ report }
               {/* Completeness */}
               <tr>
                 <td rowSpan={3} className="fw-bold text-success">
-                  {t('dataQuality.characteristics.completeness', 'Completitud')}
+                  {t('data_quality.characteristics.completeness')}
                 </td>
-                <td>{t('dataQuality.indicators.completenessRatio', 'Ratio de completitud por columna')}</td>
+                <td>{t('data_quality.indicators.completenessRatio')}</td>
                 <td>
                   <pre className="mb-0 small">
                     {JSON.stringify(report.completeness.completenessRatioByColumn, null, 2)}
@@ -181,7 +254,7 @@ const QualityMetricsTable: React.FC<{ report: DataQualityReport }> = ({ report }
                 </td>
               </tr>
               <tr>
-                <td>{t('dataQuality.indicators.overallCompleteness', 'Ratio de completitud general')}</td>
+                <td>{t('data_quality.indicators.overallCompleteness')}</td>
                 <td>
                   <span className={`badge ${report.completeness.overallCompletenessRatio >= 0.9 ? 'bg-success' : report.completeness.overallCompletenessRatio >= 0.7 ? 'bg-warning' : 'bg-danger'}`}>
                     {(report.completeness.overallCompletenessRatio * 100).toFixed(1)}%
@@ -189,7 +262,7 @@ const QualityMetricsTable: React.FC<{ report: DataQualityReport }> = ({ report }
                 </td>
               </tr>
               <tr>
-                <td>{t('dataQuality.indicators.temporalCompleteness', 'Completitud temporal')}</td>
+                <td>{t('data_quality.indicators.temporalCompleteness')}</td>
                 <td>
                   <pre className="mb-0 small">
                     {JSON.stringify(report.completeness.temporalCompleteness, null, 2)}
@@ -200,9 +273,9 @@ const QualityMetricsTable: React.FC<{ report: DataQualityReport }> = ({ report }
               {/* Consistency */}
               <tr>
                 <td className="fw-bold text-info">
-                  {t('dataQuality.characteristics.consistency', 'Consistencia')}
+                  {t('data_quality.characteristics.consistency')}
                 </td>
-                <td>{t('dataQuality.indicators.duplicatedRecords', 'Registros duplicados')}</td>
+                <td>{t('data_quality.indicators.duplicatedRecords')}</td>
                 <td>
                   <span className={`badge ${report.consistency.duplicatedRecords === 0 ? 'bg-success' : 'bg-warning'}`}>
                     {report.consistency.duplicatedRecords}
@@ -213,29 +286,29 @@ const QualityMetricsTable: React.FC<{ report: DataQualityReport }> = ({ report }
               {/* Currentness */}
               <tr>
                 <td rowSpan={3} className="fw-bold text-warning">
-                  {t('dataQuality.characteristics.currentness', 'Actualidad')}
+                  {t('data_quality.characteristics.currentness')}
                 </td>
-                <td>{t('dataQuality.indicators.mostRecentDate', 'Fecha más reciente')}</td>
-                <td>{report.currentness.mostRecentDate || t('dataQuality.report.notAvailable', 'N/A')}</td>
+                <td>{t('data_quality.indicators.mostRecentDate')}</td>
+                <td>{report.currentness.mostRecentDate || t('data_quality.report.notAvailable')}</td>
               </tr>
               <tr>
-                <td>{t('dataQuality.indicators.oldestDate', 'Fecha más antigua')}</td>
-                <td>{report.currentness.oldestDate || t('dataQuality.report.notAvailable', 'N/A')}</td>
+                <td>{t('data_quality.indicators.oldestDate')}</td>
+                <td>{report.currentness.oldestDate || t('data_quality.report.notAvailable')}</td>
               </tr>
               <tr>
-                <td>{t('dataQuality.indicators.temporalCoverage', 'Cobertura temporal')}</td>
-                <td>{report.currentness.temporalCoverage || t('dataQuality.report.notAvailable', 'N/A')}</td>
+                <td>{t('data_quality.indicators.temporalCoverage')}</td>
+                <td>{report.currentness.temporalCoverage || t('data_quality.report.notAvailable')}</td>
               </tr>
 
               {/* Accessibility */}
               <tr>
                 <td className="fw-bold text-primary">
-                  {t('dataQuality.characteristics.accessibility', 'Accesibilidad')}
+                  {t('data_quality.characteristics.accessibility')}
                 </td>
-                <td>{t('dataQuality.indicators.accessible', 'Accesibilidad')}</td>
+                <td>{t('data_quality.indicators.accessible')}</td>
                 <td>
                   <span className={`badge ${report.accessibility.accessible ? 'bg-success' : 'bg-danger'}`}>
-                    {report.accessibility.accessible ? t('dataQuality.report.true', 'Verdadero') : t('dataQuality.report.false', 'Falso')}
+                    {report.accessibility.accessible ? t('data_quality.report.true') : t('data_quality.report.false')}
                   </span>
                 </td>
               </tr>
@@ -243,9 +316,9 @@ const QualityMetricsTable: React.FC<{ report: DataQualityReport }> = ({ report }
               {/* Traceability */}
               <tr>
                 <td rowSpan={4} className="fw-bold text-secondary">
-                  {t('dataQuality.characteristics.traceability', 'Trazabilidad')}
+                  {t('data_quality.characteristics.traceability')}
                 </td>
-                <td>{t('dataQuality.indicators.provenance', 'Procedencia')}</td>
+                <td>{t('data_quality.indicators.provenance')}</td>
                 <td>
                   {report.traceability.provenance.length > 0 ? (
                     <div className="d-flex flex-wrap gap-1">
@@ -259,7 +332,7 @@ const QualityMetricsTable: React.FC<{ report: DataQualityReport }> = ({ report }
                 </td>
               </tr>
               <tr>
-                <td>{t('dataQuality.indicators.temporalInformation', 'Información temporal')}</td>
+                <td>{t('data_quality.indicators.temporalInformation')}</td>
                 <td>
                   {report.traceability.temporalInformation.length > 0 ? (
                     <div className="d-flex flex-wrap gap-1">
@@ -273,7 +346,7 @@ const QualityMetricsTable: React.FC<{ report: DataQualityReport }> = ({ report }
                 </td>
               </tr>
               <tr>
-                <td>{t('dataQuality.indicators.spatialInformation', 'Información espacial')}</td>
+                <td>{t('data_quality.indicators.spatialInformation')}</td>
                 <td>
                   {report.traceability.spatialInformation.length > 0 ? (
                     <div className="d-flex flex-wrap gap-1">
@@ -287,7 +360,7 @@ const QualityMetricsTable: React.FC<{ report: DataQualityReport }> = ({ report }
                 </td>
               </tr>
               <tr>
-                <td>{t('dataQuality.indicators.identification', 'Identificación')}</td>
+                <td>{t('data_quality.indicators.identification')}</td>
                 <td>
                   {report.traceability.identification.length > 0 ? (
                     <div className="d-flex flex-wrap gap-1">
@@ -304,9 +377,9 @@ const QualityMetricsTable: React.FC<{ report: DataQualityReport }> = ({ report }
               {/* Understandability */}
               <tr>
                 <td rowSpan={2} className="fw-bold text-dark">
-                  {t('dataQuality.characteristics.understandability', 'Comprensibilidad')}
+                  {t('data_quality.characteristics.understandability')}
                 </td>
-                <td>{t('dataQuality.indicators.confusingColumns', 'Columnas confusas')}</td>
+                <td>{t('data_quality.indicators.confusingColumns')}</td>
                 <td>
                   {report.understandability.confusingColumns.length > 0 ? (
                     <div className="d-flex flex-wrap gap-1">
@@ -320,7 +393,7 @@ const QualityMetricsTable: React.FC<{ report: DataQualityReport }> = ({ report }
                 </td>
               </tr>
               <tr>
-                <td>{t('dataQuality.indicators.uncommonColumns', 'Columnas poco comunes')}</td>
+                <td>{t('data_quality.indicators.uncommonColumns')}</td>
                 <td>
                   {report.understandability.uncommonColumns.length > 0 ? (
                     <div className="d-flex flex-wrap gap-1">
@@ -337,28 +410,28 @@ const QualityMetricsTable: React.FC<{ report: DataQualityReport }> = ({ report }
               {/* Portability */}
               <tr>
                 <td rowSpan={3} className="fw-bold text-success">
-                  {t('dataQuality.characteristics.portability', 'Portabilidad')}
+                  {t('data_quality.characteristics.portability')}
                 </td>
-                <td>{t('dataQuality.indicators.portable', 'Portabilidad')}</td>
+                <td>{t('data_quality.indicators.portable')}</td>
                 <td>
                   <span className={`badge ${report.portability.portable ? 'bg-success' : 'bg-danger'}`}>
-                    {report.portability.portable ? t('dataQuality.report.true', 'Verdadero') : t('dataQuality.report.false', 'Falso')}
+                    {report.portability.portable ? t('data_quality.report.true') : t('data_quality.report.false')}
                   </span>
                 </td>
               </tr>
               <tr>
-                <td>{t('dataQuality.indicators.machineReadable', 'Legible por máquina')}</td>
+                <td>{t('data_quality.indicators.machineReadable')}</td>
                 <td>
                   <span className={`badge ${report.portability.machineReadable ? 'bg-success' : 'bg-danger'}`}>
-                    {report.portability.machineReadable ? t('dataQuality.report.true', 'Verdadero') : t('dataQuality.report.false', 'Falso')}
+                    {report.portability.machineReadable ? t('data_quality.report.true') : t('data_quality.report.false')}
                   </span>
                 </td>
               </tr>
               <tr>
-                <td>{t('dataQuality.indicators.openFormat', 'Formato abierto')}</td>
+                <td>{t('data_quality.indicators.openFormat')}</td>
                 <td>
                   <span className={`badge ${report.portability.openFormat ? 'bg-success' : 'bg-danger'}`}>
-                    {report.portability.openFormat ? t('dataQuality.report.true', 'Verdadero') : t('dataQuality.report.false', 'Falso')}
+                    {report.portability.openFormat ? t('data_quality.report.true') : t('data_quality.report.false')}
                   </span>
                 </td>
               </tr>
@@ -379,7 +452,7 @@ const SampleRecordsViewer: React.FC<{ records: any[] }> = ({ records }) => {
       <div className="card-header">
         <h6 className="mb-0">
           <i className="bi bi-collection me-2"></i>
-          {t('dataQuality.report.sampleRecords')}
+          {t('data_quality.report.sampleRecords')}
         </h6>
       </div>
       <div className="card-body">
@@ -407,7 +480,7 @@ const SampleRecordsViewer: React.FC<{ records: any[] }> = ({ records }) => {
             </table>
           </div>
         ) : (
-          <p className="text-muted">{t('dataQuality.report.noSampleData', 'No hay datos de muestra disponibles')}</p>
+          <p className="text-muted">{t('data_quality.report.noSampleData')}</p>
         )}
       </div>
     </div>
@@ -429,15 +502,15 @@ const ObservationCard: React.FC<{ observation: QualityObservation; key?: React.K
       <div className="card-body">
         <div className="row">
           <div className="col-md-6">
-            <h6 className="text-muted small">{t('dataQuality.report.definition', 'Definición')}</h6>
+            <h6 className="text-muted small">{t('data_quality.report.definition')}</h6>
             <p className="small">{observation.definition}</p>
           </div>
           <div className="col-md-6">
-            <h6 className="text-muted small">{t('dataQuality.report.observations', 'Observaciones')}</h6>
+            <h6 className="text-muted small">{t('data_quality.report.observations')}</h6>
             <p className="small">{observation.observations}</p>
             {observation.recommendations && observation.recommendations.length > 0 && (
               <div>
-                <h6 className="text-muted small">{t('dataQuality.report.recommendations', 'Recomendaciones')}</h6>
+                <h6 className="text-muted small">{t('data_quality.report.recommendations')}</h6>
                 <ul className="small">
                   {observation.recommendations.map((rec: string, index: number) => (
                     <li key={index}>{rec}</li>
@@ -460,10 +533,10 @@ const getScoreColor = (score: number): string => {
 };
 
 const getScoreDescription = (score: number, t: any): string => {
-  if (score >= 80) return t('dataQuality.score.excellent', 'Excelente calidad de datos');
-  if (score >= 60) return t('dataQuality.score.good', 'Buena calidad de datos');
-  if (score >= 40) return t('dataQuality.score.fair', 'Calidad de datos aceptable');
-  return t('dataQuality.score.poor', 'Calidad de datos deficiente');
+  if (score >= 80) return t('data_quality.score.excellent');
+  if (score >= 60) return t('data_quality.score.good');
+  if (score >= 40) return t('data_quality.score.fair');
+  return t('data_quality.score.poor');
 };
 
 const getCharacteristicIcon = (characteristic: string): string => {

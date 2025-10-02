@@ -8,6 +8,7 @@ import {
 } from '../types/dataQuality';
 import { backendService } from './BackendService';
 import i18n from '../i18n';
+import { t } from 'i18next';
 
 /**
  * Data Quality Analysis Service based on ISO/IEC 25012
@@ -33,10 +34,22 @@ export class DataQualityService {
     onProgress?: (progress: DataQualityAnalysisProgress) => void
   ): Promise<QualityAnalysisResult> {
     try {
-      onProgress?.({ step: 'downloading', progress: 10, message: 'Descargando datos...' });
+      onProgress?.({ step: 'downloading', progress: 5, message: t('data_quality.progress.url_validating') });
       
-      // Download the data
-      const data = await this.downloadData(input.url);
+      // Download the data - use downloadURL if available, otherwise accessURL
+      const downloadUrl = input.downloadURL || input.url;
+      
+      // Validate URL before attempting download (lazy validation)
+      const DataDiscoveryService = (await import('./DataDiscoveryService')).DataDiscoveryService;
+      const discoveryService = DataDiscoveryService.getInstance();
+      const isValid = await discoveryService.validateDataURL(downloadUrl, input.format);
+      
+      if (!isValid) {
+        throw new Error(t('data_quality.progress.url_invalid') + input.format.toUpperCase() + t('data_quality.progress.url_unknown_source'));
+      }
+      
+      onProgress?.({ step: 'downloading', progress: 10, message: 'Descargando datos...' });
+      const data = await this.downloadData(downloadUrl);
       
       onProgress?.({ step: 'parsing', progress: 30, message: 'Analizando estructura de datos...' });
       
@@ -227,19 +240,45 @@ export class DataQualityService {
    */
   private async parseJSON(jsonText: string): Promise<any[]> {
     try {
+      // Check if it's a ZIP file (starts with PK magic number)
+      if (jsonText.startsWith('PK')) {
+        throw new Error(t('data_quality.errors.zipNotSupported'));
+      }
+      
       const parsed = JSON.parse(jsonText);
       
+      // Handle GeoJSON format
+      if (parsed.type === 'FeatureCollection' && Array.isArray(parsed.features)) {
+        // Extract properties from GeoJSON features
+        return parsed.features.map((feature: any) => ({
+          ...feature.properties,
+          geometry_type: feature.geometry?.type,
+          coordinates: JSON.stringify(feature.geometry?.coordinates)
+        }));
+      }
+      
+      // Handle regular JSON arrays
       if (Array.isArray(parsed)) {
         return parsed;
       } else if (parsed.data && Array.isArray(parsed.data)) {
         return parsed.data;
       } else if (parsed.results && Array.isArray(parsed.results)) {
         return parsed.results;
+      } else if (parsed.features && Array.isArray(parsed.features)) {
+        // Alternative GeoJSON structure
+        return parsed.features.map((feature: any) => feature.properties || feature);
       } else {
-        throw new Error('El JSON debe contener un array de objetos');
+        throw new Error(t('data_quality.errors.invalidJsonStructure'));
       }
     } catch (error) {
-      throw new Error('Error al parsear JSON: ' + (error instanceof Error ? error.message : 'formato inválido'));
+      // More informative error messages
+      if (error instanceof Error) {
+        if (error.message.includes('PK')) {
+          throw new Error(t('data_quality.errors.zipNotSupported'));
+        }
+        throw new Error(t('data_quality.errors.jsonParseError', { message: error.message }));
+      }
+      throw new Error(t('data_quality.errors.invalidFormat'));
     }
   }
 
@@ -652,14 +691,14 @@ export class DataQualityService {
     const totalOutliers = Object.values(report.accuracy.outliersByColumn).reduce((sum, count) => sum + count, 0);
     observations.push({
       characteristic: 'accuracy',
-      definition: i18n.t('dataQuality.observations.accuracy.definition'),
+      definition: i18n.t('data_quality.observations.accuracy.definition'),
       observations: totalOutliers > 0 
-        ? i18n.t('dataQuality.observations.accuracy.withOutliers', { count: totalOutliers })
-        : i18n.t('dataQuality.observations.accuracy.noOutliers'),
+        ? i18n.t('data_quality.observations.accuracy.withOutliers', { count: totalOutliers })
+        : i18n.t('data_quality.observations.accuracy.noOutliers'),
       recommendations: totalOutliers > 0 
         ? [
-            i18n.t('dataQuality.observations.accuracy.recommendations.reviewOutliers'),
-            i18n.t('dataQuality.observations.accuracy.recommendations.implementValidation')
+            i18n.t('data_quality.observations.accuracy.recommendations.reviewOutliers'),
+            i18n.t('data_quality.observations.accuracy.recommendations.implementValidation')
           ]
         : []
     });
@@ -668,15 +707,15 @@ export class DataQualityService {
     const completenessPercentage = (report.completeness.overallCompletenessRatio * 100).toFixed(1);
     observations.push({
       characteristic: 'completeness',
-      definition: i18n.t('dataQuality.observations.completeness.definition'),
-      observations: i18n.t('dataQuality.observations.completeness.general', { percentage: completenessPercentage }) +
+      definition: i18n.t('data_quality.observations.completeness.definition'),
+      observations: i18n.t('data_quality.observations.completeness.general', { percentage: completenessPercentage }) +
         (report.completeness.overallCompletenessRatio === 1 
-          ? i18n.t('dataQuality.observations.completeness.perfect')
-          : i18n.t('dataQuality.observations.completeness.missing')),
+          ? i18n.t('data_quality.observations.completeness.perfect')
+          : i18n.t('data_quality.observations.completeness.missing')),
       recommendations: report.completeness.overallCompletenessRatio < 1 
         ? [
-            i18n.t('dataQuality.observations.completeness.recommendations.reviewMissing'),
-            i18n.t('dataQuality.observations.completeness.recommendations.implementImputation')
+            i18n.t('data_quality.observations.completeness.recommendations.reviewMissing'),
+            i18n.t('data_quality.observations.completeness.recommendations.implementImputation')
           ]
         : []
     });
@@ -684,14 +723,14 @@ export class DataQualityService {
     // Consistency observations
     observations.push({
       characteristic: 'consistency',
-      definition: i18n.t('dataQuality.observations.consistency.definition'),
+      definition: i18n.t('data_quality.observations.consistency.definition'),
       observations: report.consistency.duplicatedRecords === 0 
-        ? i18n.t('dataQuality.observations.consistency.noDuplicates')
-        : i18n.t('dataQuality.observations.consistency.withDuplicates', { count: report.consistency.duplicatedRecords }),
+        ? i18n.t('data_quality.observations.consistency.noDuplicates')
+        : i18n.t('data_quality.observations.consistency.withDuplicates', { count: report.consistency.duplicatedRecords }),
       recommendations: report.consistency.duplicatedRecords > 0 
         ? [
-            i18n.t('dataQuality.observations.consistency.recommendations.removeDuplicates'),
-            i18n.t('dataQuality.observations.consistency.recommendations.implementUniqueKeys')
+            i18n.t('data_quality.observations.consistency.recommendations.removeDuplicates'),
+            i18n.t('data_quality.observations.consistency.recommendations.implementUniqueKeys')
           ]
         : []
     });
@@ -699,25 +738,38 @@ export class DataQualityService {
     // Accessibility observations
     observations.push({
       characteristic: 'accessibility',
-      definition: i18n.t('dataQuality.observations.accessibility.definition'),
-      observations: i18n.t('dataQuality.observations.accessibility.observation', { format: format.toUpperCase() }),
+      definition: i18n.t('data_quality.observations.accessibility.definition'),
+      observations: i18n.t('data_quality.observations.accessibility.observation', { format: format.toUpperCase() }),
       recommendations: [
-        i18n.t('dataQuality.observations.accessibility.recommendations.documentStructure'),
-        i18n.t('dataQuality.observations.accessibility.recommendations.provideMetadata')
+        i18n.t('data_quality.observations.accessibility.recommendations.documentStructure'),
+        i18n.t('data_quality.observations.accessibility.recommendations.provideMetadata')
       ]
     });
     
     // Portability observations
+    const meetsPortability = report.portability.portable 
+      ? i18n.t('data_quality.observations.portability.meets')
+      : i18n.t('data_quality.observations.portability.doesNotMeet');
+    const machineReadableText = report.portability.machineReadable 
+      ? i18n.t('data_quality.observations.portability.machineReadableYes')
+      : i18n.t('data_quality.observations.portability.machineReadableNo');
+    const openFormatText = report.portability.openFormat 
+      ? i18n.t('data_quality.observations.portability.openFormatYes')
+      : i18n.t('data_quality.observations.portability.openFormatNo');
+    
     observations.push({
       characteristic: 'portability',
-      definition: 'Grado en que los datos pueden ser utilizados en diferentes entornos.',
-      observations: `Los datos ${report.portability.portable ? 'cumplen' : 'no cumplen'} con los criterios de portabilidad. ${
-        report.portability.machineReadable ? 'El formato es legible por máquina.' : 'El formato no es fácilmente legible por máquina.'
-      } ${
-        report.portability.openFormat ? 'Es un formato abierto.' : 'No es un formato abierto.'
-      }`,
+      definition: i18n.t('data_quality.observations.portability.definition'),
+      observations: i18n.t('data_quality.observations.portability.compliant', {
+        meets: meetsPortability,
+        machineReadable: machineReadableText,
+        openFormat: openFormatText
+      }),
       recommendations: !report.portability.portable 
-        ? ['Considerar convertir a formatos más estándar', 'Asegurar que el formato sea abierto y legible por máquina']
+        ? [
+            i18n.t('data_quality.observations.portability.recommendations.convertToStandard'),
+            i18n.t('data_quality.observations.portability.recommendations.ensureOpenFormat')
+          ]
         : []
     });
     

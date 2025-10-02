@@ -531,12 +531,12 @@
     "note": "These corrections do not affect your original data, only the copy used for analysis."
   },
 
-  "dataQuality": {
+  "data_quality": {
     "title": "Data Quality Analysis",
     "subtitle": "Assessment based on ISO/IEC 25012 standard for CSV and JSON distributions",
     "newAnalysis": "New Analysis",
     "analyzeButton": "Analyze Data Quality",
-    "analyzeHelp": "The selected distribution will be analyzed according to ISO/IEC 25012 standards",
+    "analyzeHelp": "The selected distribution will be analyzed according to ISO/IEC 25012 standard",
     "analyzing": "Analyzing Data Quality...",
     
     "steps": {
@@ -556,13 +556,17 @@
       "parsing": "Analyzing structure",
       "analyzing": "Evaluating quality",
       "generating": "Generating observations",
-      "completed": "Completed"
+      "completed": "Completed",
+      "url_validating": "Validating URL",
+      "url_invalid": "URL does not return valid data in {{format}} format",
+      "url_unknown_source": ". It may be that the URL points to an HTML page instead of data."
     },
 
     "selector": {
       "title": "Search Datasets for Quality Analysis",
       "searchQuery": "Search",
       "searchPlaceholder": "Search by title, description or theme...",
+      "searchExamples": "Try searching for specific terms like \"companies\", \"population\", \"economy\", etc.",
       "format": "Format",
       "allFormats": "All formats",
       "limit": "Limit",
@@ -576,7 +580,9 @@
       "selectedDistribution": "Selected Distribution",
       "dataset": "Dataset",
       "noDataAvailable": "No CSV or JSON distributions available in the catalog at this time.",
-      "trySearch": "Try searching for specific terms like \"companies\", \"population\", \"economy\", etc."
+      "trySearch": "Try searching for specific terms like \"companies\", \"population\", \"economy\", etc.",
+      "fileSizeWarning": "File size exceeds the recommended limit of {{maxSize}} for analysis. Processing may be slow or fail.",
+      "sizeWarning": "Exceeds limit"
     },
 
     "report": {
@@ -599,7 +605,21 @@
       "false": "False",
       "noSampleData": "No sample data available",
       "error": "Analysis error",
-      "analyzing": "Analyzing data..."
+      "analyzing": "Analyzing data...",
+      "downloadAll": "Download All (ZIP)",
+      "downloadAllDescription": "Download a ZIP file with 3 CSV files (indicators, sample records, observations) and 1 JSON summary",
+      "exportIndicators": "Export Indicators (CSV)",
+      "exportSamples": "Export Sample Records (CSV)",
+      "exportObservations": "Export Observations (CSV)"
+    },
+
+    "export": {
+      "metadata": {
+        "generated": "Generated",
+        "format": "Format",
+        "standard": "Standard"
+      },
+      "summary": "Summary"
     },
 
     "characteristics": {
@@ -682,6 +702,13 @@
       "note": "See project documentation for more details about backend configuration."
     },
 
+    "errors": {
+      "zipNotSupported": "ZIP files are not supported. Please provide a direct link to CSV or JSON data.",
+      "invalidJsonStructure": "JSON must contain an array of objects, or have a 'data', 'results', or 'features' property with an array.",
+      "jsonParseError": "Error parsing JSON: {{message}}",
+      "invalidFormat": "Invalid data format"
+    },
+
     "observations": {
       "accuracy": {
         "definition": "Degree to which data correctly represents the true value.",
@@ -717,6 +744,20 @@
         "recommendations": {
           "documentStructure": "Document data structure",
           "provideMetadata": "Provide descriptive metadata"
+        }
+      },
+      "portability": {
+        "definition": "Degree to which data can be used in different environments.",
+        "compliant": "Data {{meets}} portability criteria. {{machineReadable}} {{openFormat}}",
+        "meets": "meets",
+        "doesNotMeet": "does not meet",
+        "machineReadableYes": "The format is machine-readable.",
+        "machineReadableNo": "The format is not easily machine-readable.",
+        "openFormatYes": "It is an open format.",
+        "openFormatNo": "It is not an open format.",
+        "recommendations": {
+          "convertToStandard": "Consider converting to more standard formats",
+          "ensureOpenFormat": "Ensure the format is open and machine-readable"
         }
       }
     }

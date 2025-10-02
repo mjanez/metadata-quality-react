@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { Routes, Route, Link, useLocation } from 'react-router-dom';
+import { Routes, Route, Link, useLocation, Navigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { AppStateProvider, useAppState } from './contexts/AppStateContext';
 import { backendService } from './services/BackendService';
@@ -767,9 +767,16 @@ function InternalAppRouter() {
       <Routes>
         <Route path="/" element={<ValidationApp />} />
         <Route path="/dashboard" element={<Dashboard />} />
-        {showDataQualityTab && (
-          <Route path="/data-quality" element={<DataQualityAnalysis />} />
-        )}
+        <Route 
+          path="/data-quality" 
+          element={
+            showDataQualityTab 
+              ? <DataQualityAnalysis /> 
+              : <Navigate to="/" replace />
+          } 
+        />
+        {/* Catch-all route for unmatched paths */}
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </div>
   );

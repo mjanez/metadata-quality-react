@@ -25,8 +25,8 @@ const ValidationForm: React.FC<ValidationFormProps> = ({ onValidate, isLoading }
   
   // SPARQL-related state
   const [sparqlEndpoint, setSparqlEndpoint] = useState(() => {
-    const sparqlConfig = (mqaConfigData as any).sparqlConfig;
-    return sparqlConfig?.defaultEndpoint || 'hhttps://datos.gob.es/virtuoso/sparql';
+    const sparqlConfig = (mqaConfigData as any).sparql_config;
+    return sparqlConfig?.default_endpoint || 'hhttps://datos.gob.es/virtuoso/sparql';
   });
   const [sparqlQuery, setSparqlQuery] = useState('');
   const [sparqlParameters, setSparqlParameters] = useState<SPARQLQueryParams>({});

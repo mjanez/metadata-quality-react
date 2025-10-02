@@ -95,6 +95,7 @@ export interface DataQualityReport {
 // Quality Analysis Input
 export interface DataQualityInput {
   url: string;
+  downloadURL?: string;
   format: 'csv' | 'json';
   title?: string;
   description?: string;

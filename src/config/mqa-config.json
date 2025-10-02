@@ -103,7 +103,7 @@
       "defaultVersion": "2013"
     }
   },
-  "metricsByProfile": {
+  "profile_metrics": {
     "dcat_ap": {
       "findability": [
         { "id": "dcat_keyword", "weight": 30, "property": "dcat:keyword" },
@@ -206,8 +206,8 @@
       ]
     }
   },
-  "sparqlConfig": {
-    "defaultEndpoint": "https://datos.gob.es/virtuoso/sparql",
+  "sparql_config": {
+    "default_endpoint": "https://datos.gob.es/virtuoso/sparql",
     "queries": {
       "nti_risp": [
         {

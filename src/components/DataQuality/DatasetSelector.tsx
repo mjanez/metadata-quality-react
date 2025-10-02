@@ -15,6 +15,10 @@ interface SearchFilters {
   limit: number;
 }
 
+// Maximum file size for analysis (50MB)
+const MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024;
+const MAX_FILE_SIZE_LABEL = '50 MB';
+
 const DatasetSelector: React.FC<DatasetSelectorProps> = ({
   onDistributionSelect,
   selectedDistribution
@@ -26,7 +30,7 @@ const DatasetSelector: React.FC<DatasetSelectorProps> = ({
   const [filters, setFilters] = useState<SearchFilters>({
     query: '',
     format: 'all',
-    limit: 20
+    limit: 10
   });
   const [expandedDatasets, setExpandedDatasets] = useState<Set<string>>(new Set());
   
@@ -131,6 +135,16 @@ const DatasetSelector: React.FC<DatasetSelectorProps> = ({
     return 'badge bg-secondary';
   };
 
+  const extractThemeName = (themeUrl: string): string => {
+    // Extract the last part of the URL (after last / or #)
+    const parts = themeUrl.split(/[\/\#]/);
+    return parts[parts.length - 1] || themeUrl;
+  };
+
+  const isFileSizeExceeded = (byteSize?: number): boolean => {
+    return byteSize !== undefined && byteSize > MAX_FILE_SIZE_BYTES;
+  };
+
   return (
     <div className="dataset-selector">
       {/* Search and Filter Controls */}
@@ -138,21 +152,21 @@ const DatasetSelector: React.FC<DatasetSelectorProps> = ({
         <div className="card-header">
           <h5 className="card-title mb-0">
             <i className="bi bi-search me-2"></i>
-            {t('dataQuality.selector.title', 'Buscar Datasets para Análisis de Calidad')}
+            {t('data_quality.selector.title')}
           </h5>
         </div>
         <div className="card-body">
           <div className="row g-3">
             <div className="col-md-6">
               <label htmlFor="search-query" className="form-label">
-                {t('dataQuality.selector.searchQuery', 'Buscar')}
+                {t('data_quality.selector.searchQuery')}
               </label>
               <div className="input-group">
                 <input
                   id="search-query"
                   type="text"
                   className="form-control"
-                  placeholder={t('dataQuality.selector.searchPlaceholder', 'Buscar por título, descripción o tema...')}
+                  placeholder={t('data_quality.selector.searchPlaceholder')}
                   value={filters.query}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => 
                     setFilters(prev => ({ ...prev, query: e.target.value }))}
@@ -171,7 +185,7 @@ const DatasetSelector: React.FC<DatasetSelectorProps> = ({
             
             <div className="col-md-3">
               <label htmlFor="format-filter" className="form-label">
-                {t('dataQuality.selector.format', 'Formato')}
+                {t('data_quality.selector.format')}
               </label>
               <select
                 id="format-filter"
@@ -180,7 +194,7 @@ const DatasetSelector: React.FC<DatasetSelectorProps> = ({
                 onChange={(e: React.ChangeEvent<HTMLSelectElement>) => 
                   setFilters(prev => ({ ...prev, format: e.target.value as any }))}
               >
-                <option value="all">{t('dataQuality.selector.allFormats', 'Todos los formatos')}</option>
+                <option value="all">{t('data_quality.selector.allFormats')}</option>
                 <option value="csv">CSV</option>
                 <option value="json">JSON</option>
               </select>
@@ -188,7 +202,7 @@ const DatasetSelector: React.FC<DatasetSelectorProps> = ({
             
             <div className="col-md-3">
               <label htmlFor="limit-select" className="form-label">
-                {t('dataQuality.selector.limit', 'Límite')}
+                {t('data_quality.selector.limit')}
               </label>
               <select
                 id="limit-select"
@@ -197,10 +211,10 @@ const DatasetSelector: React.FC<DatasetSelectorProps> = ({
                 onChange={(e: React.ChangeEvent<HTMLSelectElement>) => 
                   setFilters(prev => ({ ...prev, limit: parseInt(e.target.value) }))}
               >
+                <option value={5}>5</option>
                 <option value={10}>10</option>
                 <option value={20}>20</option>
                 <option value={50}>50</option>
-                <option value={100}>100</option>
               </select>
             </div>
           </div>
@@ -211,8 +225,7 @@ const DatasetSelector: React.FC<DatasetSelectorProps> = ({
       <div className="results-container">
         {loading && (
           <div className="text-center py-4">
-            <LoadingSpinner />
-            <p className="mt-2">{t('dataQuality.selector.loading', 'Buscando datasets...')}</p>
+            <LoadingSpinner message={t('data_quality.progress.analyzing')} />
           </div>
         )}
 
@@ -226,24 +239,69 @@ const DatasetSelector: React.FC<DatasetSelectorProps> = ({
         {!loading && !error && datasets.length === 0 && (
           <div className="text-center py-4">
             <i className="bi bi-folder2-open display-1 text-muted"></i>
-            <h5 className="mt-3">{t('dataQuality.selector.noResults', 'No se encontraron datasets')}</h5>
+            <h5 className="mt-3">{t('data_quality.selector.noResults')}</h5>
             <p className="text-muted">
               {filters.query.trim() 
-                ? t('dataQuality.selector.noResultsHelp', 'Prueba con términos de búsqueda diferentes o cambia los filtros.')
-                : t('dataQuality.selector.noDataAvailable', 'No hay distribuciones CSV o JSON disponibles en el catálogo en este momento.')
+                ? t('data_quality.selector.noResultsHelp')
+                : t('data_quality.selector.noDataAvailable')
               }
             </p>
             {!filters.query.trim() && (
               <div className="mt-3">
                 <small className="text-muted">
-                  {t('dataQuality.selector.trySearch', 'Prueba buscando términos específicos como "empresas", "población", "economía", etc.')}
+                  {t('data_quality.selector.searchExamples')}
                 </small>
               </div>
             )}
           </div>
         )}
 
-        {/* Dataset List */}
+        {/* Selected Distribution Summary - Moved to Top */}
+        {selectedDistribution && (
+          <div className="card border-primary mb-4">
+            <div className="card-header bg-primary text-white">
+              <h6 className="mb-0">
+                <i className="bi bi-check-circle me-2"></i>
+                {t('data_quality.selector.selectedDistribution')}
+              </h6>
+            </div>
+            <div className="card-body">
+              <div className="row">
+                <div className="col-md-8">
+                  <h6>{selectedDistribution.title}</h6>
+                  {selectedDistribution.description && (
+                    <p className="text-muted small mb-2">{selectedDistribution.description}</p>
+                  )}
+                  <p className="mb-0">
+                    <strong>{t('data_quality.selector.dataset')}:</strong> {selectedDistribution.dataset.title}
+                  </p>
+                </div>
+                <div className="col-md-4 text-md-end">
+                  <span className={getFormatBadgeClass(selectedDistribution.format) + ' mb-2'}>
+                    {selectedDistribution.format.toUpperCase()}
+                  </span>
+                  {selectedDistribution.byteSize && (
+                    <div className="small mt-2">
+                      <span className={isFileSizeExceeded(selectedDistribution.byteSize) ? 'text-danger' : 'text-muted'}>
+                        <i className={`bi ${isFileSizeExceeded(selectedDistribution.byteSize) ? 'bi-exclamation-triangle-fill' : 'bi-file-earmark-text'} me-1`}></i>
+                        {formatFileSize(selectedDistribution.byteSize)}
+                      </span>
+                      {isFileSizeExceeded(selectedDistribution.byteSize) && (
+                        <div className="alert alert-warning mt-2 mb-0 py-1 px-2 small">
+                          <i className="bi bi-info-circle me-1"></i>
+                          {t('data_quality.selector.fileSizeWarning', { maxSize: MAX_FILE_SIZE_LABEL })}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Dataset List with scrollable container */}
+        <div style={{ maxHeight: 'calc(10 * 60px)', overflowY: 'auto', overflowX: 'hidden' }} className="dataset-list-container">
         {datasets.map(dataset => (
           <div key={dataset.id} className="card mb-3">
             <div className="card-header">
@@ -274,12 +332,21 @@ const DatasetSelector: React.FC<DatasetSelectorProps> = ({
                       </span>
                     )}
                     <span className="badge bg-primary">
-                      {dataset.distributions.length} {t('dataQuality.selector.distributions', 'distribuciones')}
+                      {dataset.distributions.length} {t('data_quality.selector.distributions')}
                     </span>
                     {dataset.theme && dataset.theme.map((theme: string) => (
-                      <span key={theme} className="badge bg-info">
-                        {theme}
-                      </span>
+                      <a 
+                        key={theme} 
+                        href={theme}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="badge bg-info text-decoration-none"
+                        title={theme}
+                        onClick={(e: React.MouseEvent) => e.stopPropagation()}
+                      >
+                        {extractThemeName(theme)}
+                        <i className="bi bi-box-arrow-up-right ms-1" style={{ fontSize: '0.7em' }}></i>
+                      </a>
                     ))}
                   </div>
                 </div>
@@ -289,7 +356,7 @@ const DatasetSelector: React.FC<DatasetSelectorProps> = ({
             {expandedDatasets.has(dataset.id) && (
               <div className="card-body">
                 <h6 className="mb-3">
-                  {t('dataQuality.selector.availableDistributions', 'Distribuciones disponibles')}:
+                  {t('data_quality.selector.availableDistributions')}:
                 </h6>
                 <div className="row g-3">
                   {dataset.distributions.map((distribution: CatalogDistribution) => (
@@ -304,7 +371,7 @@ const DatasetSelector: React.FC<DatasetSelectorProps> = ({
                         <div className="card-body p-3">
                           <div className="d-flex justify-content-between align-items-start mb-2">
                             <h6 className="card-title mb-0 small">
-                              {distribution.title || t('dataQuality.selector.untitledDistribution', 'Distribución sin título')}
+                              {distribution.title || t('data_quality.selector.untitledDistribution')}
                             </h6>
                             <span className={getFormatBadgeClass(distribution.format)}>
                               {distribution.format.toUpperCase()}
@@ -322,9 +389,15 @@ const DatasetSelector: React.FC<DatasetSelectorProps> = ({
                           
                           <div className="small text-muted">
                             {distribution.byteSize && (
-                              <div>
-                                <i className="bi bi-file-earmark-text me-1"></i>
+                              <div className={isFileSizeExceeded(distribution.byteSize) ? 'text-danger' : ''}>
+                                <i className={`bi ${isFileSizeExceeded(distribution.byteSize) ? 'bi-exclamation-triangle-fill' : 'bi-file-earmark-text'} me-1`}></i>
                                 {formatFileSize(distribution.byteSize)}
+                                {isFileSizeExceeded(distribution.byteSize) && (
+                                  <small className="d-block mt-1">
+                                    <i className="bi bi-info-circle me-1"></i>
+                                    {t('data_quality.selector.sizeWarning')}
+                                  </small>
+                                )}
                               </div>
                             )}
                             {distribution.mediaType && (
@@ -343,7 +416,7 @@ const DatasetSelector: React.FC<DatasetSelectorProps> = ({
                             <div className="mt-2">
                               <i className="bi bi-check-circle-fill text-primary me-1"></i>
                               <small className="text-primary">
-                                {t('dataQuality.selector.selected', 'Seleccionado')}
+                                {t('data_quality.selector.selected')}
                               </small>
                             </div>
                           )}
@@ -356,42 +429,8 @@ const DatasetSelector: React.FC<DatasetSelectorProps> = ({
             )}
           </div>
         ))}
-      </div>
-
-      {/* Selected Distribution Summary */}
-      {selectedDistribution && (
-        <div className="card border-primary mt-4">
-          <div className="card-header bg-primary text-white">
-            <h6 className="mb-0">
-              <i className="bi bi-check-circle me-2"></i>
-              {t('dataQuality.selector.selectedDistribution', 'Distribución Seleccionada')}
-            </h6>
-          </div>
-          <div className="card-body">
-            <div className="row">
-              <div className="col-md-8">
-                <h6>{selectedDistribution.title}</h6>
-                {selectedDistribution.description && (
-                  <p className="text-muted small mb-2">{selectedDistribution.description}</p>
-                )}
-                <p className="mb-0">
-                  <strong>{t('dataQuality.selector.dataset', 'Dataset')}:</strong> {selectedDistribution.dataset.title}
-                </p>
-              </div>
-              <div className="col-md-4 text-md-end">
-                <span className={getFormatBadgeClass(selectedDistribution.format) + ' mb-2'}>
-                  {selectedDistribution.format.toUpperCase()}
-                </span>
-                {selectedDistribution.byteSize && (
-                  <div className="small text-muted">
-                    {formatFileSize(selectedDistribution.byteSize)}
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
         </div>
-      )}
+      </div>
     </div>
   );
 };

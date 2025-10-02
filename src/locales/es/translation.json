@@ -531,12 +531,12 @@
     "note": "Estas correcciones no afectan tus datos originales, solo la copia utilizada para el análisis."
   },
 
-  "dataQuality": {
+  "data_quality": {
     "title": "Análisis de Calidad de Datos",
     "subtitle": "Evaluación basada en la norma ISO/IEC 25012 para distribuciones CSV y JSON",
     "newAnalysis": "Nuevo Análisis",
     "analyzeButton": "Analizar Calidad de Datos",
-    "analyzeHelp": "Se analizará la distribución seleccionada según los estándares ISO/IEC 25012",
+    "analyzeHelp": "Se analizará la distribución seleccionada según el estándar ISO/IEC 25012",
     "analyzing": "Analizando Calidad de Datos...",
     
     "steps": {
@@ -556,13 +556,17 @@
       "parsing": "Analizando estructura",
       "analyzing": "Evaluando calidad",
       "generating": "Generando observaciones",
-      "completed": "Completado"
+      "completed": "Completado",
+      "url_validating": "Validando URL",
+      "url_invalid": "La URL no devuelve datos válidos en formato {{format}}",
+      "url_unknown_source": ". Puede que la URL dirija a una página HTML en lugar de datos."
     },
 
     "selector": {
       "title": "Buscar Datasets para Análisis de Calidad",
       "searchQuery": "Buscar",
       "searchPlaceholder": "Buscar por título, descripción o tema...",
+      "searchExamples": "Prueba buscando términos específicos como \"empresas\", \"población\", \"economía\", etc.",
       "format": "Formato",
       "allFormats": "Todos los formatos",
       "limit": "Límite",
@@ -576,7 +580,9 @@
       "selectedDistribution": "Distribución Seleccionada",
       "dataset": "Dataset",
       "noDataAvailable": "No hay distribuciones CSV o JSON disponibles en el catálogo en este momento.",
-      "trySearch": "Prueba buscando términos específicos como \"empresas\", \"población\", \"economía\", etc."
+      "trySearch": "Prueba buscando términos específicos como \"empresas\", \"población\", \"economía\", etc.",
+      "fileSizeWarning": "El tamaño del archivo excede el límite recomendado de {{maxSize}} para análisis. El procesamiento puede ser lento o fallar.",
+      "sizeWarning": "Excede límite"
     },
 
     "report": {
@@ -599,7 +605,21 @@
       "false": "Falso",
       "noSampleData": "No hay datos de muestra disponibles",
       "error": "Error en el análisis",
-      "analyzing": "Analizando datos..."
+      "analyzing": "Analizando datos...",
+      "downloadAll": "Descargar Todo (ZIP)",
+      "downloadAllDescription": "Descarga un archivo ZIP con 3 CSV (indicadores, registros de muestra, observaciones) y 1 JSON de resumen",
+      "exportIndicators": "Exportar Indicadores (CSV)",
+      "exportSamples": "Exportar Registros de Muestra (CSV)",
+      "exportObservations": "Exportar Observaciones (CSV)"
+    },
+
+    "export": {
+      "metadata": {
+        "generated": "Generado",
+        "format": "Formato",
+        "standard": "Estándar"
+      },
+      "summary": "Resumen"
     },
 
     "characteristics": {
@@ -682,6 +702,13 @@
       "note": "Ver documentación del proyecto para más detalles sobre la configuración del backend."
     },
 
+    "errors": {
+      "zipNotSupported": "No se soportan archivos ZIP. Por favor proporciona un enlace directo a datos CSV o JSON.",
+      "invalidJsonStructure": "El JSON debe contener un array de objetos, o tener una propiedad 'data', 'results' o 'features' con un array.",
+      "jsonParseError": "Error al parsear JSON: {{message}}",
+      "invalidFormat": "Formato de datos inválido"
+    },
+
     "observations": {
       "accuracy": {
         "definition": "Grado en que los datos representan correctamente el valor verdadero.",
@@ -717,6 +744,20 @@
         "recommendations": {
           "documentStructure": "Documentar la estructura de los datos",
           "provideMetadata": "Proporcionar metadatos descriptivos"
+        }
+      },
+      "portability": {
+        "definition": "Grado en que los datos pueden ser utilizados en diferentes entornos.",
+        "compliant": "Los datos {{meets}} con los criterios de portabilidad. {{machineReadable}} {{openFormat}}",
+        "meets": "cumplen",
+        "doesNotMeet": "no cumplen",
+        "machineReadableYes": "El formato es legible por máquina.",
+        "machineReadableNo": "El formato no es fácilmente legible por máquina.",
+        "openFormatYes": "Es un formato abierto.",
+        "openFormatNo": "No es un formato abierto.",
+        "recommendations": {
+          "convertToStandard": "Considerar convertir a formatos más estándar",
+          "ensureOpenFormat": "Asegurar que el formato sea abierto y legible por máquina"
         }
       }
     }

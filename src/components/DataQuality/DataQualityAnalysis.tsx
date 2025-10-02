@@ -83,6 +83,7 @@ const DataQualityAnalysis: React.FC = () => {
       
       const input: DataQualityInput = {
         url: selectedDistribution.accessURL,
+        downloadURL: selectedDistribution.downloadURL,
         format,
         title: selectedDistribution.title,
         description: selectedDistribution.description
@@ -149,10 +150,10 @@ const DataQualityAnalysis: React.FC = () => {
         <div>
           <h1 className="h3 mb-1">
             <i className="bi bi-graph-up me-2"></i>
-            {t('dataQuality.title', 'Análisis de Calidad de Datos')}
+            {t('data_quality.title')}
           </h1>
           <p className="text-muted mb-0">
-            {t('dataQuality.subtitle', 'Evaluación basada en la norma ISO/IEC 25012 para distribuciones CSV y JSON')}
+            {t('data_quality.subtitle')}
           </p>
         </div>
         {(currentStep === 'analysis' || currentStep === 'results') && (
@@ -162,7 +163,7 @@ const DataQualityAnalysis: React.FC = () => {
             disabled={isAnalyzing}
           >
             <i className="bi bi-arrow-left me-2"></i>
-            {t('dataQuality.newAnalysis', 'Nuevo Análisis')}
+            {t('data_quality.newAnalysis')}
           </button>
         )}
       </div>
@@ -181,7 +182,7 @@ const DataQualityAnalysis: React.FC = () => {
                     '1'
                   )}
                 </div>
-                <span className="small">{t('dataQuality.steps.selection', 'Selección')}</span>
+                <span className="small">{t('data_quality.steps.selection')}</span>
               </div>
               
               <div className={`mx-3 ${currentStep === 'analysis' || currentStep === 'results' ? 'text-success' : 'text-muted'}`}>
@@ -199,7 +200,7 @@ const DataQualityAnalysis: React.FC = () => {
                     '2'
                   )}
                 </div>
-                <span className="small">{t('dataQuality.steps.analysis', 'Análisis')}</span>
+                <span className="small">{t('data_quality.steps.analysis')}</span>
               </div>
               
               <div className={`mx-3 ${currentStep === 'results' ? 'text-success' : 'text-muted'}`}>
@@ -211,7 +212,7 @@ const DataQualityAnalysis: React.FC = () => {
                 <div className={`rounded-circle d-flex align-items-center justify-content-center me-2 ${currentStep === 'results' ? 'bg-primary text-white' : 'bg-light text-muted'}`} style={{ width: '32px', height: '32px', fontSize: '14px' }}>
                   3
                 </div>
-                <span className="small">{t('dataQuality.steps.results', 'Resultados')}</span>
+                <span className="small">{t('data_quality.steps.results')}</span>
               </div>
             </div>
           </div>
@@ -224,7 +225,7 @@ const DataQualityAnalysis: React.FC = () => {
           <div className="col-md-6">
             <div className="text-center">
               <LoadingSpinner />
-              <p className="mt-2">{t('dataQuality.checkingBackend', 'Verificando disponibilidad del servicio...')}</p>
+              <p className="mt-2">{t('data_quality.checkingBackend')}</p>
             </div>
           </div>
         </div>
@@ -236,25 +237,25 @@ const DataQualityAnalysis: React.FC = () => {
             <div className="alert alert-warning">
               <h5>
                 <i className="bi bi-exclamation-triangle me-2"></i>
-                {t('dataQuality.notAvailable.title', 'Funcionalidad no disponible')}
+                {t('data_quality.notAvailable.title')}
               </h5>
               <p className="mb-2">
                 {backendService.isGitHubPages() ? 
-                  t('dataQuality.notAvailable.githubPages', 'La funcionalidad de análisis de calidad de datos no está disponible en GitHub Pages debido a restricciones CORS.') :
-                  t('dataQuality.notAvailable.backend', 'El servidor backend no está disponible. Esta funcionalidad requiere un servidor backend para descargar y analizar datos.')
+                  t('data_quality.notAvailable.githubPages') :
+                  t('data_quality.notAvailable.backend')
                 }
               </p>
               {backendService.isDevelopmentMode() && !backendAvailable && (
                 <div className="mt-3">
-                  <h6>{t('dataQuality.setup.title', 'Configuración para desarrollo:')}</h6>
+                  <h6>{t('data_quality.setup.title')}</h6>
                   <ol className="small mb-2">
-                    <li>{t('dataQuality.setup.step1', 'Crear un servidor Node.js en el puerto 3001')}</li>
-                    <li>{t('dataQuality.setup.step2', 'Implementar endpoints: /api/health, /api/validate-url, /api/download-data')}</li>
-                    <li>{t('dataQuality.setup.step3', 'Habilitar CORS para el origen de la aplicación')}</li>
-                    <li>{t('dataQuality.setup.step4', 'Establecer backend_server.enabled = true en mqa-config.json')}</li>
+                    <li>{t('data_quality.setup.step1')}</li>
+                    <li>{t('data_quality.setup.step2')}</li>
+                    <li>{t('data_quality.setup.step3')}</li>
+                    <li>{t('data_quality.setup.step4')}</li>
                   </ol>
                   <p className="small text-muted">
-                    {t('dataQuality.setup.note', 'Ver documentación del proyecto para más detalles sobre la configuración del backend.')}
+                    {t('data_quality.setup.note')}
                   </p>
                 </div>
               )}
@@ -270,30 +271,24 @@ const DataQualityAnalysis: React.FC = () => {
             <div className="alert alert-info" role="alert">
               <h4 className="alert-heading">
                 <i className="bi bi-info-circle me-2"></i>
-                {t('dataQuality.noValidationData.title', 'No hay datos de validación disponibles')}
+                {t('data_quality.noValidationData.title')}
               </h4>
               <p className="mb-3">
-                {t('dataQuality.noValidationData.description', 'Para usar el análisis de calidad de datos, primero necesitas validar un catálogo RDF en la pestaña de Validación.')}
+                {t('data_quality.noValidationData.description')}
               </p>
               <ol className="mb-3">
-                <li>{t('dataQuality.noValidationData.step1', 'Ve a la pestaña "Validación"')}</li>
-                <li>{t('dataQuality.noValidationData.step2', 'Carga un catálogo RDF (URL o texto directo)')}</li>
-                <li>{t('dataQuality.noValidationData.step3', 'Ejecuta la validación')}</li>
-                <li>{t('dataQuality.noValidationData.step4', 'Regresa aquí para analizar la calidad de las distribuciones')}</li>
+                <li>{t('data_quality.noValidationData.step1')}</li>
+                <li>{t('data_quality.noValidationData.step2')}</li>
+                <li>{t('data_quality.noValidationData.step3')}</li>
+                <li>{t('data_quality.noValidationData.step4')}</li>
               </ol>
               <a href="/" className="btn btn-primary">
                 <i className="bi bi-clipboard-check me-2"></i>
-                {t('dataQuality.noValidationData.goToValidation', 'Ir a Validación')}
+                {t('data_quality.noValidationData.goToValidation')}
               </a>
             </div>
           ) : (
             <>
-              {/* Dataset Selector */}
-              <DatasetSelector 
-                onDistributionSelect={handleDistributionSelect}
-                selectedDistribution={selectedDistribution}
-              />
-          
           {/* Analyze Button */}
           {selectedDistribution && (
             <div className="text-center mt-4">
@@ -303,15 +298,20 @@ const DataQualityAnalysis: React.FC = () => {
                 disabled={isAnalyzing}
               >
                 <i className="bi bi-play-circle me-2"></i>
-                {t('dataQuality.analyzeButton', 'Analizar Calidad de Datos')}
+                {t('data_quality.analyzeButton')}
               </button>
               <div className="mt-2">
                 <small className="text-muted">
-                  {t('dataQuality.analyzeHelp', 'Se analizará la distribución seleccionada según los estándares ISO/IEC 25012')}
+                  {t('data_quality.analyzeHelp')}
                 </small>
               </div>
             </div>
           )}
+              {/* Dataset Selector */}
+              <DatasetSelector 
+                onDistributionSelect={handleDistributionSelect}
+                selectedDistribution={selectedDistribution}
+              />
             </>
           )}
         </div>
@@ -321,19 +321,19 @@ const DataQualityAnalysis: React.FC = () => {
         <div className="text-center py-5">
           <LoadingSpinner />
           <h4 className="mt-4 mb-3">
-            {t('dataQuality.analyzing', 'Analizando Calidad de Datos...')}
+            {t('data_quality.analyzing')}
           </h4>
           
           {selectedDistribution && (
             <div className="mb-4">
               <p className="text-muted">
-                <strong>{t('dataQuality.analysisInfo.dataset', 'Dataset')}:</strong> {selectedDistribution.dataset.title}
+                <strong>{t('data_quality.analysisInfo.dataset')}:</strong> {selectedDistribution.dataset.title}
               </p>
               <p className="text-muted">
-                <strong>{t('dataQuality.analysisInfo.distribution', 'Distribución')}:</strong> {selectedDistribution.title}
+                <strong>{t('data_quality.analysisInfo.distribution')}:</strong> {selectedDistribution.title}
               </p>
               <p className="text-muted">
-                <strong>{t('dataQuality.analysisInfo.format', 'Formato')}:</strong> {determineFormat(selectedDistribution).toUpperCase()}
+                <strong>{t('data_quality.analysisInfo.format')}:</strong> {determineFormat(selectedDistribution).toUpperCase()}
               </p>
             </div>
           )}
@@ -373,42 +373,42 @@ const DataQualityAnalysis: React.FC = () => {
         <div className="card-header bg-info text-white">
           <h5 className="mb-0">
             <i className="bi bi-info-circle me-2"></i>
-            {t('dataQuality.about.title', 'Acerca del Análisis de Calidad de Datos')}
+            {t('data_quality.about.title')}
           </h5>
         </div>
         <div className="card-body">
           <p className="mb-3">
-            {t('dataQuality.about.description', 'Este análisis evalúa la calidad de distribuciones de datos CSV y JSON basándose en la norma ISO/IEC 25012, que define 15 características de calidad divididas en dos categorías principales:')}
+            {t('data_quality.about.description')}
           </p>
           
           <div className="row">
             <div className="col-md-6">
               <h6 className="text-primary">
-                {t('dataQuality.about.inherent', 'Calidad de datos inherente')}
+                {t('data_quality.about.inherent')}
               </h6>
               <ul className="small">
-                <li>{t('dataQuality.characteristics.accuracy', 'Exactitud')}</li>
-                <li>{t('dataQuality.characteristics.completeness', 'Completitud')}</li>
-                <li>{t('dataQuality.characteristics.consistency', 'Consistencia')}</li>
-                <li>{t('dataQuality.characteristics.credibility', 'Credibilidad')}</li>
-                <li>{t('dataQuality.characteristics.currentness', 'Actualidad')}</li>
-                <li>{t('dataQuality.characteristics.precision', 'Precisión')}</li>
-                <li>{t('dataQuality.characteristics.relevance', 'Relevancia')}</li>
+                <li>{t('data_quality.characteristics.accuracy')}</li>
+                <li>{t('data_quality.characteristics.completeness')}</li>
+                <li>{t('data_quality.characteristics.consistency')}</li>
+                <li>{t('data_quality.characteristics.credibility')}</li>
+                <li>{t('data_quality.characteristics.currentness')}</li>
+                <li>{t('data_quality.characteristics.precision')}</li>
+                <li>{t('data_quality.characteristics.relevance')}</li>
               </ul>
             </div>
             <div className="col-md-6">
               <h6 className="text-success">
-                {t('dataQuality.about.systemDependent', 'Calidad de datos dependiente del sistema')}
+                {t('data_quality.about.systemDependent')}
               </h6>
               <ul className="small">
-                <li>{t('dataQuality.characteristics.accessibility', 'Accesibilidad')}</li>
-                <li>{t('dataQuality.characteristics.portability', 'Portabilidad')}</li>
-                <li>{t('dataQuality.characteristics.recoverability', 'Recuperabilidad')}</li>
-                <li>{t('dataQuality.characteristics.security', 'Seguridad')}</li>
-                <li>{t('dataQuality.characteristics.traceability', 'Trazabilidad')}</li>
-                <li>{t('dataQuality.characteristics.understandability', 'Comprensibilidad')}</li>
-                <li>{t('dataQuality.characteristics.compliance', 'Conformidad')}</li>
-                <li>{t('dataQuality.characteristics.availability', 'Disponibilidad')}</li>
+                <li>{t('data_quality.characteristics.accessibility')}</li>
+                <li>{t('data_quality.characteristics.portability')}</li>
+                <li>{t('data_quality.characteristics.recoverability')}</li>
+                <li>{t('data_quality.characteristics.security')}</li>
+                <li>{t('data_quality.characteristics.traceability')}</li>
+                <li>{t('data_quality.characteristics.understandability')}</li>
+                <li>{t('data_quality.characteristics.compliance')}</li>
+                <li>{t('data_quality.characteristics.availability')}</li>
               </ul>
             </div>
           </div>

@@ -53,7 +53,7 @@ export interface MQAConfig {
       defaultVersion: string;
     };
   };
-  metricsByProfile: {
+  profile_metrics: {
     [key in ValidationProfile]: {
       [dimension: string]: MQAMetricConfig[];
     };
@@ -63,8 +63,8 @@ export interface MQAConfig {
     minimumEntityThreshold: number;
     description?: string;
   };
-  sparqlConfig?: {
-    defaultEndpoint: string;
+  sparql_config?: {
+    default_endpoint: string;
     queries: {
       [profile: string]: {
         id: string;

@@ -7,7 +7,8 @@ interface LoadingSpinnerProps {
 
 const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({ message }) => {
   const { t } = useTranslation();
-  const defaultMessage = message || t('common.states.loading');
+  const displayMessage = message || t('common.states.loading');
+  const showDetailedMessage = !message; // Only show detailed message when using default
   
   return (
     <div className="text-center py-5">
@@ -15,10 +16,12 @@ const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({ message }) => {
         <span className="visually-hidden">{t('common.states.loading')}</span>
       </div>
       <div className="mt-3">
-        <p className="text-muted">{defaultMessage}</p>
-        <small className="text-muted">
-          <i>{t('common.states.validating_detailed')}</i>
-        </small>
+        <p className="text-muted">{displayMessage}</p>
+        {showDetailedMessage && (
+          <small className="text-muted">
+            <i>{t('common.states.validating_detailed')}</i>
+          </small>
+        )}
       </div>
     </div>
   );
