@@ -85,12 +85,12 @@ export class SPARQLService {
       console.debug('📥 Loading SPARQL queries from mqa-config...');
       
       // Get queries from mqa-config
-      const sparqlConfig = (mqaConfigData as any).sparqlConfig;
+      const sparqlConfig = (mqaConfigData as any).sparql_config;
       if (!sparqlConfig || !sparqlConfig.queries) {
         throw new Error('No sparqlConfig found in mqa-config.json');
       }
 
-      const defaultEndpoint = sparqlConfig.defaultEndpoint || 'https://datos.gob.es/virtuoso/sparql';
+      const defaultEndpoint = sparqlConfig.default_endpoint || 'https://datos.gob.es/virtuoso/sparql';
       
       // Load queries for each profile
       for (const [profile, queries] of Object.entries(sparqlConfig.queries)) {

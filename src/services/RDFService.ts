@@ -163,7 +163,7 @@ export class RDFService {
             const fixedIRI = this.encodeInvalidIRI(iri);
             const warningMessage = `Invalid IRI with spaces/whitespace in XML attribute: '${iri}' → automatically encoded to '${fixedIRI}'`;
             warnings.push(warningMessage);
-            console.warn(`⚠️ RDF Syntax Warning: ${warningMessage}`);
+            console.debug(`⚠️ RDF Syntax Warning: ${warningMessage}`);
             return `${prefix}${fixedIRI}${suffix}`;
           }
           return match;
@@ -180,7 +180,7 @@ export class RDFService {
             const fixedIRI = this.encodeInvalidIRI(iri);
             const warningMessage = `Invalid IRI with spaces/whitespace in Turtle: '${iri}' → automatically encoded to '${fixedIRI}'`;
             warnings.push(warningMessage);
-            console.warn(`⚠️ RDF Syntax Warning: ${warningMessage}`);
+            console.debug(`⚠️ RDF Syntax Warning: ${warningMessage}`);
             return `${prefix}${fixedIRI}${suffix}`;
           }
           return match;

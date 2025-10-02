@@ -1275,7 +1275,7 @@ export class MQAService {
         
         // Get profile configuration to create empty metrics structure
         const profileConfig = this.config.profiles[profile];
-        const metricsConfig = this.config.metricsByProfile[profile];
+        const metricsConfig = this.config.profile_metrics[profile];
 
         if (!profileConfig || !metricsConfig) {
           throw new Error(`Profile ${profile} not found in configuration`);
@@ -1331,7 +1331,7 @@ export class MQAService {
 
       // Get profile configuration
       const profileConfig = this.config.profiles[profile];
-      const metricsConfig = this.config.metricsByProfile[profile];
+      const metricsConfig = this.config.profile_metrics[profile];
 
       if (!profileConfig || !metricsConfig) {
         throw new Error(`Profile ${profile} not found in configuration`);
