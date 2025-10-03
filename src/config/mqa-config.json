@@ -304,7 +304,7 @@
     "description": "Proportional evaluation calculates metric scores based on the percentage of entities that comply with each metric, rather than binary all-or-nothing scoring"
   },
   "backend_server": {
-    "enabled": true,
+    "enabled": false,
     "url": "http://localhost:3001",
     "endpoints": {
       "validate_url": "/api/validate-url",
@@ -322,7 +322,7 @@
     }
   },
   "data_quality": {
-    "enabled": true,
+    "enabled": false,
     "require_backend": true,
     "iso_25012_metrics": {
       "accuracy": { "weight": 0.15, "enabled": true },
