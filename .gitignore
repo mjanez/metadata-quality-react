@@ -22,6 +22,7 @@ react-app/node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+lerna-debug.log*
 
 # Environment variables
 .env
@@ -34,12 +35,36 @@ yarn-error.log*
 .npm
 .eslintcache
 *.tsbuildinfo
+.cache/
 
 # IDE
 .idea/
 *.swp
 *.swo
+*~
+.project
+.settings/
 
 # OS
 Thumbs.db
+.DS_Store
 .github/*.md
+
+# Docker
+docker/nginx/ssl/*.pem
+docker/nginx/ssl/*.key
+docker/nginx/ssl/*.crt
+docker/nginx/ssl/*.csr
+!docker/nginx/ssl/README.md
+*.tar.gz
+backups/
+
+# Testing
+coverage/
+.nyc_output/
+test-results/
+
+# Temporary files
+*.tmp
+*.temp
+.temp/

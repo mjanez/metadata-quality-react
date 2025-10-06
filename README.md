@@ -3,23 +3,23 @@
 > [!TIP]
 > **Live Demo**: [https://mjanez.github.io/metadata-quality-react/](https://mjanez.github.io/metadata-quality-react/)
 
-A modern web application for evaluating RDF metadata quality based on FAIR+C principles, built with [React](https://es.react.dev/) + TypeScript.
+A modern web application for evaluating RDF metadata quality based on FAIR+C principles, built with [React](https://es.react.dev/) + [TypeScript](https://www.typescriptlang.org/docs/).
 
 ## Features
 
-- **Complete MQA evaluation** with real metrics for DCAT-AP, DCAT-AP-ES and NTI-RISP
-- **Multi-format support** RDF/XML, Turtle, JSON-LD, N-Triples with auto-detection
-- **Remote URL processing** to validate online datasets
+- **Complete [MQA](https://data.europa.eu/mqa/methodology) evaluation** with real metrics for [DCAT-AP](https://semiceu.github.io/DCAT-AP/), [DCAT-AP-ES](https://datosgobes.github.io/DCAT-AP-ES/) and [NTI-RISP](https://datosgobes.github.io/NTI-RISP/)
+- **Data Quality Analysis** [ISO/IEC 25012](https://iso25000.com/index.php/en/iso-25000-standards/iso-25012)-based assessment for `CSV`/`JSON` distributions (*Only backend enabled*)
+- **Multi-format support** `RDF/XML`, `Turtle`, `JSON-LD`, `N-Triples`, `GeoJSON` with auto-detection
+- **Remote URL processing** to validate online datasets (*Full option only if backend enabled*)
 - **SPARQL endpoint integration** with predefined queries for data portals
-- **Interactive visualization** with FAIR+C radar charts and detailed tables
+- **Interactive visualization** with [FAIR+C](https://www.go-fair.org/fair-principles/) radar charts and detailed tables
 - **Controlled vocabularies** integrated (formats, licenses, access rights)
-- **Responsive interface** with Bootstrap 5 and modern components
+- **Responsive interface** with [Bootstrap 5](https://getbootstrap.com/docs/5.0/) and modern components
 - **Full TypeScript** for safe and maintainable development
 - **Internationalization** English/Spanish support with react-i18next
 - **Dark/Light themes** with user preference persistence
 - **Tabbed results** keeping original form visible during validation
-- **Accordion metrics** grouped by FAIR+C dimensions
-
+- **Accordion metrics** grouped by [FAIR+C](https://www.go-fair.org/fair-principles/) dimensions
 
 > [!TIP]
 > **For Docker Compose deployment see**: [https://github.com/mjanez/metadata-quality-stack](https://github.com/mjanez/metadata-quality-stack)
@@ -34,6 +34,8 @@ A modern web application for evaluating RDF metadata quality based on FAIR+C pri
   - [SPARQL Configuration](#sparql-configuration)
 - [Development](#-development)
 - [Deployment](#-deployment)
+  - [GitHub Pages](#github-pages-frontend-only)
+  - [Docker](#docker-full-stack---self-hosted)
 - [Architecture](#-architecture)
 - [Internationalization](#-internationalization)
 - [Theming](#-theming)
@@ -43,7 +45,7 @@ A modern web application for evaluating RDF metadata quality based on FAIR+C pri
 
 | Technology | Version | Purpose |
 |------------|---------|---------|
-| [**React**](https://github.com/facebook/react) | 19.1.1 | UI framework with modern hooks |
+| [**React**](https://github.com/facebook/react) | 19.1.10 | UI framework with modern hooks |
 | [**TypeScript**](https://github.com/microsoft/TypeScript) | 4.9.5 | Static typing and safe development |
 | [**N3.js**](https://github.com/rdfjs/N3.js) | 1.26.0 | RDF parsing and manipulation |
 | [**rdfxml-streaming-parser**](https://github.com/rdfjs/rdfxml-streaming-parser.js) | 3.1.0 | RDF/XML → Turtle conversion |
@@ -72,9 +74,14 @@ npm install
 
 # Start development server
 npm start
+
+# Optional: Start backend server
+cd backend
+npm i && npm start
 ```
 
-Application will be available at: **http://localhost:3000**
+> [!TIP]
+> Application will be available at: **http://localhost:3000** and API at **http://localhost:3001/api/health**.
 
 ## Configuration
 
@@ -96,7 +103,7 @@ Profiles define the metadata standards (DCAT-AP, DCAT-AP-ES, NTI-RISP) with thei
           "maxScore": 405,
           "icon": "img/icons/icon.svg",
           "url": "https://profile-documentation-url",
-          "sample_url": "https://sample-data-url",
+          "sampleUrl": "https://sample-data-url",
           "shaclFiles": [
             "https://shacl-validation-file-1.ttl",
             "https://shacl-validation-file-2.ttl"
@@ -127,7 +134,7 @@ Profiles define the metadata standards (DCAT-AP, DCAT-AP-ES, NTI-RISP) with thei
       "maxScore": 400,
       "icon": "img/icons/custom.svg",
       "url": "https://my-profile-docs.com",
-      "sample_url": "https://my-sample-data.ttl",
+      "sampleUrl": "https://my-sample-data.ttl",
       "shaclFiles": [
         "https://my-shacl-validation.ttl"
       ],
@@ -144,7 +151,7 @@ Profiles define the metadata standards (DCAT-AP, DCAT-AP-ES, NTI-RISP) with thei
 }
 ```
 
-2. **Add corresponding metrics** in the `metricsByProfile` section
+2. **Add corresponding metrics** in the `profile_metrics` section
 3. **Add icon file** to `public/img/icons/`
 4. **Update translations** in `public/locales/en/translation.json` and `public/locales/es/translation.json`
 
@@ -156,7 +163,7 @@ Metrics define how quality is measured for each FAIR+C dimension. Each metric ha
 
 ```json
 {
-  "metricsByProfile": {
+  "profile_metrics": {
     "profile_id": {
       "dimension_name": [
         {
@@ -214,8 +221,8 @@ The SPARQL configuration enables integration with data portals and endpoints for
 
 ```json
 {
-  "sparqlConfig": {
-    "defaultEndpoint": "https://sparql-endpoint-url",
+  "sparql_config": {
+    "default_endpoint": "https://sparql-endpoint-url",
     "queries": {
       "profile_id": [
         {
@@ -351,20 +358,235 @@ react-app/
 
 ## Deployment
 
-### Automatic Deploy
+This application can be deployed on multiple platforms with different configurations.
+
+### Supported Platforms
+
+| Platform | Frontend | Backend | Auto HTTPS | Free Tier | CI/CD | Best For |
+|----------|----------|---------|------------|-----------|-------|----------|
+| **GitHub Pages** | ✅ | ❌ | ✅ | ✅ | ✅ | Demo/Docs (No backend) |
+| **Docker** | ✅ | ✅ (Express) | ⚙️ | - | ⚙️ | Self-hosted (Full control) |
+
+---
+
+### GitHub Pages (Frontend Only)
+
+**Features**: Simple static hosting, free for public repos, no backend support
+
+#### Prerequisites
+- Repository must be public
+- GitHub Pages must be enabled in repository settings
+
+#### Automatic Deployment
 ```bash
-# Build + Deploy in one command
+# Deploy to GitHub Pages
 npm run deploy
 ```
 
-### Manual Deploy
+This command:
+1. Builds the application with correct `PUBLIC_URL`
+2. Deploys to `gh-pages` branch
+3. Makes it available at: `https://{username}.github.io/{repo-name}/`
+
+#### Manual Deployment
 ```bash
-# 1. Production build
+# 1. Build with correct base path
 npm run build
 
-# 2. Manual deploy
+# 2. Deploy using gh-pages
 npx gh-pages -d build
 ```
+
+---
+
+### Docker (Full Stack - Self Hosted)
+
+**Features**: Full control, both frontend and backend, custom domain support
+
+#### Quick Start
+
+```bash
+# 1. Clone and configure
+git clone https://github.com/mjanez/metadata-quality-react.git
+cd metadata-quality-react
+cp .env.docker .env
+
+# 2. Build and start services
+docker-compose up -d
+
+# 3. Access application
+# Frontend: http://localhost:3000
+# Backend API: http://localhost:3001/api/health
+```
+
+#### Deployment Modes
+
+| Mode | Command | Use Case | Features |
+|------|---------|----------|----------|
+| **Development** | `docker-compose up` | Local testing | Live logs, debugging |
+| **Production** | `docker-compose --profile production up -d` | Self-hosted | Background, reverse proxy, SSL, caching, auto-restart |
+
+#### Container Services
+
+```yaml
+services:
+  mqa-app:           # React frontend + Express backend
+    ports:
+      - "3000:3000"  # Frontend
+      - "3001:3001"  # Backend API
+  
+  nginx:             # Reverse proxy (production profile)
+    ports:
+      - "80:80"      # HTTP
+      - "443:443"    # HTTPS (requires SSL configuration)
+```
+
+#### Configuration
+
+**Environment Variables** (`.env` file):
+```env
+# Port Configuration
+FRONTEND_PORT=3000
+BACKEND_PORT=3001
+
+# Application
+PUBLIC_URL=/
+REACT_APP_BACKEND_URL=http://localhost:3001/api
+NODE_ENV=production
+```
+
+**Custom Configuration**:
+```yaml
+volumes:
+  # Mount custom MQA config
+  - ./mqa-config.json:/app/build/config/mqa-config.json:ro
+  
+  # Mount custom vocabularies
+  - ./public/data:/app/build/data:ro
+```
+
+#### Management Commands
+
+```bash
+# View logs
+docker-compose logs -f mqa-app
+
+# Restart services
+docker-compose restart
+
+# Stop and remove
+docker-compose down
+
+# Update and rebuild
+docker-compose up -d --build
+
+# Health check
+curl http://localhost:3000/
+curl http://localhost:3001/api/health
+```
+
+#### Production Deployment with SSL
+
+1. **Generate SSL certificates** (automatic self-signed for development):
+```bash
+# Generate self-signed certificate (local development)
+make ssl-generate
+# or
+./docker/nginx/generate-ssl.sh
+
+# For production: replace with valid certificates
+# See docker/README.md#ssl-configuration
+```
+
+2. **Start with nginx profile**:
+```bash
+# HTTP automatically redirects to HTTPS
+docker-compose --profile production up -d
+# or
+make up-prod
+```
+
+3. **Access via HTTPS**:
+```
+https://localhost (development - will show browser warning)
+https://your-domain.com (production with valid certificate)
+```
+
+> [!NOTE]
+> **Self-signed certificates**: Browsers will show a security warning. This is normal for local development.
+> **Production**: Replace certificates in `docker/nginx/ssl/` with valid ones from Let's Encrypt or a CA.
+
+#### Alternative: Full Stack Deployment
+
+For complete deployment with API backend (Python FastAPI):
+```bash
+git clone https://github.com/mjanez/metadata-quality-stack
+cd metadata-quality-stack
+docker-compose up -d
+```
+
+Includes:
+- React frontend (this project)
+- Python FastAPI backend
+- Streamlit dashboard
+- Nginx reverse proxy
+- Volume persistence
+
+#### Troubleshooting
+
+| Issue | Solution |
+|-------|----------|
+| Port in use | Change `FRONTEND_PORT` or `BACKEND_PORT` in `.env` |
+| Build fails | `docker-compose build --no-cache` |
+| Network issues | `docker-compose down && docker network prune` |
+| Permission errors | `sudo chown -R $USER:$USER .` |
+
+---
+
+### Local Development with Backend
+
+For complete local development including backend:
+
+```bash
+# Terminal 1: Start backend server
+cd backend
+npm install
+npm start
+# Backend running on http://localhost:3001
+
+# Terminal 2: Start React app
+npm install
+npm start
+# Frontend running on http://localhost:3000
+```
+
+**Environment Setup:**
+
+Create `.env` file in project root:
+```env
+# Backend URL for local development
+REACT_APP_BACKEND_URL=http://localhost:3001/api
+
+# Or for production
+REACT_APP_BACKEND_URL=/.netlify/functions
+```
+
+**Backend Configuration:**
+
+The backend (`backend/server.js`) provides:
+- CORS proxy for accessing external RDF data
+- URL validation to check accessibility
+- Data download with SSL certificate handling
+- Health check endpoint
+
+**API Endpoints:**
+```bash
+GET  /api/health            # Health check
+POST /api/validate-url      # URL validation
+POST /api/download-data     # Download and proxy data
+```
+
+---
 
 ## Architecture
 
@@ -567,13 +789,13 @@ npm start -- --profile
    - Add translations for profile name and metrics
 
 2. **New Quality Metrics**:
-   - Define metric in `metricsByProfile` section
+   - Define metric in `profile_metrics` section
    - Implement evaluation logic in `MQAService.ts`
    - Add metric labels to translation files
    - Update documentation
 
 3. **SPARQL Queries**:
-   - Add queries to `sparqlConfig.queries`
+   - Add queries to `sparql_config.queries`
    - Test with debug queries first
    - Document parameter usage
    - Provide sample data URLs
