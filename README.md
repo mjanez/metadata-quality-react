@@ -485,6 +485,48 @@ curl http://localhost:3000/
 curl http://localhost:3001/api/health
 ```
 
+#### GitHub Container Registry (GHCR)
+
+Pre-built Docker images are automatically published to GitHub Container Registry on every push and pull request.
+
+**Quick Deploy**:
+```bash
+# Pull latest stable version
+docker pull ghcr.io/mjanez/metadata-quality-react:latest
+
+# Run with docker
+docker run -d -p 3000:3000 -p 3001:3001 \
+  ghcr.io/mjanez/metadata-quality-react:latest
+
+# Or with docker-compose
+cat > docker-compose.yml << EOF
+version: '3.8'
+services:
+  mqa-app:
+    image: ghcr.io/mjanez/metadata-quality-react:latest
+    ports:
+      - "3000:3000"
+      - "3001:3001"
+    environment:
+      - NODE_ENV=production
+    restart: unless-stopped
+EOF
+
+docker-compose up -d
+```
+
+**Available Tags**:
+- `latest` - Latest stable version (main branch)
+- `develop` - Development version (develop branch)
+- `pr-<number>` - Pull request specific image
+- `v1.2.3` - Semantic versioning tags
+
+**Multi-Architecture Support**: Images built for `linux/amd64` and `linux/arm64` (Apple Silicon/ARM servers)
+
+**See**: [GHCR Documentation](.github/GHCR.md) for complete details on image tags, security scanning, and usage.
+
+---
+
 #### Production Deployment with SSL
 
 1. **Generate SSL certificates** (automatic self-signed for development):

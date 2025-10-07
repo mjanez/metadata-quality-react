@@ -25,11 +25,11 @@ export interface DataQualityConfig {
 class BackendService {
   private backendConfig: BackendConfig = {
     enabled: false,
-    url: 'http://localhost:3001',
+    url: process.env.REACT_APP_BACKEND_URL || '/api',
     endpoints: {
-      validate_url: '/api/validate-url',
-      download_data: '/api/download-data',
-      health: '/api/health'
+      validate_url: '/validate-url',
+      download_data: '/download-data',
+      health: '/health'
     },
     cors_proxy: {
       fallback_proxies: [
@@ -58,13 +58,17 @@ class BackendService {
       const configModule = await import('../config/mqa-config.json');
       const config = configModule.default || configModule;
       
-      this.backendConfig = (config as any).backend_server || {
-        enabled: false,
-        url: 'http://localhost:3001',
+      // Get backend URL from config or environment variable
+      const configBackend = (config as any).backend_server || {};
+      const backendUrl = configBackend.url || process.env.REACT_APP_BACKEND_URL || '/api';
+      
+      this.backendConfig = {
+        enabled: configBackend.enabled !== false,
+        url: backendUrl,
         endpoints: {
-          validate_url: '/api/validate-url',
-          download_data: '/api/download-data',
-          health: '/api/health'
+          validate_url: '/validate-url',
+          download_data: '/download-data',
+          health: '/health'
         },
         cors_proxy: {
           fallback_proxies: [
@@ -83,14 +87,14 @@ class BackendService {
       };
     } catch (error) {
       console.warn('Failed to load backend configuration:', error);
-      // Use default configuration
+      // Use default configuration from environment variable
       this.backendConfig = {
         enabled: false,
-        url: 'http://localhost:3001',
+        url: process.env.REACT_APP_BACKEND_URL || '/api',
         endpoints: {
-          validate_url: '/api/validate-url',
-          download_data: '/api/download-data',
-          health: '/api/health'
+          validate_url: '/validate-url',
+          download_data: '/download-data',
+          health: '/health'
         },
         cors_proxy: {
           fallback_proxies: [
@@ -119,7 +123,8 @@ class BackendService {
     }
 
     try {
-      const response = await fetch(`${this.backendConfig.url}${this.backendConfig.endpoints.health}`, {
+      const healthUrl = `${this.backendConfig.url}${this.backendConfig.endpoints.health}`;
+      const response = await fetch(healthUrl, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -167,7 +172,8 @@ class BackendService {
    */
   private async validateURLWithBackend(url: string): Promise<{ accessible: boolean; status?: number; error?: string }> {
     try {
-      const response = await fetch(`${this.backendConfig.url}${this.backendConfig.endpoints.validate_url}`, {
+      const validateUrl = `${this.backendConfig.url}${this.backendConfig.endpoints.validate_url}`;
+      const response = await fetch(validateUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -239,7 +245,8 @@ class BackendService {
    */
   private async downloadDataWithBackend(url: string): Promise<string> {
     try {
-      const response = await fetch(`${this.backendConfig.url}${this.backendConfig.endpoints.download_data}`, {
+      const downloadUrl = `${this.backendConfig.url}${this.backendConfig.endpoints.download_data}`;
+      const response = await fetch(downloadUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

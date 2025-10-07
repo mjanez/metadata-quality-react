@@ -305,7 +305,8 @@
   },
   "backend_server": {
     "enabled": false,
-    "url": "http://localhost:3001",
+    "url": "",
+    "_comment": "Empty url means it will use REACT_APP_BACKEND_URL from env or default to /api (relative path for Docker/Nginx)",
     "endpoints": {
       "validate_url": "/api/validate-url",
       "download_data": "/api/download-data",

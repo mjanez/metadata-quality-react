@@ -11,8 +11,10 @@ const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
 );
 
-// Use basename only in production
-const basename = process.env.NODE_ENV === 'production' ? '/metadata-quality-react' : '';
+// Use PUBLIC_URL from environment (set at build time)
+// For GitHub Pages: PUBLIC_URL=/metadata-quality-react
+// For Docker: PUBLIC_URL=/
+const basename = process.env.PUBLIC_URL || '/';
 
 root.render(
   <React.StrictMode>

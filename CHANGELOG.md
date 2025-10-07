@@ -5,9 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2025-10-06
+
+### Added - GitHub Actions CI/CD
+- **Complete GitHub Actions workflows** for automated Docker image building
+- **GitHub Container Registry (GHCR)** integration for image publishing
+- **Multi-architecture builds** (linux/amd64, linux/arm64) with buildx
+- **Automatic tagging strategy** (latest, develop, PR numbers, semantic versions, commit SHAs)
+- **Security scanning** with Trivy integrated into CI/CD pipeline
+- **SBOM generation** (Software Bill of Materials) in SPDX format
+- **Build attestation** for verifiable image provenance
+- **PR comments** with automatic Docker image details
+- **Docker layer caching** for faster builds (~50-60% improvement)
+- Two workflow options:
+  - `docker-publish.yml` - Complete pipeline with tests, security scanning, and SBOM
+  - `docker-build-push.yml` - Simplified build and push workflow
+- Comprehensive GHCR documentation (`.github/GHCR.md`)
+- Workflow documentation (`.github/workflows/README.md`)
+- GitHub Actions implementation summary (`GITHUB_ACTIONS.md`)
+
+### Changed - GitHub Actions
+- Updated README.md with GHCR deployment section
+- Enhanced deployment documentation with pre-built image usage
+
 ## [1.1.0] - 2025-10-06
 
-### Added
+### Added - Docker Infrastructure
 - Complete Docker support with multi-stage builds
 - Docker Compose configuration for easy deployment
 - Production-ready Nginx reverse proxy configuration with HTTPS by default

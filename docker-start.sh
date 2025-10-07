@@ -49,8 +49,8 @@ log_info "================================"
 log_info "MQA React Application Startup"
 log_info "================================"
 log_info "Environment: ${NODE_ENV:-production}"
-log_info "Frontend Port: 3000"
-log_info "Backend Port: 3001"
+log_info "Frontend Port: ${FRONTEND_PORT:-3000}"
+log_info "Backend Port: ${BACKEND_PORT:-3001}"
 log_info "================================"
 
 # Check required files
@@ -87,7 +87,7 @@ fi
 
 # Test backend health
 for i in 1 2 3 4 5; do
-    if wget -q --spider http://localhost:3001/api/health 2>/dev/null; then
+    if wget -q --spider http://localhost:${BACKEND_PORT:-3001}/api/health 2>/dev/null; then
         log_success "Backend server started successfully (PID: $BACKEND_PID)"
         break
     fi
@@ -102,7 +102,7 @@ done
 # Start frontend server in background
 log_info "Starting frontend server..."
 cd /app
-serve -s build -l 3000 --no-clipboard --no-port-switching &
+serve -s build -l ${FRONTEND_PORT:-3000} --no-clipboard --no-port-switching &
 FRONTEND_PID=$!
 
 # Wait for frontend to be ready
@@ -121,8 +121,8 @@ log_success "Frontend server started successfully (PID: $FRONTEND_PID)"
 log_info "================================"
 log_success "Application started successfully!"
 log_info "================================"
-log_info "Frontend: http://localhost:3000"
-log_info "Backend API: http://localhost:3001/api/health"
+log_info "Frontend: http://localhost:${FRONTEND_PORT:-3000}"
+log_info "Backend API: http://localhost:${BACKEND_PORT:-3001}/api/health"
 log_info "================================"
 log_info "Press Ctrl+C to stop the application"
 log_info "================================"
