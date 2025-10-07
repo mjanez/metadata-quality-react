@@ -345,7 +345,7 @@
   },
   "app_info": {
     "name": "Metadata Quality APP",
-    "version": "1.1.0",
+    "version": "1.2.0",
     "repository": "https://github.com/mjanez/metadata-quality-react",
     "url": "https://mjanez.github.io/metadata-quality-react/",
     "see_also": "https://github.com/mjanez/metadata-quality-react?tab=readme-ov-file#metadata-quality-react",
