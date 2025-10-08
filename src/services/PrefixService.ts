@@ -28,7 +28,10 @@ export class PrefixService {
     }
 
     try {
-      const response = await fetch('/data/prefixes.ttl');
+      let basePath = process.env.PUBLIC_URL || '/';
+      // Ensure basePath ends with exactly one /
+      if (!basePath.endsWith('/')) basePath += '/';
+      const response = await fetch(`${basePath}data/prefixes.ttl`);
       if (!response.ok) {
         throw new Error(`Failed to load prefixes: ${response.statusText}`);
       }

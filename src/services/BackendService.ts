@@ -64,7 +64,8 @@ class BackendService {
       
       // Get backend URL from config or environment variable
       const configBackend = (config as any).backend_server || {};
-      const backendUrl = configBackend.url || process.env.REACT_APP_BACKEND_URL || '/api';
+      // Use config URL only if it's not empty, otherwise fallback to env var
+      const backendUrl = (configBackend.url && configBackend.url.trim()) || process.env.REACT_APP_BACKEND_URL || '/api';
       
       this.backendConfig = {
         enabled: configBackend.enabled !== false,

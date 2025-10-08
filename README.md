@@ -23,7 +23,7 @@ A modern web application for evaluating RDF metadata quality based on FAIR+C pri
 - **Accordion metrics** grouped by [FAIR+C](https://www.go-fair.org/fair-principles/) dimensions
 
 > [!TIP]
-> **For Docker Compose deployment see**: [Docker](#docker-full-stack---self-hosted)
+> **For Docker Compose deployment with backend support see**: [Docker](#docker-full-stack---self-hosted)
 
 ## Table of Contents
 
@@ -35,8 +35,8 @@ A modern web application for evaluating RDF metadata quality based on FAIR+C pri
   - [SPARQL Configuration](#sparql-configuration)
 - [Development](#-development)
 - [Deployment](#-deployment)
-  - [GitHub Pages](#github-pages-frontend-only)
   - [Docker](#docker-full-stack---self-hosted)
+  - [GitHub Pages](#github-pages-frontend-only)
 - [Architecture](#-architecture)
 - [Internationalization](#-internationalization)
 - [Theming](#-theming)
@@ -365,38 +365,8 @@ This application can be deployed on multiple platforms with different configurat
 
 | Platform | Frontend | Backend | Auto HTTPS | Free Tier | CI/CD | Best For |
 |----------|----------|---------|------------|-----------|-------|----------|
-| **GitHub Pages** | ✅ | ❌ | ✅ | ✅ | ✅ | Demo/Docs (No backend) |
 | **Docker** | ✅ | ✅ (Express) | ⚙️ | - | ⚙️ | Self-hosted (Full control) |
-
----
-
-### GitHub Pages (Frontend Only)
-
-**Features**: Simple static hosting, free for public repos, no backend support
-
-#### Prerequisites
-- Repository must be public
-- GitHub Pages must be enabled in repository settings
-
-#### Automatic Deployment
-```bash
-# Deploy to GitHub Pages
-npm run deploy
-```
-
-This command:
-1. Builds the application with correct `PUBLIC_URL`
-2. Deploys to `gh-pages` branch
-3. Makes it available at: `https://{username}.github.io/{repo-name}/`
-
-#### Manual Deployment
-```bash
-# 1. Build with correct base path
-npm run build
-
-# 2. Deploy using gh-pages
-npx gh-pages -d build
-```
+| **GitHub Pages** | ✅ | ❌ | ✅ | ✅ | ✅ | Demo/Docs (No backend) |
 
 ---
 
@@ -581,6 +551,36 @@ Includes:
 | Build fails | `docker compose build --no-cache` |
 | Network issues | `docker compose down && docker network prune` |
 | Permission errors | `sudo chown -R $USER:$USER .` |
+
+---
+
+### GitHub Pages (Frontend Only)
+
+**Features**: Simple static hosting, free for public repos, no backend support
+
+#### Prerequisites
+- Repository must be public
+- GitHub Pages must be enabled in repository settings
+
+#### Automatic Deployment
+```bash
+# Deploy to GitHub Pages
+npm run deploy
+```
+
+This command:
+1. Builds the application with correct `PUBLIC_URL`
+2. Deploys to `gh-pages` branch
+3. Makes it available at: `https://{username}.github.io/{repo-name}/`
+
+#### Manual Deployment
+```bash
+# 1. Build with correct base path
+npm run build
+
+# 2. Deploy using gh-pages
+npx gh-pages -d build
+```
 
 ---
 
