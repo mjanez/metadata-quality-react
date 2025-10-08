@@ -48,6 +48,10 @@ class BackendService {
     iso_25012_metrics: {}
   };
 
+  // Client-side cache for health checks and URL validations
+  private healthCheckCache: { available: boolean; timestamp: number } | null = null;
+  private readonly HEALTH_CHECK_TTL = 30000; // 30 seconds
+
   constructor() {
     // Load configuration dynamically
     this.loadConfig();
@@ -115,11 +119,17 @@ class BackendService {
   }
 
   /**
-   * Check if backend server is enabled and available
+   * Check if backend server is enabled and available (with caching)
    */
   async isBackendAvailable(): Promise<boolean> {
     if (!this.backendConfig.enabled) {
       return false;
+    }
+
+    // Check cache first
+    const now = Date.now();
+    if (this.healthCheckCache && (now - this.healthCheckCache.timestamp) < this.HEALTH_CHECK_TTL) {
+      return this.healthCheckCache.available;
     }
 
     try {
@@ -130,9 +140,25 @@ class BackendService {
           'Content-Type': 'application/json',
         },
       });
-      return response.ok;
+      
+      const available = response.ok;
+      
+      // Update cache
+      this.healthCheckCache = {
+        available,
+        timestamp: now
+      };
+      
+      return available;
     } catch (error) {
       console.warn('Backend server not available:', error);
+      
+      // Cache the negative result too
+      this.healthCheckCache = {
+        available: false,
+        timestamp: now
+      };
+      
       return false;
     }
   }
@@ -153,7 +179,67 @@ class BackendService {
   }
 
   /**
-   * Validate URL accessibility with backend or heuristics
+   * Validate multiple URLs in batch (more efficient)
+   */
+  async validateURLAccessibilityBatch(urls: string[]): Promise<Record<string, { accessible: boolean; status?: number; error?: string }>> {
+    if (!urls || urls.length === 0) {
+      return {};
+    }
+
+    const backendAvailable = await this.isBackendAvailable();
+    
+    if (backendAvailable) {
+      return this.validateURLsBatchWithBackend(urls);
+    } else if (this.backendConfig.cors_proxy.enable_heuristics) {
+      // Fallback to heuristics for all URLs
+      const results: Record<string, { accessible: boolean; status?: number; error?: string }> = {};
+      for (const url of urls) {
+        results[url] = this.validateURLWithHeuristics(url);
+      }
+      return results;
+    } else {
+      const results: Record<string, { accessible: boolean; status?: number; error?: string }> = {};
+      for (const url of urls) {
+        results[url] = { accessible: false, error: 'URL validation service not available' };
+      }
+      return results;
+    }
+  }
+
+  /**
+   * Validate URLs in batch using backend server
+   */
+  private async validateURLsBatchWithBackend(urls: string[]): Promise<Record<string, { accessible: boolean; status?: number; error?: string }>> {
+    try {
+      const batchUrl = `${this.backendConfig.url}/validate-urls-batch`;
+      const response = await fetch(batchUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ urls }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Batch validation failed: HTTP ${response.status}`);
+      }
+
+      const data = await response.json();
+      return data.results || {};
+    } catch (error) {
+      console.error('Backend batch URL validation failed:', error);
+      
+      // Fallback to individual validations
+      const results: Record<string, { accessible: boolean; status?: number; error?: string }> = {};
+      for (const url of urls) {
+        results[url] = { accessible: false, error: `Batch validation failed: ${error}` };
+      }
+      return results;
+    }
+  }
+
+  /**
+   * Validate URL accessibility with backend or heuristics (single URL)
    */
   async validateURLAccessibility(url: string): Promise<{ accessible: boolean; status?: number; error?: string }> {
     const backendAvailable = await this.isBackendAvailable();

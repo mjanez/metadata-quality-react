@@ -311,7 +311,7 @@
     
     "visualizations": {
       "dimension_scores": "Dimension scores",
-      "quality_radar": "Quality radar",
+      "quality_radar": "FAIR+C Quality Radar",
       "detailed_metrics": "Detailed metrics by dimension", 
       "dimension_specific_charts": "Dimension-specific metric charts",
       "metrics_breakdown": "Metrics breakdown",

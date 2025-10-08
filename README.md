@@ -14,6 +14,7 @@ A modern web application for evaluating RDF metadata quality based on FAIR+C pri
 - **SPARQL endpoint integration** with predefined queries for data portals
 - **Interactive visualization** with [FAIR+C](https://www.go-fair.org/fair-principles/) radar charts and detailed tables
 - **Controlled vocabularies** integrated (formats, licenses, access rights)
+- **Performance optimized** with vocabulary caching, batch URL validation, and smart caching (6-10x faster)
 - **Responsive interface** with [Bootstrap 5](https://getbootstrap.com/docs/5.0/) and modern components
 - **Full TypeScript** for safe and maintainable development
 - **Internationalization** English/Spanish support with react-i18next
@@ -409,22 +410,21 @@ npx gh-pages -d build
 # 1. Clone and configure
 git clone https://github.com/mjanez/metadata-quality-react.git
 cd metadata-quality-react
-cp .env.docker .env
+cp .env.example .env
 
 # 2. Build and start services
-docker-compose up -d
+docker compose up -d
 
 # 3. Access application
-# Frontend: http://localhost:3000
-# Backend API: http://localhost:3001/api/health
+# Frontend: https://localhost:443
+# Backend API: https://localhost:443/api/health
 ```
 
 #### Deployment Modes
 
 | Mode | Command | Use Case | Features |
 |------|---------|----------|----------|
-| **Development** | `docker-compose up` | Local testing | Live logs, debugging |
-| **Production** | `docker-compose --profile production up -d` | Self-hosted | Background, reverse proxy, SSL, caching, auto-restart |
+| **Development** | `docker compose up` | Self-hosted  | Background, reverse proxy, SSL, caching, auto-restart |
 
 #### Container Services
 
@@ -469,16 +469,16 @@ volumes:
 
 ```bash
 # View logs
-docker-compose logs -f mqa-app
+docker compose logs -f mqa-app
 
 # Restart services
-docker-compose restart
+docker compose restart
 
 # Stop and remove
-docker-compose down
+docker compose down
 
 # Update and rebuild
-docker-compose up -d --build
+docker compose up -d --build
 
 # Health check
 curl http://localhost:3000/
@@ -498,9 +498,8 @@ docker pull ghcr.io/mjanez/metadata-quality-react:latest
 docker run -d -p 3000:3000 -p 3001:3001 \
   ghcr.io/mjanez/metadata-quality-react:latest
 
-# Or with docker-compose
+# Or with docker compose
 cat > docker-compose.yml << EOF
-version: '3.8'
 services:
   mqa-app:
     image: ghcr.io/mjanez/metadata-quality-react:latest
@@ -512,7 +511,7 @@ services:
     restart: unless-stopped
 EOF
 
-docker-compose up -d
+docker compose up -d
 ```
 
 **Available Tags**:
@@ -543,7 +542,7 @@ make ssl-generate
 2. **Start with nginx profile**:
 ```bash
 # HTTP automatically redirects to HTTPS
-docker-compose --profile production up -d
+docker compose up -d
 # or
 make up-prod
 ```
@@ -564,7 +563,7 @@ For complete deployment with API backend (Python FastAPI):
 ```bash
 git clone https://github.com/mjanez/metadata-quality-stack
 cd metadata-quality-stack
-docker-compose up -d
+docker compose up -d
 ```
 
 Includes:
@@ -579,8 +578,8 @@ Includes:
 | Issue | Solution |
 |-------|----------|
 | Port in use | Change `FRONTEND_PORT` or `BACKEND_PORT` in `.env` |
-| Build fails | `docker-compose build --no-cache` |
-| Network issues | `docker-compose down && docker network prune` |
+| Build fails | `docker compose build --no-cache` |
+| Network issues | `docker compose down && docker network prune` |
 | Permission errors | `sudo chown -R $USER:$USER .` |
 
 ---

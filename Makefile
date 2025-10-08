@@ -122,18 +122,18 @@ backup: ## Backup configuration files
 	@echo "$(BLUE)Creating backup...$(NC)"
 	@mkdir -p backups
 	@tar -czf backups/mqa-config-backup-$$(date +%Y%m%d-%H%M%S).tar.gz \
-		.env .env.docker mqa-config.json public/data/ docker/nginx/nginx.conf 2>/dev/null || true
+		.env .env.example mqa-config.json public/data/ docker/nginx/nginx.conf 2>/dev/null || true
 	@echo "$(GREEN)Backup created in backups/ directory$(NC)"
 
 dev-setup: ## Setup development environment
 	@echo "$(BLUE)Setting up development environment...$(NC)"
-	@cp -n .env.docker .env 2>/dev/null || true
+	@cp -n .env.example .env 2>/dev/null || true
 	@echo "$(GREEN)Development environment ready!$(NC)"
 	@echo "Edit .env file if needed, then run: make up"
 
 prod-setup: ## Setup production environment
 	@echo "$(BLUE)Setting up production environment...$(NC)"
-	@cp -n .env.docker .env 2>/dev/null || true
+	@cp -n .env.example .env 2>/dev/null || true
 	@echo "$(YELLOW)Please configure the following:$(NC)"
 	@echo "1. Edit .env file with production values"
 	@echo "2. Generate SSL certificates: make ssl-generate"

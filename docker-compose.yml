@@ -8,15 +8,15 @@ services:
         - NODE_ENV=production
         - PUBLIC_URL=${PUBLIC_URL:-/}
     container_name: mqa-react-app
-    ports:
-      - "${FRONTEND_PORT:-3000}:3000"  # React frontend
-      - "${BACKEND_PORT:-3001}:3001"   # Express backend
     environment:
       - NODE_ENV=production
       - REACT_APP_BACKEND_URL=${REACT_APP_BACKEND_URL:-/api}
       - PUBLIC_URL=${PUBLIC_URL:-/}
       - FRONTEND_PORT=${FRONTEND_PORT:-3000}
       - BACKEND_PORT=${BACKEND_PORT:-3001}
+      # Security configuration
+      - NODE_TLS_REJECT_UNAUTHORIZED=${NODE_TLS_REJECT_UNAUTHORIZED:-1}
+      - ALLOWED_DOMAINS=${ALLOWED_DOMAINS:-}
     volumes:
       # Optional: Mount config for runtime changes
       - ./mqa-config.json:/app/build/config/mqa-config.json:ro
@@ -59,8 +59,6 @@ services:
     labels:
       - "com.mqa.service=reverse-proxy"
       - "com.mqa.description=Nginx Reverse Proxy with HTTPS"
-    profiles:
-      - production
 
 volumes:
   nginx-cache:

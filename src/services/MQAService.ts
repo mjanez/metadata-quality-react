@@ -11,6 +11,7 @@ export class MQAService {
   private static instance: MQAService;
   private config: MQAConfig;
   private vocabularies: Map<string, VocabularyItem[]> = new Map();
+  private vocabularyLoadPromises: Map<string, Promise<VocabularyItem[]>> = new Map();
 
   // RDF URI constants for better maintainability
   private static readonly RDF_URIS = {
@@ -21,6 +22,32 @@ export class MQAService {
 
   private constructor() {
     this.config = mqaConfig as unknown as MQAConfig;
+    // Pre-load common vocabularies to avoid repeated requests
+    this.preloadVocabularies();
+  }
+
+  /**
+   * Pre-load commonly used vocabularies
+   */
+  private async preloadVocabularies(): Promise<void> {
+    const commonVocabularies = [
+      'licenses',
+      'access_rights',
+      'file_types',
+      'media_types',
+      'non_proprietary',
+      'machine_readable'
+    ];
+
+    console.log('🚀 Pre-loading common vocabularies...');
+    const loadPromises = commonVocabularies.map(name => this.loadVocabulary(name));
+    
+    try {
+      await Promise.all(loadPromises);
+      console.log('✅ All common vocabularies loaded');
+    } catch (error) {
+      console.warn('⚠️ Some vocabularies failed to pre-load:', error);
+    }
   }
 
   public static getInstance(): MQAService {
@@ -31,34 +58,50 @@ export class MQAService {
   }
 
   /**
-   * Load vocabulary from JSONL file
+   * Load vocabulary from JSONL file (with deduplication of concurrent requests)
    */
   private async loadVocabulary(name: string): Promise<VocabularyItem[]> {
     try {
+      // Return cached vocabulary if available
       if (this.vocabularies.has(name)) {
         return this.vocabularies.get(name)!;
       }
 
-      console.debug(`📚 Loading vocabulary: ${name}`);
-      const basePath = process.env.NODE_ENV === 'production' 
-        ? '/metadata-quality-react/data/'
-        : '/data/';
-      const response = await fetch(`${basePath}${name}.jsonl`);
-      if (!response.ok) {
-        throw new Error(`Failed to load vocabulary ${name}: ${response.statusText}`);
+      // Return existing load promise if already loading (prevents duplicate requests)
+      if (this.vocabularyLoadPromises.has(name)) {
+        console.debug(`Waiting for existing load of vocabulary: ${name}`);
+        return this.vocabularyLoadPromises.get(name)!;
       }
 
-      const text = await response.text();
-      const items: VocabularyItem[] = text
-        .split('\n')
-        .filter(line => line.trim())
-        .map(line => JSON.parse(line));
+      console.debug(`Loading vocabulary: ${name}`);
 
-      this.vocabularies.set(name, items);
-      console.log(`✅ Loaded ${items.length} items for vocabulary: ${name}`);
-      return items;
+      // Create load promise
+      const loadPromise = (async () => {
+        const basePath = process.env.PUBLIC_URL || '/';
+        const response = await fetch(`${basePath}data/${name}.jsonl`);
+        if (!response.ok) {
+          throw new Error(`Failed to load vocabulary ${name}: ${response.statusText}`);
+        }
+
+        const text = await response.text();
+        const items: VocabularyItem[] = text
+          .split('\n')
+          .filter(line => line.trim())
+          .map(line => JSON.parse(line));
+
+        this.vocabularies.set(name, items);
+        this.vocabularyLoadPromises.delete(name); // Clean up promise
+        console.log(`✅ Loaded ${items.length} items for vocabulary: ${name}`);
+        return items;
+      })();
+
+      // Store promise to prevent duplicate requests
+      this.vocabularyLoadPromises.set(name, loadPromise);
+      
+      return await loadPromise;
     } catch (error) {
       console.warn(`⚠️ Failed to load vocabulary ${name}:`, error);
+      this.vocabularyLoadPromises.delete(name); // Clean up on error
       return [];
     }
   }
@@ -1493,45 +1536,74 @@ export class MQAService {
     let accessibleCount = 0;
     const details: Array<{ url: string; accessible: boolean; method: 'direct' | 'pattern' | 'failed' | 'proxy' | 'heuristic' | 'backend'; }> = [];
 
-    for (const url of urlsToCheck) {
-      let accessible = false;
-      let method: 'direct' | 'pattern' | 'failed' | 'proxy' | 'heuristic' | 'backend' = 'failed';
-      
-      if (isBackendAvailable) {
-        // Strategy 1: Use backend server for accurate validation (preferred when available)
-        try {
-          const backendResult = await backendService.validateURLAccessibility(url);
-          accessible = backendResult.accessible;
-          method = 'backend';
-          
-          if (!accessible && backendResult.error) {
-            console.debug(`Backend validation failed for ${url}: ${backendResult.error}`);
+    // OPTIMIZATION: Use batch validation if backend is available
+    if (isBackendAvailable && urlsToCheck.length > 1) {
+      console.debug(`Using batch validation for ${urlsToCheck.length} URLs`);
+      try {
+        const batchResults = await backendService.validateURLAccessibilityBatch(urlsToCheck);
+        
+        for (const url of urlsToCheck) {
+          const result = batchResults[url];
+          if (result && result.accessible) {
+            accessibleCount++;
+            details.push({ url, accessible: true, method: 'backend' });
+          } else {
+            // Fallback to heuristics for failed URLs
+            const heuristicResult = this.enhancedUrlHeuristics(url);
+            if (heuristicResult.accessible) {
+              accessibleCount++;
+              details.push({ url, accessible: true, method: 'heuristic' });
+            } else {
+              details.push({ url, accessible: false, method: 'failed' });
+            }
           }
-        } catch (error) {
-          console.warn(`Backend validation error for ${url}:`, error);
-          // Fall through to heuristic methods if backend fails
         }
+      } catch (error) {
+        console.warn('Batch validation failed, falling back to individual checks:', error);
+        // Fall through to individual validation below
       }
+    } else {
+      // Individual URL validation (original code)
+      for (const url of urlsToCheck) {
+        let accessible = false;
+        let method: 'direct' | 'pattern' | 'failed' | 'proxy' | 'heuristic' | 'backend' = 'failed';
+        
+        if (isBackendAvailable) {
+          // Strategy 1: Use backend server for accurate validation (preferred when available)
+          try {
+            const backendResult = await backendService.validateURLAccessibility(url);
+            accessible = backendResult.accessible;
+            method = 'backend';
+            
+            if (!accessible && backendResult.error) {
+              console.debug(`Backend validation failed for ${url}: ${backendResult.error}`);
+            }
+          } catch (error) {
+            console.warn(`Backend validation error for ${url}:`, error);
+            // Fall through to heuristic methods if backend fails
+          }
+        }
 
-      // Fallback strategies if backend not available or failed
-      if (!accessible) {
-        // Strategy 2: Enhanced heuristic analysis (faster and more reliable)
-        const heuristicResult = this.enhancedUrlHeuristics(url);
-        if (heuristicResult.accessible) {
-          accessible = true;
-          method = 'heuristic';
-        } else {
-          // Strategy 3: Try public CORS proxy services (only if heuristics fail)
-          const proxyResult = await this.checkUrlViaProxy(url);
-          if (proxyResult.accessible) {
+        // Fallback strategies if backend not available or failed
+        if (!accessible) {
+          // Strategy 2: Enhanced heuristic analysis (faster and more reliable)
+          const heuristicResult = this.enhancedUrlHeuristics(url);
+          if (heuristicResult.accessible) {
             accessible = true;
-            method = 'proxy';
+            method = 'heuristic';
+          } else {
+            // Strategy 3: Try public CORS proxy services (only if heuristics fail)
+            const proxyResult = await this.checkUrlViaProxy(url);
+            if (proxyResult.accessible) {
+              accessible = true;
+              method = 'proxy';
+            }
           }
         }
+        
+        if (accessible) accessibleCount++;
+        details.push({ url, accessible, method });
       }
-      
-      if (accessible) accessibleCount++;
-      details.push({ url, accessible, method });
     }
 
     const successRate = urlsToCheck.length > 0 ? (accessibleCount / urlsToCheck.length) : 0;

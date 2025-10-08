@@ -46,7 +46,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Development and production Docker Compose overrides
 - Health checks for containers (frontend, backend, nginx)
 - Non-root user in Docker containers for security
-- Environment variable templates (.env.docker)
+- Environment variable templates (.env.example)
 - .dockerignore for optimized builds
 
 ### Changed
@@ -101,7 +101,7 @@ If you're upgrading from a previous version:
 
 2. **Update Docker configuration**:
    ```bash
-   cp .env.docker .env
+   cp .env.example .env
    # Edit .env with your settings
    ```
 
@@ -129,7 +129,7 @@ If you're upgrading from a previous version:
 ### From Local Development to Docker
 
 1. Commit your local changes
-2. Create Docker environment: `cp .env.docker .env`
+2. Create Docker environment: `cp .env.example .env`
 3. Build and start: `docker-compose up -d`
 4. Access application: http://localhost:3000
 
