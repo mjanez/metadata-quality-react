@@ -161,15 +161,15 @@
     },
     
     "dimensions": {
-      "findability": "Descubrimiento",
+      "findability": "Encontrabilidad",
       "findability_description": "Qué tan fácil es encontrar el conjunto de datos",
       "accessibility": "Accesibilidad",
       "accessibility_description": "Qué tan accesibles son los datos",
       "interoperability": "Interoperabilidad",
       "interoperability_description": "Interoperabilidad técnica de los datos",
-      "reusability": "Reutilización", 
+      "reusability": "Reusabilidad", 
       "reusability_description": "Qué tan fácil es reutilizar los datos",
-      "contextuality": "Contexto",
+      "contextuality": "Contextualidad",
       "contextuality_description": "Información contextual sobre los datos"
     },
     
@@ -291,7 +291,7 @@
     "formats": {
       "expected_formats": "Formatos de archivo esperados",
       "json_metrics": "Métricas JSON:",
-      "json_format": "Contiene dimensiones (descubrimiento, accesibilidad, etc.) y métricas individuales con puntuaciones",
+      "json_format": "Contiene dimensiones (encontrabilidad, accesibilidad, etc.) y métricas individuales con puntuaciones",
       "ttl_shacl": "TTL SHACL",
       "ttl_format": "Formato Turtle con resultados de validación SHACL incluyendo violaciones, advertencias y mensajes informativos"
     },

@@ -57,5 +57,5 @@ Thumbs.db
 *.log
 
 # Development scripts
-start-dev.sh
+dev-start.sh
 scripts/

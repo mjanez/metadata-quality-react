@@ -307,6 +307,12 @@
     "enabled": true,
     "url": "",
     "_comment": "Empty url means it will use REACT_APP_BACKEND_URL from env or default to /api (relative path for Docker/Nginx)",
+    "_deployment_config": {
+      "github_pages": "Set enabled: false - GitHub Pages has no backend support",
+      "docker": "Set enabled: true - Docker includes Express backend server", 
+      "local_dev": "Set enabled: true - Backend runs on localhost:3001",
+      "static_hosting": "Set enabled: false - Static hosting has no backend support"
+    },
     "endpoints": {
       "validate_url": "/api/validate-url",
       "download_data": "/api/download-data",
@@ -325,6 +331,13 @@
   "data_quality": {
     "enabled": true,
     "require_backend": true,
+    "_deployment_config": {
+      "github_pages": "Set enabled: false - No backend available for data quality analysis",
+      "docker": "Set enabled: true - Full data quality analysis with backend support",
+      "local_dev": "Set enabled: true - Full data quality analysis with local backend",
+      "static_hosting": "Set enabled: false - No backend available for data quality analysis",
+      "_note": "Data quality requires backend_server.enabled: true for ISO/IEC 25012 metrics"
+    },
     "iso_25012_metrics": {
       "accuracy": { "weight": 0.15, "enabled": true },
       "completeness": { "weight": 0.12, "enabled": true },

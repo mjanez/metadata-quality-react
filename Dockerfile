@@ -65,9 +65,6 @@ RUN addgroup -g 1001 -S nodejs && \
 # Switch to non-root user
 USER nodejs
 
-# Expose ports
-EXPOSE 3000 3001
-
 # Health check for both services
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
   CMD curl -f http://localhost:3000/ && curl -f http://localhost:3001/api/health || exit 1

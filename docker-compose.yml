@@ -35,7 +35,7 @@ services:
       - "com.mqa.service=react-app"
       - "com.mqa.description=Metadata Quality Assessment Tool"
 
-  # Optional: Nginx reverse proxy for production (HTTPS enabled by default)
+  # (HTTPS enabled by default)
   nginx:
     image: nginx:alpine
     container_name: mqa-nginx

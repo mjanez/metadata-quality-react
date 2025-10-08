@@ -70,13 +70,17 @@ npm >= 8.x
 git clone https://github.com/mjanez/metadata-quality-react.git
 cd metadata-quality-react
 
+# Quick start (both frontend and backend)
+./dev-start.sh
+
+# Or manually:
 # Install dependencies
 npm install
 
-# Start development server
+# Start development server (frontend only)
 npm start
 
-# Optional: Start backend server
+# Optional: Start backend server (in separate terminal)
 cd backend
 npm i && npm start
 ```
@@ -321,7 +325,9 @@ Special debug queries help test endpoint connectivity:
 
 | Script | Command | Description |
 |--------|---------|-------------|
-| **Development** | `npm start` | Local server with hot reload |
+| **Development (Full)** | `./dev-start.sh` | Start both frontend and backend servers |
+| **Development (Frontend)** | `npm start` | Local server with hot reload (frontend only) |
+| **Cleanup** | `./dev-cleanup.sh` | Stop all development servers and clean ports |
 | **Build** | `npm run build` | Optimized production build |
 | **Deploy** | `npm run deploy` | Automatic deploy to GitHub Pages |
 | **Test** | `npm test` | Run tests (if any) |
@@ -358,21 +364,49 @@ react-app/
 ```
 
 ## Deployment
-
 This application can be deployed on multiple platforms with different configurations.
+> [!WARNING]
+> **Before deploying, verify your configuration!**
+> **Quick Configuration Check:**
+> ```bash
+> # Check current settings
+> grep -A 1 '\"enabled\"' src/config/mqa-config.json
+> # Expected for GitHub Pages:
+> # backend_server: \"enabled\": false
+> # data_quality: \"enabled\": false
+> # Expected for Docker:
+> # backend_server: "enabled": true
+> # data_quality: \"enabled\": true
+> ```
+> 📖 **See full guide:** [docs/DEPLOYMENT_CONFIG.md](docs/DEPLOYMENT_CONFIG.md)
 
 ### Supported Platforms
 
-| Platform | Frontend | Backend | Auto HTTPS | Free Tier | CI/CD | Best For |
-|----------|----------|---------|------------|-----------|-------|----------|
-| **Docker** | ✅ | ✅ (Express) | ⚙️ | - | ⚙️ | Self-hosted (Full control) |
-| **GitHub Pages** | ✅ | ❌ | ✅ | ✅ | ✅ | Demo/Docs (No backend) |
+| Platform | Frontend | Backend | Auto HTTPS | Free Tier | CI/CD | Backend Config | Data Quality | Best For |
+|----------|----------|---------|------------|-----------|-------|---------------|----------------|----------|
+| **Docker** | ✅ | ✅ (Express) | ⚙️ | - | ⚙️ | `enabled: true` | ✅ Full analysis | Self-hosted (Full control) |
+| **GitHub Pages** | ✅ | ❌ | ✅ | ✅ | ✅ | `enabled: false` | ❌ Limited | Demo/Docs (No backend) |
 
 ---
 
 ### Docker (Full Stack - Self Hosted)
 
 **Features**: Full control, both frontend and backend, custom domain support
+
+> [!NOTE]  
+> **Docker Configuration**: For Docker deployment, backend features should be **enabled** in `mqa-config.json`:
+> ```json
+> {
+>   "backend_server": {
+>     "enabled": true,
+>     "url": ""
+>   },
+>   "data_quality": {
+>     "enabled": true,
+>     "require_backend": true
+>   }
+> }
+> ```
 
 #### Quick Start
 
@@ -558,6 +592,24 @@ Includes:
 
 **Features**: Simple static hosting, free for public repos, no backend support
 
+> [!IMPORTANT]  
+> **GitHub Pages Configuration**: For GitHub Pages deployment, you **MUST** disable backend features in `mqa-config.json`:
+> ```json
+> {
+>   "backend_server": {
+>     "enabled": false
+>   },
+>   "data_quality": {
+>     "enabled": false
+>   }
+> }
+> ```
+> 
+> **Why**: GitHub Pages only serves static files and cannot run backend services. Leaving these enabled will cause:
+> - Failed API requests and console errors
+> - Non-functional data quality analysis features  
+> - Degraded user experience with loading states that never complete
+
 #### Prerequisites
 - Repository must be public
 - GitHub Pages must be enabled in repository settings
@@ -588,6 +640,16 @@ npx gh-pages -d build
 
 For complete local development including backend:
 
+#### Option 1: Automatic Setup (Recommended)
+```bash
+# Install dependencies and start both servers
+./dev-start.sh
+
+# If ports are occupied, clean up first:
+./dev-cleanup.sh && ./dev-start.sh
+```
+
+#### Option 2: Manual Setup
 ```bash
 # Terminal 1: Start backend server
 cd backend
@@ -603,14 +665,38 @@ npm start
 
 **Environment Setup:**
 
-Create `.env` file in project root:
+The `.env.local` file is automatically configured for local development:
 ```env
-# Backend URL for local development
+# Local development configuration (already configured)
+BROWSER=none
+PORT=3000
+BACKEND_PORT=3001
 REACT_APP_BACKEND_URL=http://localhost:3001/api
-
-# Or for production
-REACT_APP_BACKEND_URL=/.netlify/functions
+REACT_APP_ENV=development
 ```
+
+**Custom Configuration:**
+
+To modify ports or settings, edit `.env.local`:
+```env
+# Change frontend port
+PORT=3005
+
+# Change backend port
+BACKEND_PORT=3002
+REACT_APP_BACKEND_URL=http://localhost:3002/api
+```
+
+**Development Script Features:**
+
+The `./dev-start.sh` script automatically:
+- Checks Node.js and npm installation
+- Installs dependencies if missing
+- Loads environment variables from `.env.local`
+- Starts backend server on configured port (default: 3001)
+- Starts frontend development server on configured port (default: 3000)
+- Verifies backend health check
+- Handles graceful shutdown on Ctrl+C
 
 **Backend Configuration:**
 
@@ -619,13 +705,22 @@ The backend (`backend/server.js`) provides:
 - URL validation to check accessibility
 - Data download with SSL certificate handling
 - Health check endpoint
+- Batch URL validation for performance
 
 **API Endpoints:**
 ```bash
-GET  /api/health            # Health check
-POST /api/validate-url      # URL validation
-POST /api/download-data     # Download and proxy data
+GET  /api/health                    # Health check
+POST /api/validate-url              # Single URL validation
+POST /api/validate-urls-batch       # Batch URL validation (performance)
+POST /api/download-data             # Download and proxy data
 ```
+
+**Port Configuration:**
+
+| Service | Default Port | Environment Variable | Configuration File |
+|---------|--------------|---------------------|-------------------|
+| Frontend | 3000 | `PORT` | `.env.local` |
+| Backend | 3001 | `BACKEND_PORT` | `.env.local` |
 
 ---
 
@@ -807,6 +902,52 @@ npm run build 2>&1 | grep -i "config\|json"
 
 # Check for missing metric labels
 grep -r "metrics.specific" public/locales/
+```
+
+### Deployment Configuration Issues
+
+**Backend Server Configuration Errors:**
+```bash
+# Check current backend_server configuration
+grep -A 10 '"backend_server"' src/config/mqa-config.json
+
+# Common fixes:
+# For GitHub Pages: Set "enabled": false
+# For Docker: Set "enabled": true, "url": ""
+# For local dev: Set "enabled": true, "url": "http://localhost:3001/api"
+```
+
+**Data Quality Configuration Errors:**
+```bash
+# Check current data_quality configuration  
+grep -A 5 '"data_quality"' src/config/mqa-config.json
+
+# GitHub Pages: Must be "enabled": false (no backend support)
+# Docker/Local: Can be "enabled": true (backend available)
+```
+
+**Configuration by Deployment Type:**
+| Deployment | backend_server.enabled | data_quality.enabled | Reason |
+|------------|----------------------|---------------------|--------|
+| GitHub Pages | `false` | `false` | No backend services available |
+| Docker | `true` | `true` | Full backend support with Express API |
+| Local Dev | `true` | `true` | Backend runs on localhost:3001 |
+| Static Hosting | `false` | `false` | Similar to GitHub Pages |
+
+### Development Issues
+
+```bash
+# Port already in use error
+./dev-cleanup.sh  # Clean up occupied ports
+./dev-start.sh    # Restart development servers
+
+# Backend connection issues
+curl http://localhost:3001/api/health  # Check backend health
+cat .env.local                         # Verify configuration
+
+# Frontend can't reach backend
+# Check that REACT_APP_BACKEND_URL matches actual backend port
+grep REACT_APP_BACKEND_URL .env.local
 ```
 
 ### Performance Issues
