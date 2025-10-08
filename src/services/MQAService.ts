@@ -671,20 +671,26 @@ export class MQAService {
     store: N3Store, 
     profile: ValidationProfile
   ): boolean {
-    // For most metrics, presence is enough
-    // But for specific cases, we might need value validation
+    // For structural properties (BlankNodes, complex objects), presence of quads is enough
+    // Only validate actual literal values for vocabulary-based metrics
     
-    // Extract values for validation
-    const values: string[] = [];
-    propertyQuads.forEach(quad => {
-      const extractedValues = this.extractValuesFromQuad(quad, store, property, profile);
-      values.push(...extractedValues);
-    });
+    // If we have quads, check if any are structural (BlankNode/NamedNode) or have literal values
+    const hasStructuralValue = propertyQuads.some(quad => 
+      quad.object.termType === 'BlankNode' || 
+      quad.object.termType === 'NamedNode'
+    );
     
-    // Filter out empty values
-    const validValues = values.filter(value => value && value.trim().length > 0);
+    if (hasStructuralValue) {
+      return true; // Structural values are always valid
+    }
     
-    return validValues.length > 0;
+    // For literal values, check they're not empty
+    const literalValues = propertyQuads
+      .filter(quad => quad.object.termType === 'Literal')
+      .map(quad => quad.object.value)
+      .filter(value => value && value.trim().length > 0);
+    
+    return literalValues.length > 0;
   }
 
   /**
