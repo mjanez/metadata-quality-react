@@ -45,17 +45,13 @@ export class RDFService {
    */
   public static async convertRdfXmlToTurtle(rdfXmlContent: string, baseIRI: string = 'http://example.org/'): Promise<string> {
     try {
-      console.debug('🔄 Converting RDF/XML to Turtle...');
       
       // Pre-process RDF/XML to fix invalid IRIs with spaces
       const { processedContent, warnings } = this.preprocessRdfForInvalidIRIs(rdfXmlContent);
       
-      // Display warnings if any IRI issues were found and fixed
+      // Only show summary if warnings exist
       if (warnings.length > 0) {
-        console.warn(`⚠️ RDF Syntax Issues Detected: Applied ${warnings.length} automatic correction(s):`);
-        warnings.forEach(warning => console.warn(`   • ${warning}`));
-        console.warn('⚠️ Important: Original RDF contains syntax violations. While automatically corrected for processing,');
-        console.warn('   consider fixing these issues in the source data to ensure full W3C RDF compliance.');
+        console.warn(`⚠️ RDF Syntax: Fixed ${warnings.length} invalid IRI(s) with spaces/whitespace. Consider fixing source data for W3C compliance.`);
       }
       
       const parser = new RdfXmlParser({ baseIRI });
@@ -89,11 +85,9 @@ export class RDFService {
             });
 
             const quads = store.getQuads();
-            console.log(`✅ Parsed ${quads.length} quads from RDF/XML`);
             
             // Include warnings in the final success message if any were generated
             if (warnings.length > 0) {
-              console.log(`⚠️ Conversion completed with ${warnings.length} syntax correction(s) - original RDF had compliance issues`);
             }
             
             writer.addQuads(quads);
@@ -101,7 +95,6 @@ export class RDFService {
               if (error) {
                 reject(error);
               } else {
-                console.debug('✅ RDF/XML successfully converted to Turtle');
                 resolve(result);
               }
             });
@@ -163,7 +156,6 @@ export class RDFService {
             const fixedIRI = this.encodeInvalidIRI(iri);
             const warningMessage = `Invalid IRI with spaces/whitespace in XML attribute: '${iri}' → automatically encoded to '${fixedIRI}'`;
             warnings.push(warningMessage);
-            console.debug(`⚠️ RDF Syntax Warning: ${warningMessage}`);
             return `${prefix}${fixedIRI}${suffix}`;
           }
           return match;
@@ -180,7 +172,6 @@ export class RDFService {
             const fixedIRI = this.encodeInvalidIRI(iri);
             const warningMessage = `Invalid IRI with spaces/whitespace in Turtle: '${iri}' → automatically encoded to '${fixedIRI}'`;
             warnings.push(warningMessage);
-            console.debug(`⚠️ RDF Syntax Warning: ${warningMessage}`);
             return `${prefix}${fixedIRI}${suffix}`;
           }
           return match;
@@ -220,15 +211,12 @@ export class RDFService {
    * Fetch RDF content from URL with backend support and CORS fallback
    */
   public static async fetchFromUrl(url: string): Promise<string> {
-    console.debug(`🌐 Fetching content from URL: ${url}`);
     
     // First try: Use backend service if available
     try {
       const isBackendAvailable = await backendService.isBackendAvailable();
       if (isBackendAvailable) {
-        console.debug('🔧 Using backend service for RDF download');
         const content = await backendService.downloadData(url);
-        console.debug(`✅ Content successfully fetched via backend (${content.length} chars)`);
         return content;
       }
     } catch (backendError) {
@@ -237,7 +225,6 @@ export class RDFService {
 
     // Second try: Direct fetch (might fail due to CORS)
     try {
-      console.debug('📡 Attempting direct fetch');
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 15000);
       
@@ -257,7 +244,6 @@ export class RDFService {
       }
       
       const content = await response.text();
-      console.debug(`✅ Content successfully fetched directly (${content.length} chars)`);
       return content;
       
     } catch (directError) {
@@ -283,7 +269,6 @@ export class RDFService {
    */
   public static async convertNTriplesToTurtle(ntriplesContent: string): Promise<string> {
     try {
-      console.debug('🔄 Converting N-Triples to Turtle...');
       
       const parser = new N3Parser({ format: 'application/n-triples' });
       const store = new N3Store();
@@ -314,14 +299,12 @@ export class RDFService {
               });
 
               const quads = store.getQuads();
-              console.log(`✅ Parsed ${quads.length} quads from N-Triples`);
               
               writer.addQuads(quads);
               writer.end((error, result) => {
                 if (error) {
                   reject(error);
                 } else {
-                  console.debug('✅ N-Triples successfully converted to Turtle');
                   resolve(result);
                 }
               });
@@ -343,7 +326,6 @@ export class RDFService {
    */
   public static async convertJsonLdToTurtle(jsonldContent: string): Promise<string> {
     try {
-      console.debug('🔄 Converting JSON-LD to Turtle...');
       
       // First validate that it's valid JSON
       const parsed = JSON.parse(jsonldContent);
@@ -444,7 +426,6 @@ export class RDFService {
       format = this.detectFormat(content);
     }
     
-    console.debug(`🔄 Normalizing ${format} to Turtle...`);
     
     if (format === 'rdfxml') {
       return await this.convertRdfXmlToTurtle(content);
@@ -452,9 +433,7 @@ export class RDFService {
       // Apply preprocessing to Turtle content as well
       const { processedContent, warnings } = this.preprocessRdfForInvalidIRIs(content);
       if (warnings.length > 0) {
-        console.warn(`⚠️ Turtle preprocessing applied ${warnings.length} automatic correction(s):`);
-        warnings.forEach(warning => console.warn(`   • ${warning}`));
-        console.warn('⚠️ Original Turtle content had syntax violations that were automatically corrected.');
+        console.warn(`⚠️ Turtle: Fixed ${warnings.length} invalid IRI(s). Original content had syntax violations.`);
       }
       return processedContent;
     } else if (format === 'ntriples') {

@@ -38,7 +38,6 @@ export class SHACLValidationService {
           parsedQuads.push(quad);
         } else {
           // quad is null means parsing is complete
-          console.debug(`✅ Parsing completed for ${fileName}: ${parsedQuads.length} quads`);
           resolve(parsedQuads);
         }
       });
@@ -58,7 +57,6 @@ export class SHACLValidationService {
     const matches = content.match(problematicPattern);
     
     if (matches) {
-      console.debug(`Found ${matches.length} problematic regex patterns:`, matches);
       
       // Replace with a JavaScript-compatible pattern that does the same thing
       // Original: "^(?s)(?=.*\\S).*$" (matches any string with at least one non-whitespace char)
@@ -77,7 +75,6 @@ export class SHACLValidationService {
       replacements = matches.length;
     }
     
-    console.debug(`🧹 SHACL regex cleanup: Fixed ${replacements} problematic patterns`);
     
     return cleaned;
   }
@@ -94,8 +91,6 @@ export class SHACLValidationService {
       const shaclFiles = this.getSHACLFilesForProfile(profile);
       const dataset = rdfDataset.dataset();
 
-      console.debug(`📚 Loading SHACL shapes for profile: ${profile}`);
-      console.debug(`📂 Files to load: ${shaclFiles.length}`, shaclFiles);
       
       let totalQuadsLoaded = 0;
       const loadedFiles: string[] = [];
@@ -106,13 +101,11 @@ export class SHACLValidationService {
       // Load all SHACL files for the profile
       for (const shaclFile of shaclFiles) {
         try {
-          console.debug(`📥 Attempting to fetch: ${shaclFile}`);
           
           // Determine if this is a local file or remote URL
           const isLocalFile = !shaclFile.startsWith('http://') && !shaclFile.startsWith('https://');
           const fileUrl = isLocalFile ? `/${shaclFile}` : shaclFile;
           
-          console.debug(`📁 Loading ${isLocalFile ? 'local' : 'remote'} file: ${fileUrl}`);
           
           const response = await fetch(fileUrl);
           if (!response.ok) {
@@ -121,15 +114,12 @@ export class SHACLValidationService {
             continue; // Skip this file but continue with others
           }
           const shaclContent = await response.text();
-          console.debug(`📄 Loaded ${shaclContent.length} characters from ${fileUrl}`);
           
           // Show first few lines for debugging
           const lines = shaclContent.split('\n').slice(0, 5);
-          console.debug(`First lines of ${shaclFile}:`, lines);
           
           // Parse the SHACL file content using async method
           const fileQuads = await this.parseSHACLContent(shaclContent, shaclFile);
-          console.debug(`✅ Parsed ${fileQuads.length} quads from ${shaclFile}`);
           totalQuadsLoaded += fileQuads.length;
           loadedFiles.push(shaclFile);
           
@@ -143,10 +133,6 @@ export class SHACLValidationService {
         }
       }
 
-      console.debug(`SHACL loading summary for ${profile}:`);
-      console.debug(`   ✅ Successfully loaded: ${loadedFiles.length} files`);
-      console.debug(`   ❌ Failed to load: ${failedFiles.length} files`);
-      console.debug(`   Total quads loaded: ${totalQuadsLoaded}`);
       
       if (failedFiles.length > 0) {
         console.warn(`⚠️ Some SHACL files failed to load:`, failedFiles);
@@ -158,7 +144,6 @@ export class SHACLValidationService {
       } else {
         // Count actual shape definitions
         const shapeCount = this.countShapeDefinitions(dataset);
-        console.debug(`✅ Found ${shapeCount} SHACL shape definitions`);
         
         if (shapeCount === 0) {
           console.warn(`⚠️ No SHACL shape definitions found in loaded files for ${profile}. This may indicate import issues.`);
@@ -189,7 +174,7 @@ export class SHACLValidationService {
         }
       }
     } catch (error) {
-      console.debug('Error counting shape definitions:', error);
+
     }
     
     return shapeCount;
@@ -217,7 +202,6 @@ export class SHACLValidationService {
 
     // Get SHACL files from configuration
     const shaclFiles = versionConfig.shaclFiles || [];
-    console.log(`✅ Found ${shaclFiles.length} SHACL files in config for profile ${profile} (v${defaultVersion}):`, shaclFiles);
     
     if (shaclFiles.length === 0) {
       console.warn(`⚠️ No SHACL files configured for profile: ${profile}, version: ${defaultVersion}`);
@@ -231,21 +215,18 @@ export class SHACLValidationService {
    */
   private static async parseRDFContent(content: string, format: string = 'turtle'): Promise<any> {
     try {
-      console.debug(`Parsing RDF content (${format}): ${content.length} characters`);
       
       const dataset = rdfDataset.dataset();
       const parsedQuads = await this.parseSHACLContent(content, `RDF-${format}`);
       
-      console.debug(`Parsed ${parsedQuads.length} RDF quads from content`);
       
       // Log sample quads for debugging
       if (parsedQuads.length > 0) {
-        console.debug(` Sample RDF quads:`);
         parsedQuads.slice(0, 5).forEach((quad, index) => {
-          console.debug(`   ${index + 1}. ${quad.subject.value} ${quad.predicate.value} ${quad.object.value}`);
+
         });
         if (parsedQuads.length > 5) {
-          console.debug(`   ... and ${parsedQuads.length - 5} more quads`);
+
         }
       }
 
@@ -367,12 +348,6 @@ export class SHACLValidationService {
    */
   private static parseSHACLResult(validationReport: any, shaclShapes?: any, profile?: ValidationProfile): SHACLValidationResult {
     const results: SHACLViolation[] = [];
-
-    console.log('Parsing SHACL validation report:', {
-      hasResults: !!validationReport.results,
-      resultsCount: validationReport.results?.length || 0,
-      conforms: validationReport.conforms
-    });
 
     // shacl-engine returns results in validationReport.results
     if (validationReport.results) {
@@ -576,12 +551,10 @@ export class SHACLValidationService {
     format: string = 'turtle'
   ): Promise<SHACLReport> {
     try {
-      console.log(`Running SHACL validation with shacl-engine for profile: ${profile}`);
       
       // Load SHACL shapes
       const shapes = await this.getSHACLShapes(profile);
       const shapesCount = Array.from(shapes).length;
-      console.log(`Loaded ${shapesCount} SHACL shape quads for validation`);
       
       if (shapesCount === 0) {
         console.warn(`⚠️ No SHACL shapes loaded for profile ${profile}! This will result in 0 violations.`);
@@ -605,7 +578,6 @@ export class SHACLValidationService {
       // Parse RDF data
       const data = await this.parseRDFContent(rdfContent, format);
       const dataCount = Array.from(data).length;
-      console.log(`Loaded ${dataCount} RDF data quads for validation`);
 
       // Check if RDF content is empty or contains no meaningful data
       if (dataCount === 0) {
@@ -628,7 +600,6 @@ export class SHACLValidationService {
       }
 
       // Create validator with SPARQL support
-      console.log(`Creating SHACL validator with SPARQL support...`);
       const validator = new Validator(shapes, {
         factory: rdfDataModel,
         debug: false,
@@ -637,15 +608,9 @@ export class SHACLValidationService {
       });
 
       // Run validation
-      console.log(`Running SHACL validation...`);
       let report;
       try {
         report = await validator.validate({ dataset: data });
-        console.log(`SHACL validation report:`, {
-          conforms: report.conforms,
-          hasResults: !!report.results,
-          resultsLength: report.results?.length || 0
-        });
       } catch (validationError: any) {
         // Handle specific regex error that occurs with some SHACL constraints
         if (validationError.message?.includes('Invalid regular expression') || 
@@ -683,7 +648,6 @@ export class SHACLValidationService {
       const warnings = validationResult.results.filter(r => r.severity === 'Warning');
       const infos = validationResult.results.filter(r => r.severity === 'Info');
 
-      console.log(`✅ SHACL validation completed: ${violations.length} violations, ${warnings.length} warnings, ${infos.length} info`);
 
       return {
         profile,
@@ -723,16 +687,13 @@ export class SHACLValidationService {
    * Binary scoring: conforme = 100%, no conforme = 0%
    */
   public static calculateComplianceScore(report: SHACLReport): number {
-    console.log(`Calculating compliance score - Conforms: ${report.conforms}, Violations: ${report.totalViolations}`);
     
     // Binary compliance scoring as requested by user:
     // Si el perfil no es conforme con la validacion SHACL, entonces la metrica de compliance es 0
     // La validacion es binaria
     if (report.conforms && report.totalViolations === 0) {
-      console.log(`✅ SHACL: CONFORME - Compliance score: 100%`);
       return 100; // Full compliance
     } else {
-      console.log(`❌ SHACL: NO CONFORME - Compliance score: 0%`);
       return 0; // No compliance if any violations exist
     }
   }
@@ -1013,7 +974,6 @@ export class SHACLValidationService {
    */
   public static clearCache(): void {
     this.shaclShapesCache.clear();
-    console.debug('SHACL shapes cache cleared');
   }
 }
 

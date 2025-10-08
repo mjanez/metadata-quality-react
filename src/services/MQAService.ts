@@ -39,12 +39,10 @@ export class MQAService {
       'machine_readable'
     ];
 
-    console.log('🚀 Pre-loading common vocabularies...');
     const loadPromises = commonVocabularies.map(name => this.loadVocabulary(name));
     
     try {
       await Promise.all(loadPromises);
-      console.log('✅ All common vocabularies loaded');
     } catch (error) {
       console.warn('⚠️ Some vocabularies failed to pre-load:', error);
     }
@@ -69,11 +67,9 @@ export class MQAService {
 
       // Return existing load promise if already loading (prevents duplicate requests)
       if (this.vocabularyLoadPromises.has(name)) {
-        console.debug(`Waiting for existing load of vocabulary: ${name}`);
         return this.vocabularyLoadPromises.get(name)!;
       }
 
-      console.debug(`Loading vocabulary: ${name}`);
 
       // Create load promise
       const loadPromise = (async () => {
@@ -91,7 +87,6 @@ export class MQAService {
 
         this.vocabularies.set(name, items);
         this.vocabularyLoadPromises.delete(name); // Clean up promise
-        console.log(`✅ Loaded ${items.length} items for vocabulary: ${name}`);
         return items;
       })();
 
@@ -113,7 +108,6 @@ export class MQAService {
     // Auto-detect format if not specified or is 'auto'
     const detectedFormat = (!format || format === 'auto') ? detectRDFFormat(content) : format;
     
-    console.debug(`Validating RDF syntax for detected format: ${detectedFormat}`);
     
     switch (detectedFormat) {
       case 'rdfxml':
@@ -163,7 +157,6 @@ export class MQAService {
 
         parser.on('end', () => {
           if (!hasError) {
-            console.debug(`✅ RDF/XML syntax validation passed (${quadCount} triples parsed)`);
             resolve({ valid: true });
           }
         });
@@ -282,7 +275,6 @@ export class MQAService {
 
       // For more thorough validation, we could use a JSON-LD library
       // but for now, valid JSON that's an object is considered valid JSON-LD
-      console.debug(`✅ JSON-LD syntax validation passed`);
       return { valid: true };
       
     } catch (error: any) {
@@ -395,7 +387,6 @@ export class MQAService {
    * Extract values from BlankNode based on profile
    */
   private extractBlankNodeValues(blankNode: any, store: N3Store, property: string, profile?: ValidationProfile): string[] {
-    console.debug(`Found BlankNode for property ${property}: ${blankNode.value}`);
     
     if (profile === 'nti_risp') {
       return this.extractNTIRISPBlankNodeValues(blankNode, store);
@@ -454,8 +445,7 @@ export class MQAService {
       quads.forEach(quad => {
         if (quad.object.termType === 'Literal') {
           values.push(quad.object.value);
-          const propertyName = this.getPropertyDisplayName(propertyUri);
-          console.debug(`Found ${propertyName} from ${context}: ${quad.object.value}`);
+          //const propertyName = this.getPropertyDisplayName(propertyUri);
         }
       });
     });
@@ -557,7 +547,6 @@ export class MQAService {
     );
     
     const count = typeQuads.length;
-    console.debug(`Found ${count} entities of type ${entityType}`);
     
     return count;
   }
@@ -600,7 +589,6 @@ export class MQAService {
       }
     });
     
-    console.debug(`✅ ${compliantCount}/${entityQuads.length} ${entityType} entities comply with ${property}`);
     
     return compliantCount;
   }
@@ -659,7 +647,6 @@ export class MQAService {
       // This reflects that they don't meet the vocabulary requirement
     }
     
-    console.debug(`🏷️ ${compliantCount}/${entityQuads.length} ${entityType} entities have valid ${vocabularyName} vocabulary values for ${baseProperty}`);
     
     return compliantCount;
   }
@@ -708,7 +695,6 @@ export class MQAService {
     const totalEntities = datasetTotal + distributionTotal;
     const compliantEntities = datasetCompliant + distributionCompliant;
     
-    console.debug(`🔄 Multi-entity metric evaluation: ${compliantEntities}/${totalEntities} total (Datasets: ${datasetCompliant}/${datasetTotal}, Distributions: ${distributionCompliant}/${distributionTotal})`);
     
     return {
       totalEntities,
@@ -760,7 +746,6 @@ export class MQAService {
         distributionStats = multiStats.distributionStats;
         
         if (totalEntities === 0) {
-          console.debug(`⚠️ No Dataset or Distribution entities found for multi-entity metric ${id}`);
           
           return {
             id,
@@ -786,7 +771,6 @@ export class MQAService {
         totalEntities = this.countEntitiesByType(store, entityType as 'Dataset' | 'Distribution' | 'Catalog');
         
         if (totalEntities === 0) {
-          console.debug(`⚠️ No ${entityType} entities found for metric ${id}`);
           
           return {
             id,
@@ -846,7 +830,6 @@ export class MQAService {
         values = propertyCheck.values.slice(0, 3); // Limit to 3 examples
       }
 
-      console.debug(`Metric ${id}: ${compliantEntities}/${totalEntities} ${entityType} entities comply (${compliancePercentage.toFixed(1)}%)`);
 
     } catch (error) {
       console.warn(`Warning evaluating metric ${id}:`, error);
@@ -919,18 +902,15 @@ export class MQAService {
 
       // NTI-RISP specific vocabulary metrics
       case 'dct_format_vocabulary_nti_risp':
-        console.debug(`🏷️ Evaluating NTI-RISP format vocabulary for values:`, values);
         return await this.checkNTIRISPVocabularyMatch(values, 'file_types', profile) ? maxWeight : 0;
         
       case 'dcat_media_type_vocabulary_nti_risp':
-        console.debug(`📱 Evaluating NTI-RISP media type vocabulary for values:`, values);
         return await this.checkNTIRISPVocabularyMatch(values, 'media_types', profile) ? maxWeight : 0;
 
       case 'dct_format_nonproprietary':
         return await this.checkVocabularyMatch(values, 'non_proprietary') ? maxWeight : 0;
 
       case 'dct_format_machine_readable':
-        console.debug(` Checking machine-readable formats for values:`, values);
         return await this.checkVocabularyMatch(values, 'machine_readable') ? maxWeight : 0;
 
       // License-related metrics
@@ -993,7 +973,6 @@ export class MQAService {
     // Filter out empty or invalid values
     const validValues = values.filter(value => value && typeof value === 'string' && value.trim().length > 0);
     
-    console.debug(`Checking ${validValues.length} values against vocabulary '${vocabularyName}' (${vocabulary.length} entries)`);
     
     const result = validValues.some(value => {
       const match = vocabulary.some(item => {
@@ -1016,22 +995,18 @@ export class MQAService {
         }
         
         if (uriMatch || valueMatch || labelMatch || mimeTypeMatch) {
-          console.debug(`✅ Found match for '${value}' in vocabulary '${vocabularyName}': ${item.uri || item.value} (${item.label})`);
           return true;
         }
         return false;
       });
       
       if (match) {
-        console.debug(`✅ Found match for value in vocabulary '${vocabularyName}'`);
       } else {
-        console.debug(`❌ No match found for value in vocabulary '${vocabularyName}'`);
       }
       
       return match;
     });
     
-    console.debug(`🎯 Vocabulary match result for '${vocabularyName}': ${result}`);
     return result;
   }
 
@@ -1045,14 +1020,12 @@ export class MQAService {
       return this.checkVocabularyMatch(values, vocabularyName);
     }
 
-    console.debug(`🏷️ NTI-RISP vocabulary check for '${vocabularyName}' with values:`, values);
     
     const vocabulary = await this.loadVocabulary(vocabularyName);
     
     // Filter out empty or invalid values
     const validValues = values.filter(value => value && typeof value === 'string' && value.trim().length > 0);
     
-    console.debug(`Checking ${validValues.length} NTI-RISP values against vocabulary '${vocabularyName}' (${vocabulary.length} entries)`);
     
     const result = validValues.some(value => {
       const match = vocabulary.some(item => {
@@ -1092,27 +1065,25 @@ export class MQAService {
           
           // Debug the comparison
           if (fileTypeMatch) {
-            console.debug(`🎯 Exact file type match: '${value}' matches '${item.label}' (URI: ${item.uri})`);
           }
         }
         
         if (uriMatch || valueMatch || labelMatch || mimeTypeMatch || fileTypeMatch) {
-          console.debug(`✅ NTI-RISP match found for '${value}' in vocabulary '${vocabularyName}': ${item.uri || item.value} (${item.label})`);
           return true;
         }
         return false;
       });
       
       if (match) {
-        console.debug(`✅ NTI-RISP vocabulary match found for value '${value}' in vocabulary '${vocabularyName}'`);
+
       } else {
-        console.debug(`❌ No NTI-RISP vocabulary match found for value '${value}' in vocabulary '${vocabularyName}'`);
+
       }
       
       return match;
     });
     
-    console.debug(`🎯 NTI-RISP vocabulary match result for '${vocabularyName}': ${result}`);
+
     return result;
   }
 
@@ -1192,7 +1163,7 @@ export class MQAService {
         return { en: enLabel, es: esLabel };
       }
     } catch (error) {
-      console.debug('Failed to get translation for metric:', metricId, error);
+
     }
     
     // Fallback to metric ID if no translation found
@@ -1215,11 +1186,9 @@ export class MQAService {
         ? profileSelection 
         : profileSelection.profile;
         
-      console.debug(`Starting MQA+SHACL evaluation for profile: ${profile}`);
 
       // Validate RDF syntax first (unless already validated)
       if (!skipSyntaxValidation) {
-        console.debug(`Validating RDF syntax...`);
         const syntaxValidation = await this.validateRDFSyntax(content, format);
         
         if (!syntaxValidation.valid) {
@@ -1228,9 +1197,7 @@ export class MQAService {
           throw new Error(errorMsg);
         }
         
-        console.debug(`✅ RDF syntax validation passed`);
       } else {
-        console.debug(`⏭️ Skipping syntax validation (already validated)`);
       }
 
       // Run standard MQA evaluation
@@ -1266,7 +1233,6 @@ export class MQAService {
         }
       }
 
-      console.debug(`✅ MQA+SHACL evaluation completed. SHACL conforms: ${shaclReport.conforms}`);
 
       return { quality, shaclReport };
 
@@ -1286,11 +1252,9 @@ export class MQAService {
     skipSyntaxValidation?: boolean
   ): Promise<QualityResult> {
     try {
-      console.debug(`Starting MQA evaluation for profile: ${profile}`);
       
       // Validate RDF syntax first (unless already validated)
       if (!skipSyntaxValidation) {
-        console.debug(`Validating RDF syntax...`);
         const syntaxValidation = await this.validateRDFSyntax(content, format);
         
         if (!syntaxValidation.valid) {
@@ -1299,14 +1263,11 @@ export class MQAService {
           throw new Error(errorMsg);
         }
         
-        console.debug(`✅ RDF syntax validation passed`);
       } else {
-        console.debug(`⏭️ Skipping syntax validation (already validated)`);
       }
       
       // Parse RDF content
       const store = await this.parseRDF(content, format);
-      console.debug(`Parsed RDF store with ${store.size} triples`);
 
       // Check if RDF content is empty or contains no meaningful data
       if (store.size === 0) {
@@ -1361,7 +1322,6 @@ export class MQAService {
           };
         }
 
-        console.log(`✅ MQA evaluation completed for empty content: 0/${allMetrics.reduce((sum, m) => sum + m.maxScore, 0)} (0%)`);
 
         return {
           totalScore: 0,
@@ -1385,7 +1345,6 @@ export class MQAService {
       const byCategory: any = {};
 
       for (const [category, metrics] of Object.entries(metricsConfig)) {
-        console.debug(` Evaluating ${metrics.length} metrics for category: ${category}`);
         
         const categoryMetrics: QualityMetric[] = [];
         
@@ -1411,7 +1370,6 @@ export class MQAService {
       const maxScore = allMetrics.reduce((sum, m) => sum + m.maxScore, 0);
       const percentage = maxScore > 0 ? (totalScore / maxScore) * 100 : 0;
 
-      console.log(`✅ MQA evaluation completed: ${totalScore}/${maxScore} (${percentage.toFixed(1)}%)`);
 
       return {
         totalScore,
@@ -1431,7 +1389,7 @@ export class MQAService {
    * Validate RDF syntax (public method) with automatic preprocessing
    */
   public async validateRDF(content: string, format?: string): Promise<RDFValidationResult> {
-    console.debug(`Validating RDF syntax for format: ${format || 'auto'}...`);
+
     
     try {
       // Apply preprocessing to fix common IRI issues before validation
@@ -1526,19 +1484,16 @@ export class MQAService {
       // Random sampling
       const shuffled = [...validUrls].sort(() => 0.5 - Math.random());
       urlsToCheck = shuffled.slice(0, maxSample);
-      console.debug(`Sampling ${maxSample} URLs out of ${validUrls.length} for accessibility check`);
     }
 
     // Check if backend is available
     const isBackendAvailable = await backendService.isBackendAvailable();
-    console.debug(`Backend availability for URL checking: ${isBackendAvailable}`);
 
     let accessibleCount = 0;
     const details: Array<{ url: string; accessible: boolean; method: 'direct' | 'pattern' | 'failed' | 'proxy' | 'heuristic' | 'backend'; }> = [];
 
     // OPTIMIZATION: Use batch validation if backend is available
     if (isBackendAvailable && urlsToCheck.length > 1) {
-      console.debug(`Using batch validation for ${urlsToCheck.length} URLs`);
       try {
         const batchResults = await backendService.validateURLAccessibilityBatch(urlsToCheck);
         
@@ -1576,7 +1531,6 @@ export class MQAService {
             method = 'backend';
             
             if (!accessible && backendResult.error) {
-              console.debug(`Backend validation failed for ${url}: ${backendResult.error}`);
             }
           } catch (error) {
             console.warn(`Backend validation error for ${url}:`, error);
@@ -1674,7 +1628,6 @@ export class MQAService {
     });
 
     if (allUrls.length === 0) {
-      console.debug(`No URLs found for HTTP status check in ${entityType} entities`);
       return 0;
     }
 
@@ -1685,7 +1638,6 @@ export class MQAService {
     // If we have 100 entities and 50% of URLs are accessible, then 50 entities are considered compliant
     const compliantEntities = Math.round(entityQuads.length * accessibilityResult.successRate);
     
-    console.debug(`🌐 HTTP Status Check: ${accessibilityResult.accessibleUrls}/${accessibilityResult.checkedUrls} URLs accessible (${(accessibilityResult.successRate * 100).toFixed(1)}%) -> ${compliantEntities}/${entityQuads.length} entities compliant`);
     
     return compliantEntities;
   }
@@ -1699,7 +1651,6 @@ export class MQAService {
     // Skip proxy checks in GitHub Pages environment due to CORS limitations
     if (window.location.hostname.includes('github.io')) {
       console.info('ℹ️ GitHub Pages detected: Using heuristic analysis instead of proxy verification for URL accessibility');
-      console.debug('🚫 Skipping proxy checks in GitHub Pages environment for:', url);
       return { accessible: false, error: 'GitHub Pages CORS limitations - using heuristic analysis' };
     }
 
@@ -1723,7 +1674,6 @@ export class MQAService {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 5000); // Reduced timeout for better performance
 
-        console.debug(`🔄 Trying proxy ${index + 1} for: ${url}`);
         
         const response = await fetch(proxyUrl, {
           method: 'HEAD', // Use HEAD instead of GET for faster response
@@ -1737,17 +1687,14 @@ export class MQAService {
         clearTimeout(timeoutId);
         
         if (response.ok) {
-          console.debug(`✅ Proxy verification successful: ${url} via proxy ${index + 1}`);
           return { accessible: true, proxy: `proxy-${index + 1}` };
         }
       } catch (error: any) {
-        console.debug(`❌ Proxy ${index + 1} failed for ${url}:`, error?.message || 'Unknown error');
         // Don't break immediately, try next proxy
         continue;
       }
     }
 
-    console.debug(`🚫 All proxies failed for: ${url}`);
     return { accessible: false, error: 'All proxies failed or CORS blocked' };
   }
 
@@ -1844,8 +1791,6 @@ export class MQAService {
       const confidence = Math.max(0, Math.min(100, score));
       const accessible = confidence >= 60; // Umbral de confianza del 60%
       
-      console.debug(`🎯 Heuristic analysis for ${url}: ${confidence}% confidence, accessible: ${accessible}`);
-      console.debug(`   Reasons: ${reasons.join(', ')}`);
       
       return { accessible, confidence, reasons };
       
@@ -1881,7 +1826,6 @@ export class MQAService {
         const isDataFile = dataFileExtensions.includes(extension);
         
         if (isDataFile) {
-          console.debug(`🏛️ Government domain verified: ${url} (${extension.toUpperCase()} file)`);
           return true;
         }
         
@@ -1897,7 +1841,6 @@ export class MQAService {
         
         const hasDataPath = dataPathPatterns.some(pattern => pattern.test(parsedUrl.pathname));
         if (hasDataPath) {
-          console.debug(`🏛️ Government domain verified: ${url} (data path pattern)`);
           return true;
         }
       }
@@ -1917,7 +1860,6 @@ export class MQAService {
       
       const isReliableDomain = reliableDomains.some(reliable => domain.includes(reliable));
       if (isReliableDomain) {
-        console.debug(`✅ Reliable domain verified: ${url}`);
         return true;
       }
       
@@ -1934,17 +1876,14 @@ export class MQAService {
         
         const isSuspicious = suspiciousPatterns.some(pattern => pattern.test(domain));
         if (!isSuspicious) {
-          console.debug(`📄 HTTPS data file verified: ${url} (${extension.toUpperCase()})`);
           return true;
         }
       }
       
       // Default: if we can't categorize it and got CORS error, assume not accessible
-      console.debug(`❓ Pattern verification failed: ${url} - marked as inaccessible`);
       return false;
       
     } catch (parseError) {
-      console.debug(`❌ URL ${url}: Invalid URL format - not accessible`);
       return false;
     }
   }
@@ -2027,7 +1966,6 @@ export class MQAService {
       // Intelligent sampling: prioritize diverse domains and data file extensions
       const shuffbled = [...validUrls].sort(() => 0.5 - Math.random());
       urlsToCheck = shuffbled.slice(0, maxSample);
-      console.debug(`Intelligent sampling: ${maxSample} URLs out of ${validUrls.length}`);
     }
 
     let accessibleCount = 0;

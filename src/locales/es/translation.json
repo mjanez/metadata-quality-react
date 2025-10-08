@@ -586,18 +586,18 @@
     },
 
     "report": {
-      "title": "Informe de Calidad de Datos",
-      "overallScore": "Puntuación Global de Calidad",
-      "basicInfo": "Información Básica",
+      "title": "Informe de calidad de datos",
+      "overallScore": "Puntuación global de calidad",
+      "basicInfo": "Información básica",
       "columns": "Columnas",
       "records": "Registros",
       "columnNames": "Nombres de columnas",
-      "indicators": "Indicadores de Calidad",
+      "indicators": "Indicadores de calidad",
       "category": "Categoría",
       "indicator": "Indicador",
       "result": "Resultado",
-      "sampleRecords": "Registros de Muestra",
-      "observations": "Observaciones y Recomendaciones",
+      "sampleRecords": "Registros de muestra",
+      "observations": "Observaciones y recomendaciones",
       "definition": "Definición",
       "recommendations": "Recomendaciones",
       "notAvailable": "N/A",
@@ -606,11 +606,11 @@
       "noSampleData": "No hay datos de muestra disponibles",
       "error": "Error en el análisis",
       "analyzing": "Analizando datos...",
-      "downloadAll": "Descargar Todo (ZIP)",
+      "downloadAll": "Descargar todo (ZIP)",
       "downloadAllDescription": "Descarga un archivo ZIP con 3 CSV (indicadores, registros de muestra, observaciones) y 1 JSON de resumen",
-      "exportIndicators": "Exportar Indicadores (CSV)",
-      "exportSamples": "Exportar Registros de Muestra (CSV)",
-      "exportObservations": "Exportar Observaciones (CSV)"
+      "exportIndicators": "Exportar indicadores (CSV)",
+      "exportSamples": "Exportar registros de muestra (CSV)",
+      "exportObservations": "Exportar observaciones (CSV)"
     },
 
     "export": {

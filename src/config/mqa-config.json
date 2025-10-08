@@ -304,7 +304,7 @@
     "description": "Proportional evaluation calculates metric scores based on the percentage of entities that comply with each metric, rather than binary all-or-nothing scoring"
   },
   "backend_server": {
-    "enabled": false,
+    "enabled": true,
     "url": "",
     "_comment": "Empty url means it will use REACT_APP_BACKEND_URL from env or default to /api (relative path for Docker/Nginx)",
     "endpoints": {
@@ -323,7 +323,7 @@
     }
   },
   "data_quality": {
-    "enabled": false,
+    "enabled": true,
     "require_backend": true,
     "iso_25012_metrics": {
       "accuracy": { "weight": 0.15, "enabled": true },

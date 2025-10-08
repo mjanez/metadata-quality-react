@@ -131,11 +131,11 @@ export class DataDiscoveryService {
         const dataset = await this.extractDatasetInfo(quads, datasetUri, result);
         if (dataset && dataset.distributions.length > 0) {
           datasets.push(dataset);
-          console.debug(`Added dataset: ${dataset.title} with ${dataset.distributions.length} compatible distributions`);
+          //console.debug(`Added dataset: ${dataset.title} with ${dataset.distributions.length} compatible distributions`);
         }
       }
-      
-      console.debug(`Extracted ${datasets.length} datasets with compatible distributions from RDF`);
+
+      //console.debug(`Extracted ${datasets.length} datasets with compatible distributions from RDF`);
       return datasets;
     } catch (error) {
       console.error('Error extracting datasets from RDF:', error);
@@ -322,7 +322,7 @@ export class DataDiscoveryService {
       
       if (valueQuad) {
         const formatValue = valueQuad.object.value;
-        console.debug('Found format rdf:value:', formatValue);
+        //console.debug('Found format rdf:value:', formatValue);
         return this.normalizeFormatValue(formatValue);
       }
       
@@ -333,7 +333,7 @@ export class DataDiscoveryService {
       
       if (labelQuad) {
         const labelValue = labelQuad.object.value;
-        console.debug('Found format rdfs:label:', labelValue);
+        //console.debug('Found format rdfs:label:', labelValue);
         return this.normalizeFormatValue(labelValue);
       }
       

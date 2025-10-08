@@ -23,7 +23,7 @@ A modern web application for evaluating RDF metadata quality based on FAIR+C pri
 - **Accordion metrics** grouped by [FAIR+C](https://www.go-fair.org/fair-principles/) dimensions
 
 > [!TIP]
-> **For Docker Compose deployment see**: [https://github.com/mjanez/metadata-quality-stack](https://github.com/mjanez/metadata-quality-stack)
+> **For Docker Compose deployment see**: [Docker](#docker-full-stack---self-hosted)
 
 ## Table of Contents
 
@@ -855,4 +855,4 @@ This project is licensed under the MIT License. See the [LICENSE](../LICENSE) fi
 
 ---
 
-**Built with ❤️ for the open data community**
+**Built with ❤️ for the Open Data community**
