@@ -8,6 +8,11 @@ import i18n from '../i18n';
 import { backendService } from './BackendService';
 
 export class MQAService {
+  // Consistent rounding function for all score calculations
+  private static roundScore(value: number): number {
+    return Math.round(value * 1000) / 1000; // 3 decimal places for consistency
+  }
+  
   private static instance: MQAService;
   private config: MQAConfig;
   private vocabularies: Map<string, VocabularyItem[]> = new Map();
@@ -382,6 +387,53 @@ export class MQAService {
   }
 
   /**
+   * Extract values from NTI-RISP dct:IMT structure
+   * @param quad - The quad containing the dct:format property
+   * @param store - The RDF store
+   * @param propertyToExtract - Either 'rdfs:label' or 'rdf:value'
+   * @returns Array of extracted values
+   */
+  private extractNTIRISPIMTValues(quad: any, store: N3Store, propertyToExtract: string): string[] {
+    const values: string[] = [];
+    
+    try {
+      // Check if the object is a dct:IMT resource
+      const imtResource = quad.object;
+      
+      // First check if it's typed as dct:IMT
+      const typeQuads = store.getQuads().filter(q => 
+        q.subject.equals(imtResource) && 
+        q.predicate.value === MQAService.RDF_URIS.RDF_TYPE &&
+        q.object.value.includes('IMT')
+      );
+      
+      if (typeQuads.length > 0) {
+        // It's a dct:IMT resource, extract the requested property
+        const propertyURI = this.expandProperty(propertyToExtract);
+        const propertyQuads = store.getQuads().filter(q => 
+          q.subject.equals(imtResource) && 
+          q.predicate.value === propertyURI
+        );
+        
+        propertyQuads.forEach(propQuad => {
+          if (propQuad.object.termType === 'Literal') {
+            values.push(propQuad.object.value.trim());
+          }
+        });
+      } else {
+        // Fallback: treat as regular literal value if not dct:IMT
+        if (quad.object.termType === 'Literal') {
+          values.push(quad.object.value.trim());
+        }
+      }
+    } catch (error) {
+      console.warn(`Warning extracting NTI-RISP IMT values:`, error);
+    }
+    
+    return values;
+  }
+
+  /**
    * Extract values from a quad based on object type and profile
    */
   private extractValuesFromQuad(quad: any, store: N3Store, property: string, profile?: ValidationProfile): string[] {
@@ -500,12 +552,13 @@ export class MQAService {
   /**
    * Get vocabulary metric information for vocabulary-based metrics
    */
-  private getVocabularyMetricInfo(metricId: string): { baseProperty: string; vocabularyName: string } | null {
-    const vocabularyMetrics: { [key: string]: { baseProperty: string; vocabularyName: string } } = {
+  private getVocabularyMetricInfo(metricId: string): { baseProperty: string; vocabularyName: string; ntiRispProperty?: string } | null {
+    const vocabularyMetrics: { [key: string]: { baseProperty: string; vocabularyName: string; ntiRispProperty?: string } } = {
       'dct_format_vocabulary': { baseProperty: 'dct:format', vocabularyName: 'file_types' },
       'dcat_media_type_vocabulary': { baseProperty: 'dcat:mediaType', vocabularyName: 'media_types' },
-      'dct_format_vocabulary_nti_risp': { baseProperty: 'dct:format', vocabularyName: 'file_types' },
-      'dcat_media_type_vocabulary_nti_risp': { baseProperty: 'dcat:mediaType', vocabularyName: 'media_types' },
+      // NTI-RISP specific: evaluate different properties of dct:IMT
+      'dct_format_vocabulary_nti_risp': { baseProperty: 'dct:format', vocabularyName: 'file_types', ntiRispProperty: 'rdfs:label' },
+      'dcat_media_type_vocabulary_nti_risp': { baseProperty: 'dct:format', vocabularyName: 'media_types', ntiRispProperty: 'rdf:value' },
       'dct_format_nonproprietary': { baseProperty: 'dct:format', vocabularyName: 'non_proprietary' },
       'dct_format_machine_readable': { baseProperty: 'dct:format', vocabularyName: 'machine_readable' },
       'dct_license_vocabulary': { baseProperty: 'dct:license', vocabularyName: 'licenses' },
@@ -528,7 +581,7 @@ export class MQAService {
     const datasetMetrics = [
       'dcat_keyword', 'dcat_theme', 'dct_spatial', 'dct_temporal',
       'dct_creator', 'dct_language', 'dcat_contact_point', 
-      'dct_access_rights', 'dct_publisher', 'dct_access_rights_vocabulary', 'dct_license_nti_risp'
+      'dct_access_rights', 'dct_publisher', 'dct_publisher_nti_risp', 'dct_access_rights_vocabulary', 'dct_license_nti_risp'
     ];
     
     // Metrics that apply to Distributions only
@@ -646,7 +699,8 @@ export class MQAService {
     baseProperty: string, // e.g., 'dct:format'
     vocabularyName: string, // e.g., 'non_proprietary' 
     entityType: 'Dataset' | 'Distribution' | 'Catalog',
-    profile: ValidationProfile
+    profile: ValidationProfile,
+    ntiRispProperty?: string // For NTI-RISP: 'rdfs:label' or 'rdf:value'
   ): Promise<number> {
     const typeURI = this.getEntityTypeURI(entityType);
     const fullProperty = this.expandProperty(baseProperty);
@@ -672,8 +726,14 @@ export class MQAService {
         // Extract values from property
         const values: string[] = [];
         propertyQuads.forEach(quad => {
-          const extractedValues = this.extractValuesFromQuad(quad, store, baseProperty, profile);
-          values.push(...extractedValues);
+          if (ntiRispProperty) {
+            // Special handling for NTI-RISP dct:IMT structure
+            const imtValues = this.extractNTIRISPIMTValues(quad, store, ntiRispProperty);
+            values.push(...imtValues);
+          } else {
+            const extractedValues = this.extractValuesFromQuad(quad, store, baseProperty, profile);
+            values.push(...extractedValues);
+          }
         });
         
         // Filter valid values
@@ -762,6 +822,70 @@ export class MQAService {
   private async isInVocabulary(value: string, vocabularyName: string): Promise<boolean> {
     console.warn(`⚠️ isInVocabulary is deprecated. Use checkVocabularyMatch instead.`);
     return this.checkVocabularyMatch([value], vocabularyName);
+  }
+
+  /**
+   * Validate if a publisher URI follows the Spanish government organism format
+   * Expected: https://datos.gob.es/recurso/sector-publico/org/Organismo/XX
+   */
+  private validateSpanishGovernmentPublisher(publisherUri: string): boolean {
+    if (!publisherUri) return false;
+    
+    // Simple regex check for Spanish government organism URIs
+    const pattern = /^https?:\/\/datos\.gob\.es\/recurso\/sector-publico\/org\/Organismo\/[A-Z0-9]+$/;
+    return pattern.test(publisherUri);
+  }
+
+  /**
+   * Count entities that have valid NTI-RISP publisher URIs
+   */
+  private countNTIRISPPublisherCompliantEntities(
+    store: N3Store,
+    baseProperty: string,
+    entityType: 'Dataset' | 'Distribution' | 'Catalog',
+    profile: ValidationProfile
+  ): number {
+    const typeURI = this.getEntityTypeURI(entityType);
+    const fullProperty = this.expandProperty(baseProperty);
+    
+    // Get all entities of the specified type
+    const entityQuads = store.getQuads().filter(quad => 
+      quad.predicate.value === MQAService.RDF_URIS.RDF_TYPE && 
+      quad.object.value === typeURI
+    );
+    
+    let compliantCount = 0;
+    
+    for (const entityQuad of entityQuads) {
+      const entityURI = entityQuad.subject;
+      
+      // Check if this entity has the publisher property
+      const publisherQuads = store.getQuads().filter(quad => 
+        quad.subject.equals(entityURI) && 
+        quad.predicate.value === fullProperty
+      );
+      
+      if (publisherQuads.length > 0) {
+        // Extract publisher values and validate them
+        const publisherValues: string[] = [];
+        publisherQuads.forEach(quad => {
+          const extractedValues = this.extractValuesFromQuad(quad, store, baseProperty, profile);
+          publisherValues.push(...extractedValues);
+        });
+        
+        // Check if any publisher value is a valid NTI-RISP government URI
+        const hasValidPublisher = publisherValues.some(value => 
+          this.validateSpanishGovernmentPublisher(value)
+        );
+        
+        if (hasValidPublisher) {
+          compliantCount++;
+        }
+      }
+      // If no publisher property exists, the entity is not compliant (needs publisher)
+    }
+    
+    return compliantCount;
   }
 
   /**
@@ -854,11 +978,20 @@ export class MQAService {
             vocabularyMetricInfo.baseProperty, 
             vocabularyMetricInfo.vocabularyName, 
             entityType as 'Dataset' | 'Distribution' | 'Catalog', 
-            profile
+            profile,
+            vocabularyMetricInfo.ntiRispProperty
           );
         } else if (id === 'dcat_access_url_status' || id === 'dcat_downloadURL_status') {
           // Special handling for HTTP status check metrics
           compliantEntities = await this.countHttpStatusCompliantEntities(
+            store, 
+            property, 
+            entityType as 'Dataset' | 'Distribution' | 'Catalog', 
+            profile
+          );
+        } else if (id === 'dct_publisher_nti_risp') {
+          // Special handling for NTI-RISP publisher validation
+          compliantEntities = this.countNTIRISPPublisherCompliantEntities(
             store, 
             property, 
             entityType as 'Dataset' | 'Distribution' | 'Catalog', 
@@ -927,7 +1060,7 @@ export class MQAService {
     const result: any = {
       id,
       name: label.en || id,
-      score: Math.round(score * 100) / 100, // Round to 2 decimal places
+      score: MQAService.roundScore(score),
       maxScore: weight,
       weight,
       description: label.es || label.en || id,
@@ -939,7 +1072,7 @@ export class MQAService {
       entityType,
       totalEntities,
       compliantEntities,
-      compliancePercentage: Math.round(compliancePercentage * 100) / 100
+      compliancePercentage: Math.round(compliancePercentage * 10) / 10 // Round to 1 decimal place for percentages
     };
     
     // Add multi-entity specific fields if applicable
@@ -978,6 +1111,11 @@ export class MQAService {
       case 'dcat_media_type_vocabulary_nti_risp':
         //console.debug(`📱 Evaluating NTI-RISP media type vocabulary for values:`, values);
         return await this.checkNTIRISPVocabularyMatch(values, 'media_types', profile) ? maxWeight : 0;
+
+      // NTI-RISP specific publisher validation
+      case 'dct_publisher_nti_risp':
+        const validPublisherUris = values.filter(value => this.validateSpanishGovernmentPublisher(value));
+        return validPublisherUris.length > 0 ? maxWeight : 0;
 
       case 'dct_format_nonproprietary':
         return await this.checkVocabularyMatch(values, 'non_proprietary') ? maxWeight : 0;
@@ -1328,7 +1466,7 @@ export class MQAService {
         const maxScore = quality.metrics.reduce((sum, m) => sum + m.maxScore, 0);
         const percentage = maxScore > 0 ? (totalScore / maxScore) * 100 : 0;
 
-        quality.totalScore = totalScore;
+        quality.totalScore = MQAService.roundScore(totalScore);
         quality.percentage = percentage;
 
         // Update category totals
@@ -1337,8 +1475,8 @@ export class MQAService {
           const categoryScore = categoryMetrics.reduce((sum: number, m: QualityMetric) => sum + m.score, 0);
           const categoryMaxScore = categoryMetrics.reduce((sum: number, m: QualityMetric) => sum + m.maxScore, 0);
           
-          categoryData.score = categoryScore;
-          categoryData.percentage = categoryMaxScore > 0 ? (categoryScore / categoryMaxScore) * 100 : 0;
+          categoryData.score = MQAService.roundScore(categoryScore);
+          categoryData.percentage = categoryMaxScore > 0 ? MQAService.roundScore((categoryScore / categoryMaxScore) * 100) : 0;
         }
       }
 
@@ -1474,7 +1612,7 @@ export class MQAService {
           allMetrics.push(metric);
         }
 
-        const categoryScore = categoryMetrics.reduce((sum, m) => sum + m.score, 0);
+        const categoryScore = MQAService.roundScore(categoryMetrics.reduce((sum, m) => sum + m.score, 0));
         const categoryMaxScore = categoryMetrics.reduce((sum, m) => sum + m.maxScore, 0);
         
         byCategory[category] = {
@@ -1486,7 +1624,7 @@ export class MQAService {
       }
 
       // Calculate totals
-      const totalScore = allMetrics.reduce((sum, m) => sum + m.score, 0);
+      const totalScore = MQAService.roundScore(allMetrics.reduce((sum, m) => sum + m.score, 0));
       const maxScore = allMetrics.reduce((sum, m) => sum + m.maxScore, 0);
       const percentage = maxScore > 0 ? (totalScore / maxScore) * 100 : 0;
 
@@ -1776,7 +1914,7 @@ export class MQAService {
    */
   private async checkUrlViaProxy(url: string): Promise<{ accessible: boolean; proxy?: string; error?: string }> {
     // Skip proxy checks in GitHub Pages environment due to CORS limitations
-    if (window.location.hostname.includes('github.io')) {
+    if (window.location.hostname === 'github.io' || window.location.hostname.endsWith('.github.io')) {
       console.info('ℹ️ GitHub Pages detected: Using heuristic analysis instead of proxy verification for URL accessibility');
       console.debug('🚫 Skipping proxy checks in GitHub Pages environment for:', url);
       return { accessible: false, error: 'GitHub Pages CORS limitations - using heuristic analysis' };
@@ -1786,11 +1924,19 @@ export class MQAService {
     // Get CORS proxies from configuration
     const configProxies = backendService.getBackendConfig().cors_proxy.fallback_proxies;
     const publicProxies = configProxies.map(proxy => {
-      if (proxy.includes('allorigins')) {
-        return (url: string) => `${proxy}${encodeURIComponent(url)}`;
-      } else if (proxy.includes('corsproxy.io')) {
-        return (url: string) => `${proxy}${url}`;
-      } else {
+      // Use URL parsing to verify actual host name for security
+      try {
+        const proxyUrl = new URL(proxy);
+        const proxyHost = proxyUrl.hostname.toLowerCase();
+        if (proxyHost === 'allorigins.win' || proxyHost === 'api.allorigins.win') {
+          return (url: string) => `${proxy}${encodeURIComponent(url)}`;
+        } else if (proxyHost === 'corsproxy.io') {
+          return (url: string) => `${proxy}${url}`;
+        } else {
+          return (url: string) => `${proxy}${url}`;
+        }
+      } catch (e) {
+        // Fallback: treat as generic proxy if URL parsing fails
         return (url: string) => `${proxy}${url}`;
       }
     });
@@ -2162,7 +2308,7 @@ export class MQAService {
           heuristicSuccess++;
         } else {
           // Strategy 3: Only try proxy if heuristics fail AND proxy is specifically requested AND not in GitHub Pages
-          if (useProxyFirst && !window.location.hostname.includes('github.io')) {
+          if (useProxyFirst && !(window.location.hostname === 'github.io' || window.location.hostname.endsWith('.github.io'))) {
             const proxyResult = await this.checkUrlViaProxy(url);
             if (proxyResult.accessible) {
               accessible = true;

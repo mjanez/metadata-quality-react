@@ -29,6 +29,7 @@ export interface DashboardMetricsData {
     percentage: number;
     weight: number;
     found: boolean;
+    description?: string; // Add description field for metric explanations
     // Compliance information
     entityType?: string;
     totalEntities?: number;

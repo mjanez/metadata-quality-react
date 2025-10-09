@@ -84,6 +84,7 @@ const Dashboard: React.FC = () => {
           percentage: metric.maxScore > 0 ? metric.score / metric.maxScore : 0,
           weight: metric.weight,
           found: metric.found || false,
+          description: metric.description, // Add metric description
           // Compliance information
           entityType: metric.entityType,
           totalEntities: metric.totalEntities,

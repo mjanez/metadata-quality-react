@@ -446,6 +446,7 @@
       "dct_access_rights_vocabulary": "Vocabulario de derechos de acceso",
       "dcat_contact_point": "Punto de contacto",
       "dct_publisher": "Publicador",
+      "dct_publisher_nti_risp": "Publicador NTI-RISP (DIR3)",
       "dct_rights": "Derechos",
       "dcat_byte_size": "Tamaño en bytes",
       "dct_issued": "Fecha de emisión",

@@ -596,7 +596,12 @@ const DimensionCharts: React.FC<DimensionChartsProps> = ({ metricsData, showProf
                         <tbody>
                           {metricsByDimension[dimension.name]?.map((metric, metricIndex) => (
                             <tr key={`${metric.id}-${metricIndex}`}>
-                              <td><code className="small">{metric.id}</code></td>
+                              <td>
+                                <div>
+                                  <code className="small d-block">{metric.id}</code>
+                                  <small className="text-muted">{t(`metrics.specific.${metric.id}`, metric.description || metric.id)}</small>
+                                </div>
+                              </td>
                               <td>
                                 <ScoreBadge 
                                   score={metric.score}

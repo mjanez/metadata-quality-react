@@ -146,7 +146,7 @@ const ValidationResults: React.FC<ValidationResultsProps> = ({
         dimension: metric.category,
         score: parseFloat(metric.score.toFixed(1)),
         maxScore: metric.maxScore,
-        percentage: parseFloat((metric.score / metric.maxScore).toFixed(3)),
+        percentage: metric.compliancePercentage !== undefined ? (metric.compliancePercentage / 100) : parseFloat((metric.score / metric.maxScore).toFixed(3)),
         weight: metric.weight,
         entityType: metric.entityType,
         totalEntities: metric.totalEntities,
@@ -765,7 +765,7 @@ const ValidationResults: React.FC<ValidationResultsProps> = ({
                                     )}
                                   </td>
                                   <td>
-                                    <small>{metric.description}</small>
+                                    <small>{t(`metrics.specific.${metric.id}`, metric.description || metric.id)}</small>
                                   </td>
                                 </tr>
                               ))}

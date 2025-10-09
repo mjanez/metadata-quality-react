@@ -77,7 +77,7 @@
     "nti_risp": {
       "versions": {
         "2013": {
-          "name": "NTI-RISP 2013",
+          "name": "NTI-RISP (2013)",
           "maxScore": 305,
           "icon": "img/icons/esp.svg",
           "url": "https://datosgobes.github.io/NTI-RISP/",
@@ -167,7 +167,7 @@
         { "id": "dct_access_rights", "weight": 10, "property": "dct:accessRights" },
         { "id": "dct_access_rights_vocabulary", "weight": 5, "property": "dct:accessRights" },
         { "id": "dcat_contact_point", "weight": 20, "property": "dcat:contactPoint" },
-        { "id": "dct_publisher", "weight": 10, "property": "dct:publisher" }
+        { "id": "dct_publisher_nti_risp", "weight": 10, "property": "dct:publisher" }
       ],
       "contextuality": [
         { "id": "dcat_byte_size", "weight": 5, "property": "dcat:byteSize" },
@@ -197,7 +197,7 @@
       "reusability": [
         { "id": "dct_license_nti_risp", "weight": 20, "property": "dct:license" },
         { "id": "dct_license_vocabulary", "weight": 10, "property": "dct:license" },
-        { "id": "dct_publisher", "weight": 10, "property": "dct:publisher" }
+        { "id": "dct_publisher_nti_risp", "weight": 10, "property": "dct:publisher" }
       ],
       "contextuality": [
         { "id": "dcat_byte_size", "weight": 5, "property": "dcat:byteSize" },
