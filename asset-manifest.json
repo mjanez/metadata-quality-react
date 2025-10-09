@@ -1,13 +1,13 @@
 {
   "files": {
     "main.css": "/metadata-quality-react/static/css/main.bab68441.css",
-    "main.js": "/metadata-quality-react/static/js/main.551fefa9.js",
+    "main.js": "/metadata-quality-react/static/js/main.2de5f323.js",
     "fflate.js": "/metadata-quality-react/static/js/fflate.f0b9eb18.chunk.js",
     "static/js/206.228e45cf.chunk.js": "/metadata-quality-react/static/js/206.228e45cf.chunk.js",
     "index.html": "/metadata-quality-react/index.html"
   },
   "entrypoints": [
     "static/css/main.bab68441.css",
-    "static/js/main.551fefa9.js"
+    "static/js/main.2de5f323.js"
   ]
 }

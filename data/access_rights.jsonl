@@ -1,4 +1,4 @@
-{"source": "docs/vocabularies/access_rights.csv", "generated": "2025-08-21T15:04:29Z", "format": "jsonl", "type": "uri_label", "name": "access_rights", "count": 7}
+{"source": "https://raw.githubusercontent.com/mjanez/metadata-quality-react/refs/heads/develop/docs/vocabularies/access_rights.csv", "generated": "2025-10-09T13:41:15Z", "format": "jsonl", "type": "uri_label", "name": "access_rights", "count": 7}
 {"uri": "http://publications.europa.eu/resource/authority/access-right/CONFIDENTIAL", "label": "CONFIDENTIAL"}
 {"uri": "http://publications.europa.eu/resource/authority/access-right/NON_PUBLIC", "label": "NON_PUBLIC"}
 {"uri": "http://publications.europa.eu/resource/authority/access-right/NORMAL", "label": "NORMAL"}
