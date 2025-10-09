@@ -196,7 +196,7 @@
       ],
       "reusability": [
         { "id": "dct_license_nti_risp", "weight": 20, "property": "dct:license" },
-        { "id": "dct_license_vocabulary", "weight": 10, "property": "dct:license" },
+        { "id": "dct_license_vocabulary_nti_risp", "weight": 10, "property": "dct:license" },
         { "id": "dct_publisher_nti_risp", "weight": 10, "property": "dct:publisher" }
       ],
       "contextuality": [

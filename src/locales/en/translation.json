@@ -442,6 +442,7 @@
       "dct_license": "License",
       "dct_license_nti_risp": "NTI-RISP License (Dataset)",
       "dct_license_vocabulary": "License vocabulary",
+      "dct_license_vocabulary_nti_risp": "License vocabulary (NTI-RISP)",
       "dct_access_rights": "Access rights",
       "dct_access_rights_vocabulary": "Access rights vocabulary",
       "dcat_contact_point": "Contact point",

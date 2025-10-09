@@ -562,7 +562,8 @@ export class MQAService {
       'dct_format_nonproprietary': { baseProperty: 'dct:format', vocabularyName: 'non_proprietary' },
       'dct_format_machine_readable': { baseProperty: 'dct:format', vocabularyName: 'machine_readable' },
       'dct_license_vocabulary': { baseProperty: 'dct:license', vocabularyName: 'licenses' },
-      'dct_access_rights_vocabulary': { baseProperty: 'dct:accessRights', vocabularyName: 'access_rights' }
+      'dct_access_rights_vocabulary': { baseProperty: 'dct:accessRights', vocabularyName: 'access_rights' },
+      'dct_license_vocabulary_nti_risp': { baseProperty: 'dct:license', vocabularyName: 'licenses' },
     };
     
     return vocabularyMetrics[metricId] || null;
@@ -581,7 +582,7 @@ export class MQAService {
     const datasetMetrics = [
       'dcat_keyword', 'dcat_theme', 'dct_spatial', 'dct_temporal',
       'dct_creator', 'dct_language', 'dcat_contact_point', 
-      'dct_access_rights', 'dct_publisher', 'dct_publisher_nti_risp', 'dct_access_rights_vocabulary', 'dct_license_nti_risp'
+      'dct_access_rights', 'dct_publisher', 'dct_publisher_nti_risp', 'dct_access_rights_vocabulary', 'dct_license_nti_risp', 'dct_license_vocabulary_nti_risp'
     ];
     
     // Metrics that apply to Distributions only
@@ -1116,6 +1117,10 @@ export class MQAService {
       case 'dct_publisher_nti_risp':
         const validPublisherUris = values.filter(value => this.validateSpanishGovernmentPublisher(value));
         return validPublisherUris.length > 0 ? maxWeight : 0;
+
+      // License-related metrics
+      case 'dct_license_vocabulary_nti_risp':
+        return await this.checkVocabularyMatch(values, 'licenses') ? maxWeight : 0;
 
       case 'dct_format_nonproprietary':
         return await this.checkVocabularyMatch(values, 'non_proprietary') ? maxWeight : 0;
@@ -1694,10 +1699,10 @@ export class MQAService {
   /**
    * Check URL accessibility using multiple strategies for client-side validation
    * @param urls Array of URLs to check
-   * @param maxSample Maximum number of URLs to sample (default: 10)
+   * @param maxSample Maximum number of URLs to sample (default: 20)
    * @returns Object with accessibility results and proportional score
    */
-  public async checkURLAccessibility(urls: string[], maxSample: number = 10): Promise<{
+  public async checkURLAccessibility(urls: string[], maxSample: number = 20): Promise<{
     totalUrls: number;
     checkedUrls: number;
     accessibleUrls: number;
