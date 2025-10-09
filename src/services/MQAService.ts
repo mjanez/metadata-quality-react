@@ -12,6 +12,10 @@ export class MQAService {
   private config: MQAConfig;
   private vocabularies: Map<string, VocabularyItem[]> = new Map();
   private vocabularyLoadPromises: Map<string, Promise<VocabularyItem[]>> = new Map();
+  
+  // Performance caches - static to persist across instances
+  private static propertyCache: Map<string, boolean> = new Map();
+  private static complianceCache: Map<string, number> = new Map();
 
   // RDF URI constants for better maintainability
   private static readonly RDF_URIS = {
@@ -55,6 +59,25 @@ export class MQAService {
       MQAService.instance = new MQAService();
     }
     return MQAService.instance;
+  }
+
+  /**
+   * Clear performance caches to free memory
+   */
+  public static clearCaches(): void {
+    MQAService.propertyCache.clear();
+    MQAService.complianceCache.clear();
+    console.debug('🧹 Cleared MQA performance caches');
+  }
+
+  /**
+   * Get cache statistics
+   */
+  public static getCacheStats(): { propertyCache: number; complianceCache: number } {
+    return {
+      propertyCache: MQAService.propertyCache.size,
+      complianceCache: MQAService.complianceCache.size
+    };
   }
 
   /**
@@ -505,14 +528,13 @@ export class MQAService {
     const datasetMetrics = [
       'dcat_keyword', 'dcat_theme', 'dct_spatial', 'dct_temporal',
       'dct_creator', 'dct_language', 'dcat_contact_point', 
-      'dct_access_rights', 'dcat_ap_compliance', 'dcat_ap_es_compliance', 
-      'nti_risp_compliance', 'dct_publisher', 'dct_access_rights_vocabulary', 'dct_license_nti_risp'
+      'dct_access_rights', 'dct_publisher', 'dct_access_rights_vocabulary', 'dct_license_nti_risp'
     ];
     
     // Metrics that apply to Distributions only
     const distributionMetrics = [
       'dcat_access_url', 'dcat_download_url', 'dct_format', 'dcat_media_type',
-      'dcat_byte_size', 'dct_format_vocabulary', 'dct_format_machine_readable',
+      'dcat_byte_size', 'dct_rights', 'dct_format_vocabulary', 'dct_format_machine_readable',
       'dct_format_vocabulary_nti_risp', 'dcat_media_type_vocabulary_nti_risp',
       'dcat_media_type_vocabulary', 'dct_format_nonproprietary',
       'dcat_access_url_status', 'dcat_download_url_status', 'dct_license',
@@ -522,12 +544,15 @@ export class MQAService {
     // Metrics that apply to Catalogs only
     const catalogMetrics = [
       // Catalog-specific metrics would go here
+      'dcat_ap_compliance', 'dcat_ap_es_compliance', 
+      'nti_risp_compliance'
     ];
     
     // Priority classification
     if (multiEntityMetrics.includes(metricId)) return 'Multi';
     if (distributionMetrics.includes(metricId)) return 'Distribution';
     if (datasetMetrics.includes(metricId)) return 'Dataset';
+    if (catalogMetrics.includes(metricId)) return 'Catalog';
     return 'Catalog'; // Default fallback
   }
 
@@ -569,6 +594,12 @@ export class MQAService {
     entityType: 'Dataset' | 'Distribution' | 'Catalog',
     profile: ValidationProfile
   ): number {
+    // Create cache key for this compliance check
+    const cacheKey = `compliance:${property}:${entityType}:${profile}:${store.size}`;
+    if (MQAService.complianceCache.has(cacheKey)) {
+      return MQAService.complianceCache.get(cacheKey)!;
+    }
+
     const typeURI = this.getEntityTypeURI(entityType);
     const fullProperty = this.expandProperty(property);
     
@@ -599,6 +630,9 @@ export class MQAService {
     });
     
     console.debug(`✅ ${compliantCount}/${entityQuads.length} ${entityType} entities comply with ${property}`);
+    
+    // Cache the result
+    MQAService.complianceCache.set(cacheKey, compliantCount);
     
     return compliantCount;
   }
@@ -830,13 +864,25 @@ export class MQAService {
             entityType as 'Dataset' | 'Distribution' | 'Catalog', 
             profile
           );
+        } else if (id.includes('compliance')) {
+          // Special handling for SHACL compliance metrics
+          // These will be updated later in calculateQualityWithSHACL
+          // For now, assume non-compliant (will be corrected by SHACL validation)
+          compliantEntities = 0;
+          // Note: 'found' will be set based on totalEntities > 0 below
+          // Ensure we have the correct total entities for Catalog (always 1 unless multiple catalogs exist)
+          if (totalEntities === 0 && entityType === 'Catalog') {
+            totalEntities = 1; // Default to 1 catalog if none found in RDF (implicit catalog)
+          }
         } else {
           // Count compliant entities for regular single-entity metric
           compliantEntities = this.countCompliantEntities(store, property, entityType as 'Dataset' | 'Distribution' | 'Catalog', profile);
         }
       }
       
-      found = compliantEntities > 0;
+      // The 'found' field indicates if the metric is evaluable (i.e., there are entities to evaluate)
+      // This is different from compliance - a metric can be 'found' but have 0% compliance
+      found = totalEntities > 0;
       
       // Calculate proportional score
       const proportionalRatio = compliantEntities / totalEntities;
@@ -844,7 +890,7 @@ export class MQAService {
       compliancePercentage = proportionalRatio * 100;
 
       // Get sample values for display (optional, for backwards compatibility)
-      if (found) {
+      if (found && compliantEntities > 0) {
         const fullProperty = this.expandProperty(property);
         const propertyCheck = this.hasProperty(store, fullProperty, profile);
         values = propertyCheck.values.slice(0, 3); // Limit to 3 examples
@@ -862,7 +908,10 @@ export class MQAService {
     // Prepare descriptive value showing compliance ratio
     let valueDescription: string;
     
-    if (entityType === 'Multi') {
+    if (id.includes('compliance')) {
+      // Special description for compliance metrics (will be updated by SHACL validation)
+      valueDescription = `${compliantEntities}/${totalEntities} Catalog comply (${compliancePercentage.toFixed(1)}%) - Pending SHACL validation`;
+    } else if (entityType === 'Multi') {
       const datasetPercent = datasetStats!.total > 0 ? ((datasetStats!.compliant / datasetStats!.total) * 100).toFixed(1) : '0';
       const distributionPercent = distributionStats!.total > 0 ? ((distributionStats!.compliant / distributionStats!.total) * 100).toFixed(1) : '0';
       
@@ -960,8 +1009,9 @@ export class MQAService {
       case 'dct_spatial':
       case 'dct_temporal':
       case 'dct_format':
-      case 'dcat_accessURL':
-      case 'dcat_downloadURL':
+      case 'dcat_media_type':
+      case 'dcat_access_url':
+      case 'dcat_download_url':
       case 'dct_license':
       case 'dct_license_nti_risp':
       case 'dct_access_rights':
@@ -969,8 +1019,10 @@ export class MQAService {
       case 'dct_conformsTo':
       case 'dct_creator':
       case 'dct_publisher':
-      case 'dct_contactPoint':
+      case 'dcat_contact_point':
       case 'dcat_distribution':
+      case 'dcat_byte_size':
+      case 'dct_rights':
       case 'dct_issued':
       case 'dct_modified':
         return maxWeight; // Full score for presence
@@ -996,6 +1048,12 @@ export class MQAService {
     
     // Filter out empty or invalid values
     const validValues = values.filter(value => value && typeof value === 'string' && value.trim().length > 0);
+    
+    // Use cache key for performance
+    const cacheKey = `${vocabularyName}:${validValues.join('|')}`;
+    if (MQAService.propertyCache.has(cacheKey)) {
+      return MQAService.propertyCache.get(cacheKey)!;
+    }
     
     //console.debug(`Checking ${validValues.length} values against vocabulary '${vocabularyName}' (${vocabulary.length} entries)`);
     
@@ -1034,6 +1092,9 @@ export class MQAService {
       
       return match;
     });
+    
+    // Cache the result for future use
+    MQAService.propertyCache.set(cacheKey, result);
     
     //console.debug(`🎯 Vocabulary match result for '${vocabularyName}': ${result}`);
     return result;
@@ -1248,8 +1309,19 @@ export class MQAService {
       if (complianceMetric) {
         const complianceScore = RDFService.calculateComplianceScore(shaclReport);
         complianceMetric.score = Math.round((complianceScore / 100) * complianceMetric.maxScore);
-        complianceMetric.found = shaclReport.conforms;
-        complianceMetric.value = shaclReport.conforms ? 'compliant' : 'non-compliant';
+        
+        // Update compliance entity information based on SHACL validation
+        // Compliance metrics evaluate the Catalog (1 catalog total)
+        complianceMetric.totalEntities = 1;
+        complianceMetric.compliantEntities = shaclReport.conforms ? 1 : 0;
+        complianceMetric.compliancePercentage = shaclReport.conforms ? 100.0 : 0.0;
+        complianceMetric.entityType = 'Catalog';
+        
+        // 'found' indicates if the metric is evaluable - for compliance, it's always true since we have a catalog
+        complianceMetric.found = true;
+        
+        // Update descriptive value to reflect SHACL compliance
+        complianceMetric.value = `${complianceMetric.compliantEntities}/1 Catalog comply (${complianceMetric.compliancePercentage.toFixed(1)}%) - SHACL ${shaclReport.conforms ? 'conformant' : 'non-conformant'}`;
 
         // Recalculate totals
         const totalScore = quality.metrics.reduce((sum, m) => sum + m.score, 0);
@@ -1291,6 +1363,9 @@ export class MQAService {
   ): Promise<QualityResult> {
     try {
       console.debug(`Starting MQA evaluation for profile: ${profile}`);
+      
+      // Clear caches for fresh evaluation to avoid memory buildup
+      MQAService.clearCaches();
       
       // Validate RDF syntax first (unless already validated)
       if (!skipSyntaxValidation) {
@@ -1481,10 +1556,10 @@ export class MQAService {
   /**
    * Check URL accessibility using multiple strategies for client-side validation
    * @param urls Array of URLs to check
-   * @param maxSample Maximum number of URLs to sample (default: 20)
+   * @param maxSample Maximum number of URLs to sample (default: 10)
    * @returns Object with accessibility results and proportional score
    */
-  public async checkURLAccessibility(urls: string[], maxSample: number = 20): Promise<{
+  public async checkURLAccessibility(urls: string[], maxSample: number = 10): Promise<{
     totalUrls: number;
     checkedUrls: number;
     accessibleUrls: number;
@@ -1985,7 +2060,7 @@ export class MQAService {
     };
   }> {
     const {
-      maxSample = 20,
+      maxSample = 10,
       confidenceThreshold = 60,
       useProxyFirst = true,
       timeout = 8000

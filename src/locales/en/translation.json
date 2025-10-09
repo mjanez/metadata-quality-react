@@ -325,6 +325,7 @@
       "percentage": "Percentage", 
       "weight": "Weight",
       "found": "Found",
+      "entity_compliance": "Entity compliance",
       "search_results": "Search results...",
       "all_severities": "All severities",
       "severity": "Severity",
@@ -492,9 +493,11 @@
     },
     
     "entities": {
+      "multi": "Multi",
       "datasets": "Datasets",
       "data_services": "Data Services",
       "distributions": "Distributions",
+      "catalogs": "Catalogs",
       "total_entities": "Total entities"
     }
   },

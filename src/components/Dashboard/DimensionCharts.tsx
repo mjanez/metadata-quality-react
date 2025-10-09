@@ -590,6 +590,7 @@ const DimensionCharts: React.FC<DimensionChartsProps> = ({ metricsData, showProf
                             <th>{t('dashboard.table.percentage')}</th>
                             <th>{t('dashboard.table.weight')}</th>
                             <th>{t('dashboard.table.found')}</th>
+                            <th>{t('dashboard.table.entity_compliance')}</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -617,6 +618,57 @@ const DimensionCharts: React.FC<DimensionChartsProps> = ({ metricsData, showProf
                               <td>{metric.weight}</td>
                               <td>
                                 <i className={`bi bi-${metric.found ? 'check-circle-fill text-success' : 'x-circle-fill text-danger'}`}></i>
+                              </td>
+                              <td>
+                                {metric.totalEntities !== undefined && metric.compliantEntities !== undefined ? (
+                                  <div className="d-flex flex-column">
+                                    {metric.entityType === 'Multi' ? (
+                                      <>
+                                        <span className="ms-1 badge bg-light text-dark">
+                                          {t('sidebar.entities.multi')}
+                                        </span>
+                                        {metric.datasetEntities && (
+                                          <small className="text-muted">
+                                            <i className="bi bi-database text-primary me-1"></i> {metric.datasetEntities.compliant}/{metric.datasetEntities.total} <span className="ms-1 badge bg-light text-dark">{t('sidebar.entities.datasets')}</span>
+                                          </small>
+                                        )}
+                                        {metric.distributionEntities && (
+                                          <small className="text-muted">
+                                            <i className="bi bi-folder-symlink text-success me-1"></i> {metric.distributionEntities.compliant}/{metric.distributionEntities.total} <span className="ms-1 badge bg-light text-dark">{t('sidebar.entities.distributions')}</span>
+                                          </small>
+                                        )}
+                                        {metric.compliancePercentage !== undefined && (
+                                          <ScoreBadge 
+                                            percentage={metric.compliancePercentage}
+                                            variant="percentage"
+                                            size="sm"
+                                            profile={metricsData.profile?.id as any}
+                                          />
+                                        )}
+                                      </>
+                                    ) : (
+                                      <>
+                                        <small className="text-muted">
+                                          {metric.compliantEntities}/{metric.totalEntities} 
+                                          <span className="ms-1 badge bg-light text-dark">
+                                            {metric.entityType === 'Dataset' && t('sidebar.entities.datasets')}
+                                            {metric.entityType === 'Distribution' && t('sidebar.entities.distributions')}
+                                            {metric.entityType === 'Catalog' && t('sidebar.entities.catalogs')}
+                                            {!['Dataset', 'Distribution', 'Catalog'].includes(metric.entityType || '') && metric.entityType}
+                                          </span>
+                                        </small>
+                                        <ScoreBadge 
+                                          percentage={metric.compliancePercentage || 0}
+                                          variant="percentage"
+                                          size="sm"
+                                          profile={metricsData.profile?.id as any}
+                                        />
+                                      </>
+                                    )}
+                                  </div>
+                                ) : (
+                                  <span className="text-muted">N/A</span>
+                                )}
                               </td>
                             </tr>
                           ))}

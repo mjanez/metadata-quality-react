@@ -99,10 +99,15 @@ const ValidationResults: React.FC<ValidationResultsProps> = ({
 
   // Download functions
   const downloadCSV = () => {
-    const csvHeader = 'dimension,metric,score,maxScore,percentage,weight\n';
+    const csvHeader = 'dimension,metric,score,maxScore,percentage,weight,entityType,compliantEntities,totalEntities,compliancePercentage\n';
     const csvData = quality.metrics.map(metric => {
       const percentage = (metric.score / metric.maxScore * 100).toFixed(1);
-      return `${metric.category},${metric.id},${metric.score.toFixed(1)},${metric.maxScore},${percentage},${metric.weight}`;
+      const entityType = metric.entityType || 'N/A';
+      const compliantEntities = metric.compliantEntities || 0;
+      const totalEntities = metric.totalEntities || 0;
+      const compliancePercentage = metric.compliancePercentage || 0;
+      
+      return `${metric.category},${metric.id},${metric.score.toFixed(1)},${metric.maxScore},${percentage},${metric.weight},${entityType},${compliantEntities},${totalEntities},${compliancePercentage.toFixed(1)}`;
     }).join('\n');
     
     const blob = new Blob([csvHeader + csvData], { type: 'text/csv;charset=utf-8;' });
@@ -143,7 +148,13 @@ const ValidationResults: React.FC<ValidationResultsProps> = ({
         maxScore: metric.maxScore,
         percentage: parseFloat((metric.score / metric.maxScore).toFixed(3)),
         weight: metric.weight,
-        found: metric.found || false
+        entityType: metric.entityType,
+        totalEntities: metric.totalEntities,
+        compliantEntities: metric.compliantEntities,
+        compliancePercentage: metric.compliancePercentage ? parseFloat(metric.compliancePercentage.toFixed(1)) : undefined,
+        // Multi-entity specific fields
+        ...(metric.datasetEntities && { datasetEntities: metric.datasetEntities }),
+        ...(metric.distributionEntities && { distributionEntities: metric.distributionEntities })
       }))
     };
     
@@ -676,6 +687,7 @@ const ValidationResults: React.FC<ValidationResultsProps> = ({
                                 <th>{t('metrics.labels.name')}</th>
                                 <th>{t('metrics.labels.score')}</th>
                                 <th>{t('metrics.labels.weight')}</th>
+                                <th>{t('dashboard.table.entity_compliance')}</th>
                                 <th>{t('metrics.labels.description')}</th>
                               </tr>
                             </thead>
@@ -700,6 +712,57 @@ const ValidationResults: React.FC<ValidationResultsProps> = ({
                                     <span className="badge bg-info">
                                       {metric.weight}
                                     </span>
+                                  </td>
+                                  <td>
+                                    {(metric as any).totalEntities !== undefined && (metric as any).compliantEntities !== undefined ? (
+                                      <div className="d-flex flex-column">
+                                        {(metric as any).entityType === 'Multi' ? (
+                                          <>
+                                            <span className="ms-1 badge bg-light text-dark">
+                                              <i className="bi bi-collection me-1"></i>{t('sidebar.entities.multi')}
+                                            </span>
+                                            {(metric as any).datasetEntities && (
+                                              <small className="text-muted">
+                                                <i className="bi bi-database text-primary me-1"></i> {(metric as any).datasetEntities.compliant}/{(metric as any).datasetEntities.total} <span className="ms-1 badge bg-light text-dark">{t('sidebar.entities.datasets')}</span>
+                                              </small>
+                                            )}
+                                            {(metric as any).distributionEntities && (
+                                              <small className="text-muted">
+                                                <i className="bi bi-folder-symlink text-success me-1"></i> {(metric as any).distributionEntities.compliant}/{(metric as any).distributionEntities.total} <span className="ms-1 badge bg-light text-dark">{t('sidebar.entities.distributions')}</span>
+                                              </small>
+                                            )}
+                                            {(metric as any).compliancePercentage !== undefined && (
+                                              <ScoreBadge 
+                                                percentage={(metric as any).compliancePercentage}
+                                                variant="percentage"
+                                                size="sm"
+                                                profile={profile}
+                                              />
+                                            )}
+                                          </>
+                                        ) : (
+                                          <>
+                                            <small className="text-muted">
+                                              {(metric as any).compliantEntities}/{(metric as any).totalEntities} 
+                                              <span className="ms-1 badge bg-light text-dark">
+                                                {(metric as any).entityType === 'Dataset' && t('sidebar.entities.datasets')}
+                                                {(metric as any).entityType === 'Distribution' && t('sidebar.entities.distributions')}
+                                                {(metric as any).entityType === 'Catalog' && t('sidebar.entities.catalogs')}
+                                                {!['Dataset', 'Distribution', 'Catalog'].includes((metric as any).entityType || '') && (metric as any).entityType}
+                                              </span>
+                                            </small>
+                                            <ScoreBadge 
+                                              percentage={(metric as any).compliancePercentage || 0}
+                                              variant="percentage"
+                                              size="sm"
+                                              profile={profile}
+                                            />
+                                          </>
+                                        )}
+                                      </div>
+                                    ) : (
+                                      <span className="text-muted">N/A</span>
+                                    )}
                                   </td>
                                   <td>
                                     <small>{metric.description}</small>

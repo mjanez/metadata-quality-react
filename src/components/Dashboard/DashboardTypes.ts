@@ -29,6 +29,13 @@ export interface DashboardMetricsData {
     percentage: number;
     weight: number;
     found: boolean;
+    // Compliance information
+    entityType?: string;
+    totalEntities?: number;
+    compliantEntities?: number;
+    compliancePercentage?: number;
+    datasetEntities?: { total: number; compliant: number };
+    distributionEntities?: { total: number; compliant: number };
   }>;
 }
 

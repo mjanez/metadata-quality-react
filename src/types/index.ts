@@ -113,7 +113,7 @@ export interface QualityMetric {
   description: string;
   category: 'findability' | 'accessibility' | 'interoperability' | 'reusability' | 'contextuality';
   property?: string;
-  found?: boolean;
+  found?: boolean; // Indicates if the metric is evaluable (i.e., there are entities to evaluate), NOT if there's compliance
   value?: string;
   // Proportional evaluation fields
   entityType?: 'Dataset' | 'Distribution' | 'Catalog' | 'Multi';
