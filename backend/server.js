@@ -218,17 +218,31 @@ async function validateSingleURL(url) {
       timeout: 10000,
       maxRedirects: 5,
       validateStatus: () => true,
+      headers: {
+        'Accept': 'text/turtle, application/rdf+xml, text/n3, application/n-triples, application/ld+json, text/csv, application/json, text/plain, */*'
+      },
       httpsAgent: createHttpsAgent()
     });
 
     const accessible = response.status >= 200 && response.status < 400;
+    const contentType = response.headers['content-type'] || '';
+    
+    // Extract charset from content-type
+    let charset = 'utf-8';
+    const charsetMatch = contentType.match(/charset=([^;]+)/i);
+    if (charsetMatch) {
+      charset = charsetMatch[1].toLowerCase();
+    }
+    
     return {
       accessible,
       status: response.status,
       headers: {
-        'content-type': response.headers['content-type'],
+        'content-type': contentType,
         'content-length': response.headers['content-length']
-      }
+      },
+      charset: charset,
+      detectedFormat: detectRDFFormat('', contentType, url)
     };
   } catch (error) {
     return {
@@ -278,18 +292,35 @@ app.post('/api/validate-url', async (req, res) => {
         timeout: 10000,
         maxRedirects: 5,
         validateStatus: () => true,
+        headers: {
+          'Accept': 'text/turtle, application/rdf+xml, text/n3, application/n-triples, application/ld+json, text/csv, application/json, text/plain, */*'
+        },
         httpsAgent: createHttpsAgent()
       });
 
       const accessible = response.status >= 200 && response.status < 400;
+      const contentType = response.headers['content-type'] || '';
+      
+      // Extract charset from content-type
+      let charset = 'utf-8';
+      const charsetMatch = contentType.match(/charset=([^;]+)/i);
+      if (charsetMatch) {
+        charset = charsetMatch[1].toLowerCase();
+      }
+      
+      // Detect potential RDF format from content-type and URL
+      const detectedFormat = detectRDFFormat('', contentType, url);
       
       const result = {
         accessible,
         status: response.status,
         headers: {
-          'content-type': response.headers['content-type'],
-          'content-length': response.headers['content-length']
-        }
+          'content-type': contentType,
+          'content-length': response.headers['content-length'],
+          'content-encoding': response.headers['content-encoding']
+        },
+        charset: charset,
+        detectedFormat: detectedFormat
       };
       
       // Cache the result
@@ -342,16 +373,17 @@ app.post('/api/download-data', async (req, res) => {
 
     console.log(`Downloading data from: ${sanitizeForLog(url)}`);
 
-    // Download data
+    // Download data with proper encoding handling
     try {
       const response = await axios.get(url, {
         timeout: 30000, // 30 seconds timeout for data download
         maxRedirects: 5,
-        responseType: 'text',
+        responseType: 'arraybuffer', // Get binary data to handle encoding properly
         maxContentLength: 50 * 1024 * 1024, // 50MB limit
         headers: {
           'User-Agent': 'MQA-Backend/1.0.0 (Data Quality Analysis)',
-          'Accept': 'text/csv, application/json, text/plain, */*'
+          'Accept': 'text/turtle, application/rdf+xml, text/n3, application/n-triples, application/ld+json, text/csv, application/json, text/plain, */*',
+          'Accept-Charset': 'utf-8, iso-8859-1'
         },
         httpsAgent: createHttpsAgent(),
         validateStatus: (status) => status >= 200 && status < 300
@@ -361,10 +393,64 @@ app.post('/api/download-data', async (req, res) => {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
+      // Handle encoding properly
+      let textData;
+      const contentType = response.headers['content-type'] || '';
+      const contentEncoding = response.headers['content-encoding'];
+      
+      // Extract charset from content-type header
+      let charset = 'utf-8';
+      const charsetMatch = contentType.match(/charset=([^;]+)/i);
+      if (charsetMatch) {
+        charset = charsetMatch[1].toLowerCase();
+      }
+      
+      console.log(`Content-Type: ${contentType}, Charset: ${charset}, Encoding: ${contentEncoding || 'none'}`);
+      
+      // Convert binary data to text with proper encoding
+      try {
+        if (charset === 'utf-8' || charset === 'utf8') {
+          textData = Buffer.from(response.data).toString('utf8');
+        } else if (charset === 'iso-8859-1' || charset === 'latin1') {
+          textData = Buffer.from(response.data).toString('latin1');
+        } else if (charset === 'ascii') {
+          textData = Buffer.from(response.data).toString('ascii');
+        } else {
+          // Try UTF-8 as fallback and detect if there are encoding issues
+          textData = Buffer.from(response.data).toString('utf8');
+          
+          // Check for common encoding issues (BOM, invalid UTF-8)
+          if (textData.startsWith('\uFEFF')) {
+            textData = textData.substring(1); // Remove BOM
+            console.log('Removed UTF-8 BOM from content');
+          }
+          
+          // Check for likely encoding corruption
+          if (textData.includes('�')) {
+            console.warn('Detected encoding corruption, trying latin1');
+            textData = Buffer.from(response.data).toString('latin1');
+          }
+        }
+      } catch (encodingError) {
+        console.error('Encoding error, falling back to binary-safe conversion:', encodingError.message);
+        textData = Buffer.from(response.data).toString('binary');
+      }
+      
+      // Detect and normalize RDF format
+      const detectedFormat = detectRDFFormat(textData, contentType, url);
+      
+      // Basic content validation for RDF
+      if (detectedFormat && !isValidRDFContent(textData, detectedFormat)) {
+        console.warn(`Content validation failed for detected format: ${detectedFormat}`);
+      }
+
       res.json({
-        data: response.data,
-        contentType: response.headers['content-type'],
-        size: response.data.length
+        data: textData,
+        contentType: contentType,
+        detectedFormat: detectedFormat,
+        charset: charset,
+        size: textData.length,
+        originalSize: response.data.length
       });
     } catch (error) {
       const sanitizedUrl = sanitizeForLog(url);
@@ -373,7 +459,8 @@ app.post('/api/download-data', async (req, res) => {
       
       res.status(500).json({
         error: 'Failed to download data',
-        status: error.response?.status
+        status: error.response?.status,
+        details: error.code || error.message
       });
     }
   } catch (error) {
@@ -383,6 +470,105 @@ app.post('/api/download-data', async (req, res) => {
     });
   }
 });
+
+/**
+ * Detect RDF format from content, content-type, and URL
+ */
+function detectRDFFormat(content, contentType, url) {
+  const lowerContentType = (contentType || '').toLowerCase();
+  const lowerUrl = url.toLowerCase();
+  
+  // Check content-type first
+  if (lowerContentType.includes('turtle') || lowerContentType.includes('text/turtle')) {
+    return 'turtle';
+  }
+  if (lowerContentType.includes('rdf+xml') || lowerContentType.includes('application/rdf+xml')) {
+    return 'rdf-xml';
+  }
+  if (lowerContentType.includes('n-triples') || lowerContentType.includes('application/n-triples')) {
+    return 'n-triples';
+  }
+  if (lowerContentType.includes('ld+json') || lowerContentType.includes('application/ld+json')) {
+    return 'json-ld';
+  }
+  if (lowerContentType.includes('n3') || lowerContentType.includes('text/n3')) {
+    return 'n3';
+  }
+  
+  // Check URL extension
+  if (lowerUrl.endsWith('.ttl') || lowerUrl.endsWith('.turtle')) {
+    return 'turtle';
+  }
+  if (lowerUrl.endsWith('.rdf') || lowerUrl.endsWith('.xml')) {
+    return 'rdf-xml';
+  }
+  if (lowerUrl.endsWith('.nt')) {
+    return 'n-triples';
+  }
+  if (lowerUrl.endsWith('.jsonld') || lowerUrl.endsWith('.json-ld')) {
+    return 'json-ld';
+  }
+  if (lowerUrl.endsWith('.n3')) {
+    return 'n3';
+  }
+  
+  // Content analysis (first few lines)
+  const firstLines = content.substring(0, 1000).trim();
+  
+  if (firstLines.startsWith('<?xml') && firstLines.includes('rdf')) {
+    return 'rdf-xml';
+  }
+  if (firstLines.startsWith('@prefix') || firstLines.includes(' a ') || firstLines.includes(' . ')) {
+    return 'turtle';
+  }
+  if (firstLines.startsWith('<') && firstLines.includes('> <') && firstLines.includes('> .')) {
+    return 'n-triples';
+  }
+  if (firstLines.startsWith('{') && firstLines.includes('@context')) {
+    return 'json-ld';
+  }
+  
+  return null;
+}
+
+/**
+ * Basic validation for RDF content
+ */
+function isValidRDFContent(content, format) {
+  try {
+    const sample = content.substring(0, 2000);
+    
+    switch (format) {
+      case 'turtle':
+      case 'n3':
+        // Should contain prefixes or triples
+        return /@prefix|@base|<[^>]+>\s+<[^>]+>\s+[^.]+\./.test(sample);
+        
+      case 'rdf-xml':
+        // Should be valid XML with RDF elements
+        return /^<\?xml|<rdf:|<RDF/.test(sample);
+        
+      case 'n-triples':
+        // Should contain N-Triples pattern
+        return /<[^>]+>\s+<[^>]+>\s+[^.]+\s*\./.test(sample);
+        
+      case 'json-ld':
+        // Should be valid JSON
+        try {
+          JSON.parse(sample.substring(0, sample.lastIndexOf('}') + 1));
+          return true;
+        } catch {
+          return false;
+        }
+        
+      default:
+        return true; // Unknown format, assume valid
+    }
+  } catch (error) {
+    console.warn('RDF validation error:', error.message);
+    return true; // Assume valid if validation fails
+  }
+}
 
 // Default error handler
 app.use((error, req, res, next) => {
