@@ -728,7 +728,7 @@ const ValidationResults: React.FC<ValidationResultsProps> = ({
                                             )}
                                             {(metric as any).distributionEntities && (
                                               <small className="text-muted">
-                                                <i className="bi bi-folder-symlink text-success me-1"></i> {(metric as any).distributionEntities.compliant}/{(metric as any).distributionEntities.total} <span className="ms-1 badge bg-light text-dark">{t('sidebar.entities.distributions')}</span>
+                                                <i className="bi bi-folder-symlink text-secondary me-1"></i> {(metric as any).distributionEntities.compliant}/{(metric as any).distributionEntities.total} <span className="ms-1 badge bg-light text-dark">{t('sidebar.entities.distributions')}</span>
                                               </small>
                                             )}
                                             {(metric as any).compliancePercentage !== undefined && (

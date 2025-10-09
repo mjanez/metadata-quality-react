@@ -318,7 +318,7 @@ const MQAInfoSidebar: React.FC<MQAInfoSidebarProps> = ({
                           <div className="card border-0" style={{ backgroundColor: 'var(--bs-secondary-bg)' }}>
                             <div className="card-body py-2">
                               <div className="d-flex align-items-center justify-content-center mb-1 position-relative">
-                                <i className="bi bi-folder-symlink text-success me-1"></i>
+                                <i className="bi bi-folder-symlink text-secondary me-1"></i>
                                 <button 
                                   type="button" 
                                   className="btn btn-link p-0 text-decoration-none position-absolute"

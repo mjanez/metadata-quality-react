@@ -198,7 +198,7 @@ const ResponsiveSidebar: React.FC<ResponsiveSidebarProps> = ({
                   {validationResult.stats.distributions > 0 && (
                     <div className="d-flex flex-column align-items-center">
                       <i 
-                        className="bi bi-folder-symlink text-success" 
+                        className="bi bi-folder-symlink text-secondary" 
                         style={{ fontSize: '14px' }}
                         title={t('sidebar.entities.distributions')}
                       ></i>
