@@ -1952,6 +1952,7 @@ http://www.iana.org/assignments/media-types/text/mizar ,text/mizar
 http://www.iana.org/assignments/media-types/text/n3 ,text/n3
 http://www.iana.org/assignments/media-types/text/parameters ,text/parameters
 http://www.iana.org/assignments/media-types/text/parityfec ,text/parityfec
+http://www.iana.org/assignments/media-types/text/plain ,text/plain
 http://www.iana.org/assignments/media-types/text/provenance-notation ,text/provenance-notation
 http://www.iana.org/assignments/media-types/text/prs.fallenstein.rst ,text/prs.fallenstein.rst
 http://www.iana.org/assignments/media-types/text/prs.lines.tag ,text/prs.lines.tag

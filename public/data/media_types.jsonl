@@ -1953,6 +1953,7 @@
 {"uri": "http://www.iana.org/assignments/media-types/text/n3", "label": "text/n3"}
 {"uri": "http://www.iana.org/assignments/media-types/text/parameters", "label": "text/parameters"}
 {"uri": "http://www.iana.org/assignments/media-types/text/parityfec", "label": "text/parityfec"}
+{"uri": "http://www.iana.org/assignments/media-types/text/plain", "label": "text/plain"}
 {"uri": "http://www.iana.org/assignments/media-types/text/provenance-notation", "label": "text/provenance-notation"}
 {"uri": "http://www.iana.org/assignments/media-types/text/prs.fallenstein.rst", "label": "text/prs.fallenstein.rst"}
 {"uri": "http://www.iana.org/assignments/media-types/text/prs.lines.tag", "label": "text/prs.lines.tag"}

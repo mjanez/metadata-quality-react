@@ -559,6 +559,8 @@ export class MQAService {
       // NTI-RISP specific: evaluate different properties of dct:IMT
       'dct_format_vocabulary_nti_risp': { baseProperty: 'dct:format', vocabularyName: 'file_types', ntiRispProperty: 'rdfs:label' },
       'dcat_media_type_vocabulary_nti_risp': { baseProperty: 'dct:format', vocabularyName: 'media_types', ntiRispProperty: 'rdf:value' },
+      'dct_format_nonproprietary_nti_risp': { baseProperty: 'dct:format', vocabularyName: 'non_proprietary', ntiRispProperty: 'rdfs:label' },
+      'dct_format_machine_readable_nti_risp': { baseProperty: 'dct:format', vocabularyName: 'machine_readable', ntiRispProperty: 'rdfs:label' },
       'dct_format_nonproprietary': { baseProperty: 'dct:format', vocabularyName: 'non_proprietary' },
       'dct_format_machine_readable': { baseProperty: 'dct:format', vocabularyName: 'machine_readable' },
       'dct_license_vocabulary': { baseProperty: 'dct:license', vocabularyName: 'licenses' },
@@ -582,14 +584,14 @@ export class MQAService {
     const datasetMetrics = [
       'dcat_keyword', 'dcat_theme', 'dct_spatial', 'dct_temporal',
       'dct_creator', 'dct_language', 'dcat_contact_point', 
-      'dct_access_rights', 'dct_publisher', 'dct_publisher_nti_risp', 'dct_access_rights_vocabulary', 'dct_license_nti_risp', 'dct_license_vocabulary_nti_risp'
+      'dct_access_rights', 'dct_publisher', 'dct_publisher_nti_risp', 'dct_access_rights_vocabulary', 'dct_license_nti_risp', 'dct_license_vocabulary_nti_risp', 'dct_issued_nti_risp', 'dct_modified_nti_risp'
     ];
     
     // Metrics that apply to Distributions only
     const distributionMetrics = [
       'dcat_access_url', 'dcat_download_url', 'dct_format', 'dcat_media_type',
       'dcat_byte_size', 'dct_rights', 'dct_format_vocabulary', 'dct_format_machine_readable',
-      'dct_format_vocabulary_nti_risp', 'dcat_media_type_vocabulary_nti_risp',
+      'dct_format_vocabulary_nti_risp', 'dcat_media_type_vocabulary_nti_risp', 'dct_format_nonproprietary_nti_risp', 'dct_format_machine_readable_nti_risp',
       'dcat_media_type_vocabulary', 'dct_format_nonproprietary',
       'dcat_access_url_status', 'dcat_download_url_status', 'dct_license',
       'dct_license_vocabulary'
@@ -713,6 +715,7 @@ export class MQAService {
     );
     
     let compliantCount = 0;
+    const nonCompliantValues = new Set<string>(); // Track unique non-compliant values
     
     for (const entityQuad of entityQuads) {
       const entityURI = entityQuad.subject;
@@ -745,6 +748,9 @@ export class MQAService {
           const isInVocabulary = await this.checkVocabularyMatch(validValues, vocabularyName);
           if (isInVocabulary) {
             compliantCount++;
+          } else {
+            // Track non-compliant values for debugging
+            validValues.forEach(value => nonCompliantValues.add(value));
           }
         }
       }
@@ -753,6 +759,11 @@ export class MQAService {
     }
     
     console.debug(`🏷️ ${compliantCount}/${entityQuads.length} ${entityType} entities have valid ${vocabularyName} vocabulary values for ${baseProperty}`);
+    
+    // Log non-compliant values for debugging if any exist
+    if (nonCompliantValues.size > 0) {
+      console.warn(`⚠️ Non-compliant values for ${vocabularyName} vocabulary (${baseProperty}):`, Array.from(nonCompliantValues).sort());
+    }
     
     return compliantCount;
   }
@@ -1113,15 +1124,16 @@ export class MQAService {
         //console.debug(`📱 Evaluating NTI-RISP media type vocabulary for values:`, values);
         return await this.checkNTIRISPVocabularyMatch(values, 'media_types', profile) ? maxWeight : 0;
 
+      case 'dct_format_nonproprietary_nti_risp':
+        //console.debug(`📱 Evaluating NTI-RISP media type vocabulary for values:`, values);
+        return await this.checkNTIRISPVocabularyMatch(values, 'non_proprietary', profile) ? maxWeight : 0;
+
       // NTI-RISP specific publisher validation
       case 'dct_publisher_nti_risp':
         const validPublisherUris = values.filter(value => this.validateSpanishGovernmentPublisher(value));
         return validPublisherUris.length > 0 ? maxWeight : 0;
 
-      // License-related metrics
-      case 'dct_license_vocabulary_nti_risp':
-        return await this.checkVocabularyMatch(values, 'licenses') ? maxWeight : 0;
-
+      // Format non-proprietary-related metrics
       case 'dct_format_nonproprietary':
         return await this.checkVocabularyMatch(values, 'non_proprietary') ? maxWeight : 0;
 
@@ -1168,6 +1180,8 @@ export class MQAService {
       case 'dct_rights':
       case 'dct_issued':
       case 'dct_modified':
+      case 'dct_issued_nti_risp':
+      case 'dct_modified_nti_risp':
         return maxWeight; // Full score for presence
 
       // Quality-based metrics (can have partial scores)
@@ -1200,6 +1214,9 @@ export class MQAService {
     
     //console.debug(`Checking ${validValues.length} values against vocabulary '${vocabularyName}' (${vocabulary.length} entries)`);
     
+    const matchedValues: string[] = [];
+    const unmatchedValues: string[] = [];
+    
     const result = validValues.some(value => {
       const match = vocabulary.some(item => {
         // Compare with URI (primary field in JSONL files)
@@ -1228,9 +1245,9 @@ export class MQAService {
       });
       
       if (match) {
-        //console.debug(`✅ Found match for value in vocabulary '${vocabularyName}'`);
+        matchedValues.push(value);
       } else {
-        //console.debug(`❌ No match found for value in vocabulary '${vocabularyName}'`);
+        unmatchedValues.push(value);
       }
       
       return match;
@@ -1261,6 +1278,9 @@ export class MQAService {
     const validValues = values.filter(value => value && typeof value === 'string' && value.trim().length > 0);
     
     //console.debug(`Checking ${validValues.length} NTI-RISP values against vocabulary '${vocabularyName}' (${vocabulary.length} entries)`);
+    
+    const matchedValues: string[] = [];
+    const unmatchedValues: string[] = [];
     
     const result = validValues.some(value => {
       const match = vocabulary.some(item => {
@@ -1312,9 +1332,9 @@ export class MQAService {
       });
       
       if (match) {
-        //console.debug(`✅ NTI-RISP vocabulary match found for value '${value}' in vocabulary '${vocabularyName}'`);
+        matchedValues.push(value);
       } else {
-        //console.debug(`❌ No NTI-RISP vocabulary match found for value '${value}' in vocabulary '${vocabularyName}'`);
+        unmatchedValues.push(value);
       }
       
       return match;
