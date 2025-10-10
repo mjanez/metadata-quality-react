@@ -72,7 +72,7 @@ export class MQAService {
   public static clearCaches(): void {
     MQAService.propertyCache.clear();
     MQAService.complianceCache.clear();
-    console.debug('🧹 Cleared MQA performance caches');
+    console.debug('Cleared MQA performance caches');
   }
 
   /**
@@ -1717,12 +1717,38 @@ export class MQAService {
   }
 
   /**
+   * Calculate dynamic sample size based on total number of distributions
+   * Scales intelligently to balance validation thoroughness with performance
+   * 
+   * @param totalCount Total number of distributions
+   * @returns Optimal sample size
+   */
+  private calculateDynamicSampleSize(totalCount: number): number {
+    if (totalCount <= 10) {
+      // Very small catalogs: validate all
+      return totalCount;
+    } else if (totalCount <= 100) {
+      // Small catalogs: validate 15%
+      return 15;
+    } else if (totalCount <= 500) {
+      // Medium catalogs: validate 25
+      return 25;
+    } else if (totalCount <= 1000) {
+      // Large catalogs: validate 35
+      return 35;
+    } else {
+      // Very large catalogs: validate 50
+      return 50;
+    }
+  }
+
+  /**
    * Check URL accessibility using multiple strategies for client-side validation
    * @param urls Array of URLs to check
-   * @param maxSample Maximum number of URLs to sample (default: 20)
+   * @param maxSample Maximum number of URLs to sample (optional - auto-calculated if not provided)
    * @returns Object with accessibility results and proportional score
    */
-  public async checkURLAccessibility(urls: string[], maxSample: number = 20): Promise<{
+  public async checkURLAccessibility(urls: string[], maxSample?: number): Promise<{
     totalUrls: number;
     checkedUrls: number;
     accessibleUrls: number;
@@ -1762,13 +1788,18 @@ export class MQAService {
       };
     }
 
-    // Sample URLs if more than maxSample
+    // Calculate dynamic sample size if not provided
+    const effectiveSampleSize = maxSample ?? this.calculateDynamicSampleSize(validUrls.length);
+
+    // Sample URLs if more than effectiveSampleSize
     let urlsToCheck = validUrls;
-    if (validUrls.length > maxSample) {
+    if (validUrls.length > effectiveSampleSize) {
       // Random sampling
       const shuffled = [...validUrls].sort(() => 0.5 - Math.random());
-      urlsToCheck = shuffled.slice(0, maxSample);
-      console.debug(`Sampling ${maxSample} URLs out of ${validUrls.length} for accessibility check`);
+      urlsToCheck = shuffled.slice(0, effectiveSampleSize);
+      console.log(`Dynamic sampling: ${effectiveSampleSize} URLs out of ${validUrls.length} for accessibility check`);
+    } else {
+      console.log(`✅ Validating all ${validUrls.length} URLs (under threshold)`);
     }
 
     // Check if backend is available
@@ -2200,6 +2231,8 @@ export class MQAService {
 
   /**
    * Batch URL accessibility check with intelligent sampling
+   * @param urls Array of URLs to check
+   * @param options Configuration options (maxSample auto-calculated if not provided)
    */
   public async batchCheckURLAccessibility(
     urls: string[], 
@@ -2230,8 +2263,11 @@ export class MQAService {
       avgConfidence: number;
     };
   }> {
+    // Calculate dynamic sample size if not provided
+    const effectiveSampleSize = options.maxSample ?? this.calculateDynamicSampleSize(urls.length);
+    
     const {
-      maxSample = 10,
+      maxSample = effectiveSampleSize,
       confidenceThreshold = 60,
       useProxyFirst = true,
       timeout = 8000
