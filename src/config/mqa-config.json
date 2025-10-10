@@ -7,7 +7,7 @@
           "maxScore": 405,
           "icon": "img/icons/eur.svg",
           "url": "https://semiceu.github.io/DCAT-AP/",
-          "sampleUrl": "https://raw.githubusercontent.com/datosgobes/DCAT-AP-ES/refs/heads/develop/examples/ttl/1.0.0/E_DCAT-AP-ES_Catalog.ttl",
+          "sampleUrl": "https://raw.githubusercontent.com/datosgobes/DCAT-AP-ES/refs/heads/main/examples/ttl/1.0.0/E_DCAT-AP-ES_Catalog.ttl",
             "shaclFiles": [
             "https://raw.githubusercontent.com/SEMICeu/DCAT-AP/refs/heads/master/releases/2.1.1/dcat-ap_2.1.1_shacl_imports.ttl",
             "https://raw.githubusercontent.com/SEMICeu/DCAT-AP/refs/heads/master/releases/2.1.1/dcat-ap_2.1.1_shacl_mdr_imports.ttl",
@@ -30,7 +30,7 @@
           "maxScore": 405,
           "icon": "img/icons/eur.svg",
           "url": "https://semiceu.github.io/DCAT-AP/",
-          "sampleUrl": "https://raw.githubusercontent.com/datosgobes/DCAT-AP-ES/refs/heads/develop/examples/ttl/1.0.0/E_DCAT-AP-ES_Catalog.ttl",
+          "sampleUrl": "https://raw.githubusercontent.com/datosgobes/DCAT-AP-ES/refs/heads/main/examples/ttl/1.0.0/E_DCAT-AP-ES_Catalog.ttl",
           "shaclFiles": [
             "https://raw.githubusercontent.com/SEMICeu/DCAT-AP/refs/heads/master/releases/3.0.0/shacl/dcat-ap-SHACL.ttl"
           ],
@@ -81,15 +81,15 @@
           "maxScore": 305,
           "icon": "img/icons/esp.svg",
           "url": "https://datosgobes.github.io/NTI-RISP/",
-          "sampleUrl": "https://raw.githubusercontent.com/datosgobes/NTI-RISP/refs/heads/develop/examples/ttl/E_NTI-RISP_Catalog.ttl",
+          "sampleUrl": "https://raw.githubusercontent.com/datosgobes/NTI-RISP/refs/heads/main/examples/ttl/E_NTI-RISP_Catalog.ttl",
           "shaclFiles": [
-            "https://raw.githubusercontent.com/datosgobes/NTI-RISP/refs/heads/develop/shacl/1.0.0/nti-risp_catalog_shape.ttl",
-            "https://raw.githubusercontent.com/datosgobes/NTI-RISP/refs/heads/develop/shacl/1.0.0/nti-risp_common_shapes.ttl",
-            "https://raw.githubusercontent.com/datosgobes/NTI-RISP/refs/heads/develop/shacl/1.0.0/nti-risp_dataset_shape.ttl",
-            "https://raw.githubusercontent.com/datosgobes/NTI-RISP/refs/heads/develop/shacl/1.0.0/nti-risp_distribution_shape.ttl",
-            "https://raw.githubusercontent.com/datosgobes/NTI-RISP/refs/heads/develop/shacl/1.0.0/nti-risp_shacl_imports.ttl",
-            "https://raw.githubusercontent.com/datosgobes/NTI-RISP/refs/heads/develop/shacl/1.0.0/nti-risp_shacl_mdr_imports.ttl",
-            "https://raw.githubusercontent.com/datosgobes/NTI-RISP/refs/heads/develop/shacl/1.0.0/nti-risp_vocabularies.shape.ttl"
+            "https://raw.githubusercontent.com/datosgobes/NTI-RISP/refs/heads/main/shacl/1.0.0/nti-risp_catalog_shape.ttl",
+            "https://raw.githubusercontent.com/datosgobes/NTI-RISP/refs/heads/main/shacl/1.0.0/nti-risp_common_shapes.ttl",
+            "https://raw.githubusercontent.com/datosgobes/NTI-RISP/refs/heads/main/shacl/1.0.0/nti-risp_dataset_shape.ttl",
+            "https://raw.githubusercontent.com/datosgobes/NTI-RISP/refs/heads/main/shacl/1.0.0/nti-risp_distribution_shape.ttl",
+            "https://raw.githubusercontent.com/datosgobes/NTI-RISP/refs/heads/main/shacl/1.0.0/nti-risp_shacl_imports.ttl",
+            "https://raw.githubusercontent.com/datosgobes/NTI-RISP/refs/heads/main/shacl/1.0.0/nti-risp_shacl_mdr_imports.ttl",
+            "https://raw.githubusercontent.com/datosgobes/NTI-RISP/refs/heads/main/shacl/1.0.0/nti-risp_vocabularies.shape.ttl"
           ],
           "dimensions": {
             "findability": { "maxScore": 100 },

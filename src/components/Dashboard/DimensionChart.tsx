@@ -90,6 +90,7 @@ const DimensionChart: React.FC<DimensionChartProps> = ({
   const chartOptions = {
     responsive: true,
     maintainAspectRatio: false,
+    devicePixelRatio: 2, // Higher DPI for sharper text rendering
     plugins: {
       legend: {
         position: 'bottom' as const,
