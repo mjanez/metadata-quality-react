@@ -1,4 +1,4 @@
-{"source": "https://raw.githubusercontent.com/mjanez/metadata-quality-react/refs/heads/develop/docs/vocabularies/licenses.csv", "generated": "2025-10-09T14:14:51Z", "format": "jsonl", "type": "licenses", "name": "licenses", "count": 366}
+{"source": "https://raw.githubusercontent.com/mjanez/metadata-quality-react/refs/heads/develop/docs/vocabularies/licenses.csv", "generated": "2025-10-09T14:34:43Z", "format": "jsonl", "type": "licenses", "name": "licenses", "count": 372}
 {"uri": "http://publications.europa.eu/resource/authority/licence/0BSD", "code": "0BSD", "url": "https://opensource.org/licenses/0BSD", "label": "0BSD"}
 {"uri": "http://publications.europa.eu/resource/authority/licence/AGPL_3_0", "code": "AGPL_3_0", "url": "https://opensource.org/licenses/AGPL-3.0", "label": "AGPL_3_0"}
 {"uri": "http://publications.europa.eu/resource/authority/licence/APACHE_1_1", "code": "APACHE_1_1", "url": "https://opensource.org/licenses/Apache-1.1", "label": "APACHE_1_1"}
@@ -365,3 +365,9 @@
 {"uri": "https://creativecommons.org/licenses/by/3.0/es/", "code": "CC_BY_3_0", "url": "http://publications.europa.eu/resource/authority/licence/CC_BY_3_0", "label": "CC_BY_3_0"}
 {"uri": "http://creativecommons.org/licenses/by/2.0/es/", "code": "CC_BY_2_0", "url": "http://publications.europa.eu/resource/authority/licence/CC_BY_2_0", "label": "CC_BY_2_0"}
 {"uri": "https://creativecommons.org/licenses/by/2.0/es/", "code": "CC_BY_2_0", "url": "http://publications.europa.eu/resource/authority/licence/CC_BY_2_0", "label": "CC_BY_2_0"}
+{"uri": "https://creativecommons.org/licenses/by-nc/4.0/es/", "code": "CC_BYNC_4_0", "url": "http://publications.europa.eu/resource/authority/licence/CC_BYNC_4_0", "label": "CC_BYNC_4_0"}
+{"uri": "http://creativecommons.org/licenses/by-nc/4.0/es/", "code": "CC_BYNC_4_0", "url": "http://publications.europa.eu/resource/authority/licence/CC_BYNC_4_0", "label": "CC_BYNC_4_0"}
+{"uri": "http://creativecommons.org/licenses/by-nc/3.0/es/", "code": "CC_BYNC_3_0", "url": "http://publications.europa.eu/resource/authority/licence/CC_BYNC_3_0", "label": "CC_BYNC_3_0"}
+{"uri": "https://creativecommons.org/licenses/by-nc/3.0/es/", "code": "CC_BYNC_3_0", "url": "http://publications.europa.eu/resource/authority/licence/CC_BYNC_3_0", "label": "CC_BYNC_3_0"}
+{"uri": "http://creativecommons.org/licenses/by-nc/2.0/es/", "code": "CC_BYNC_2_0", "url": "http://publications.europa.eu/resource/authority/licence/CC_BYNC_2_0", "label": "CC_BYNC_2_0"}
+{"uri": "https://creativecommons.org/licenses/by-nc/2.0/es/", "code": "CC_BYNC_2_0", "url": "http://publications.europa.eu/resource/authority/licence/CC_BYNC_2_0", "label": "CC_BYNC_2_0"}
