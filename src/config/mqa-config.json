@@ -189,7 +189,7 @@
       "interoperability": [
         { "id": "dct_format", "weight": 20, "property": "dct:format" },
         { "id": "dct_format_vocabulary_nti_risp", "weight": 5, "property": "dct:format" },
-        { "id": "dcat_media_type_vocabulary_nti_risp", "weight": 5, "property": "dct:format" },
+        { "id": "dcat_media_type", "weight": 5, "property": "dcat:mediaType" },
         { "id": "dct_format_nonproprietary_nti_risp", "weight": 20, "property": "dct:format" },
         { "id": "dct_format_machine_readable_nti_risp", "weight": 20, "property": "dct:format" },
         { "id": "nti_risp_compliance", "weight": 30, "property": "rdf:type" }
@@ -362,6 +362,6 @@
     "repository": "https://github.com/mjanez/metadata-quality-react",
     "url": "https://mjanez.github.io/metadata-quality-react/",
     "see_also": "https://github.com/mjanez/metadata-quality-react?tab=readme-ov-file#metadata-quality-react",
-    "description": "Metadata Quality Stack is a comprehensive toolkit for analysing metadata quality. It implements the European Data Portal's MQA methodology, uses shacl-engine for SHACL validation and rdfxml-streaming-parser for efficient streaming RDF parsing and metric processing, and is built with React."
+    "description": "Metadata Quality React is a comprehensive toolkit for analysing metadata quality. It implements the European Data Portal's MQA methodology, uses shacl-engine for SHACL validation and rdfxml-streaming-parser for efficient streaming RDF parsing and metric processing, and is built with React."
   }
 }
