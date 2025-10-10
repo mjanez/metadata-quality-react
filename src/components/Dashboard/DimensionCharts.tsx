@@ -16,6 +16,7 @@ import ScoreBadge from '../common/ScoreBadge';
 import { DashboardMetricsData } from './DashboardTypes';
 import { getRatingFromScore, getScoreColorClass, getScoreProgressClass, getProgressBarStyle, getProgressBarBaseClass } from '../../utils/ratingUtils';
 import MQAService from '../../services/MQAService';
+import { downloadChartAsImage, downloadChartsAsZip, CHART_DIMENSIONS, renderChartAtHighRes } from '../../utils/chartExport';
 // fflate for creating ZIP archives in browser
 
 ChartJS.register(
@@ -35,6 +36,7 @@ interface DimensionChartsProps {
 const DimensionCharts: React.FC<DimensionChartsProps> = ({ metricsData, showProfileCard = false }) => {
   const { t } = useTranslation();
   const barChartRef = useRef<any>(null);
+  const radarChartRef = useRef<any>(null);
   const [theme, setTheme] = useState(document.documentElement.getAttribute('data-bs-theme') || 'light');
   
   // Helper function using new rating system
@@ -94,14 +96,7 @@ const DimensionCharts: React.FC<DimensionChartsProps> = ({ metricsData, showProf
   }, {} as Record<string, { score: number; maxScore: number; percentage: number }>);
 
   const downloadChart = (chartRef: React.RefObject<any>, filename: string) => {
-    if (chartRef.current) {
-      const canvas = chartRef.current.canvas;
-      const url = canvas.toDataURL('image/png');
-      const link = document.createElement('a');
-      link.download = filename;
-      link.href = url;
-      link.click();
-    }
+    downloadChartAsImage(chartRef, filename, CHART_DIMENSIONS.bar);
   };
 
   const downloadAllCharts = async () => {
@@ -112,37 +107,50 @@ const DimensionCharts: React.FC<DimensionChartsProps> = ({ metricsData, showProf
       // Collect all files to zip
       const files: { [key: string]: Uint8Array } = {};
 
-      // Add main bar chart
+      // Add main bar chart (high-res with preserved aspect ratio)
       if (barChartRef.current) {
-        const barCanvas = barChartRef.current.canvas;
-        const barDataUrl = barCanvas.toDataURL('image/png');
+        const barDataUrl = await renderChartAtHighRes(barChartRef.current, CHART_DIMENSIONS.bar.width);
         const barData = barDataUrl.split(',')[1];
         files['dimension-scores-bar.png'] = new Uint8Array(
           atob(barData).split('').map(c => c.charCodeAt(0))
         );
+        
+        // Wait for chart to restore before rendering next
+        await new Promise(resolve => setTimeout(resolve, 200));
       }
 
-      // Add radar chart (QualityChart)
-      const radarCanvas = document.querySelector('#quality-radar-chart canvas') as HTMLCanvasElement;
-      if (radarCanvas) {
-        const radarDataUrl = radarCanvas.toDataURL('image/png');
+      // Add radar chart (500x500px, no scaling, no margins) - use same method as ValidationResults
+      if (radarChartRef.current) {
+        const radarDataUrl = await renderChartAtHighRes(
+          radarChartRef.current, 
+          CHART_DIMENSIONS.radar.width, 
+          CHART_DIMENSIONS.radar.height, 
+          CHART_DIMENSIONS.radar.noScale
+        );
         const radarData = radarDataUrl.split(',')[1];
         files['quality-radar-chart.png'] = new Uint8Array(
           atob(radarData).split('').map(c => c.charCodeAt(0))
         );
+        
+        // Wait for chart to restore before rendering next
+        await new Promise(resolve => setTimeout(resolve, 200));
       }
 
-      // Add individual dimension charts
-      dimensionData.forEach((dim) => {
+      // Add individual dimension charts (high-res with preserved aspect ratio)
+      for (const dim of dimensionData) {
         const canvas = document.querySelector(`#dimension-chart-${dim.name} canvas`) as HTMLCanvasElement;
         if (canvas) {
-          const dataUrl = canvas.toDataURL('image/png');
+          const chart = (window as any).Chart?.getChart?.(canvas);
+          const dataUrl = await renderChartAtHighRes(chart || canvas, CHART_DIMENSIONS.dimensionDetail.width);
           const data = dataUrl.split(',')[1];
           files[`${dim.name}-metrics-chart.png`] = new Uint8Array(
             atob(data).split('').map(c => c.charCodeAt(0))
           );
+          
+          // Wait for chart to restore before rendering next
+          await new Promise(resolve => setTimeout(resolve, 200));
         }
-      });
+      }
 
       // Add JSON data file
       const jsonData = {
@@ -165,6 +173,35 @@ const DimensionCharts: React.FC<DimensionChartsProps> = ({ metricsData, showProf
       
       const jsonString = JSON.stringify(jsonData, null, 2);
       files['metrics-data.json'] = new TextEncoder().encode(jsonString);
+
+      // Add README with export information
+      const readmeContent = `# Quality Assessment Charts Export
+
+## Export Information
+- **Export Date**: ${new Date().toISOString()}
+- **Format**: PNG (Portable Network Graphics)
+- **Scale Factor**: 1.5x for high resolution (except radar chart)
+- **Background**: Transparent
+- **Aspect Ratio**: Preserved from original chart proportions (no distortion)
+
+## Image Specifications
+Each chart is rendered at 1.5x the target resolution for maximum quality:
+- **Bar Charts**: 800px wide → 1200px export (height scaled proportionally)
+- **Radar Chart**: 500x500px export (1:1 scale, no margins, square format)
+- **Dimension Charts**: 800px wide → 1200px export (height scaled proportionally)
+
+## Contents
+1. **dimension-scores-bar.png** - Bar chart showing scores by dimension
+2. **quality-radar-chart.png** - FAIR+C radar chart
+3. **[dimension]-metrics-chart.png** - Individual dimension detail charts
+4. **metrics-data.json** - Complete metrics data in JSON format
+
+## Data Source
+Source: ${metricsData.source || 'Not specified'}
+Profile: ${metricsData.profile?.name || 'Not specified'}
+Generated: ${metricsData.created || new Date().toISOString()}
+`;
+      files['README.md'] = new TextEncoder().encode(readmeContent);
 
       // Create ZIP
       zip(files, (err, data) => {
@@ -475,10 +512,7 @@ const DimensionCharts: React.FC<DimensionChartsProps> = ({ metricsData, showProf
               <h6 className="card-title mb-0">{t('dashboard.visualizations.quality_radar')}</h6>
               <button
                 className="btn btn-outline-primary btn-sm"
-                onClick={() => {
-                  // We'll implement this later with the ZIP download functionality
-                  console.log('Download radar chart');
-                }}
+                onClick={() => downloadChartAsImage(radarChartRef, 'quality-radar-chart.png', CHART_DIMENSIONS.radar)}
                 title={t('dashboard.downloads.download_radar_chart')}
               >
                 <i className="bi bi-download me-1"></i>
@@ -486,7 +520,7 @@ const DimensionCharts: React.FC<DimensionChartsProps> = ({ metricsData, showProf
               </button>
             </div>
             <div className="card-body" id="quality-radar-chart">
-              <QualityChart data={qualityChartData} />
+              <QualityChart data={qualityChartData} ref={radarChartRef} />
             </div>
           </div>
         </div>
@@ -629,17 +663,17 @@ const DimensionCharts: React.FC<DimensionChartsProps> = ({ metricsData, showProf
                                   <div className="d-flex flex-column">
                                     {metric.entityType === 'Multi' ? (
                                       <>
-                                        <span className="ms-1 badge bg-light text-dark">
+                                        <span className="ms-1">
                                           {t('sidebar.entities.multi')}
                                         </span>
                                         {metric.datasetEntities && (
                                           <small className="text-muted">
-                                            <i className="bi bi-database text-primary me-1"></i> {metric.datasetEntities.compliant}/{metric.datasetEntities.total} <span className="ms-1 badge bg-light text-dark">{t('sidebar.entities.datasets')}</span>
+                                            <i className="bi bi-database text-primary me-1"></i> {metric.datasetEntities.compliant}/{metric.datasetEntities.total} <span className="ms-1">{t('sidebar.entities.datasets')}</span>
                                           </small>
                                         )}
                                         {metric.distributionEntities && (
                                           <small className="text-muted">
-                                            <i className="bi bi-folder-symlink text-secondary me-1"></i> {metric.distributionEntities.compliant}/{metric.distributionEntities.total} <span className="ms-1 badge bg-light text-dark">{t('sidebar.entities.distributions')}</span>
+                                            <i className="bi bi-folder-symlink text-secondary me-1"></i> {metric.distributionEntities.compliant}/{metric.distributionEntities.total} <span className="ms-1">{t('sidebar.entities.distributions')}</span>
                                           </small>
                                         )}
                                         {metric.compliancePercentage !== undefined && (
@@ -655,7 +689,7 @@ const DimensionCharts: React.FC<DimensionChartsProps> = ({ metricsData, showProf
                                       <>
                                         <small className="text-muted">
                                           {metric.compliantEntities}/{metric.totalEntities} 
-                                          <span className="ms-1 badge bg-light text-dark">
+                                          <span className="ms-1">
                                             {metric.entityType === 'Dataset' && t('sidebar.entities.datasets')}
                                             {metric.entityType === 'Distribution' && t('sidebar.entities.distributions')}
                                             {metric.entityType === 'Catalog' && t('sidebar.entities.catalogs')}

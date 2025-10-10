@@ -718,17 +718,17 @@ const ValidationResults: React.FC<ValidationResultsProps> = ({
                                       <div className="d-flex flex-column">
                                         {(metric as any).entityType === 'Multi' ? (
                                           <>
-                                            <span className="ms-1 badge bg-light text-dark">
+                                            <span className="ms-1">
                                               <i className="bi bi-collection me-1"></i>{t('sidebar.entities.multi')}
                                             </span>
                                             {(metric as any).datasetEntities && (
                                               <small className="text-muted">
-                                                <i className="bi bi-database text-primary me-1"></i> {(metric as any).datasetEntities.compliant}/{(metric as any).datasetEntities.total} <span className="ms-1 badge bg-light text-dark">{t('sidebar.entities.datasets')}</span>
+                                                <i className="bi bi-database text-primary me-1"></i> {(metric as any).datasetEntities.compliant}/{(metric as any).datasetEntities.total} <span className="ms-1">{t('sidebar.entities.datasets')}</span>
                                               </small>
                                             )}
                                             {(metric as any).distributionEntities && (
                                               <small className="text-muted">
-                                                <i className="bi bi-folder-symlink text-secondary me-1"></i> {(metric as any).distributionEntities.compliant}/{(metric as any).distributionEntities.total} <span className="ms-1 badge bg-light text-dark">{t('sidebar.entities.distributions')}</span>
+                                                <i className="bi bi-folder-symlink text-secondary me-1"></i> {(metric as any).distributionEntities.compliant}/{(metric as any).distributionEntities.total} <span className="ms-1">{t('sidebar.entities.distributions')}</span>
                                               </small>
                                             )}
                                             {(metric as any).compliancePercentage !== undefined && (
@@ -744,7 +744,7 @@ const ValidationResults: React.FC<ValidationResultsProps> = ({
                                           <>
                                             <small className="text-muted">
                                               {(metric as any).compliantEntities}/{(metric as any).totalEntities} 
-                                              <span className="ms-1 badge bg-light text-dark">
+                                              <span className="ms-1">
                                                 {(metric as any).entityType === 'Dataset' && t('sidebar.entities.datasets')}
                                                 {(metric as any).entityType === 'Distribution' && t('sidebar.entities.distributions')}
                                                 {(metric as any).entityType === 'Catalog' && t('sidebar.entities.catalogs')}
