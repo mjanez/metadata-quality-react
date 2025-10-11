@@ -101,7 +101,6 @@ const QualityChart = forwardRef<any, QualityChartProps>(({ data, showDownload = 
   const options = {
     responsive: true,
     maintainAspectRatio: false,
-    devicePixelRatio: 2, // Higher DPI for sharper text rendering
     plugins: {
       legend: {
         position: 'bottom' as const,

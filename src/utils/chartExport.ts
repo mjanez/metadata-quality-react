@@ -83,7 +83,7 @@ export const downloadChartAsImage = (
     const scaleFactor = (dimensions as any)?.noScale ? 1 : CHART_EXPORT_CONFIG.scaleFactor;
     const exportWidth = targetWidth * scaleFactor;
     const exportHeight = targetHeight * scaleFactor;
-       
+    
     // Store original size for restoration
     const originalStyle = {
       width: originalCanvas.style.width,
@@ -95,28 +95,28 @@ export const downloadChartAsImage = (
       try {
         // Temporarily resize chart to export size
         chart.resize(exportWidth, exportHeight);
-        chart.update('none'); // Update without animation
+        chart.update(); // Update without animation
         
         // Wait for resize to complete
         setTimeout(() => {
           try {
             const dataURL = originalCanvas.toDataURL(
-              CHART_EXPORT_CONFIG.format,
-              CHART_EXPORT_CONFIG.quality
-            );
+      CHART_EXPORT_CONFIG.format,
+      CHART_EXPORT_CONFIG.quality
+    );
 
-            const link = document.createElement('a');
-            link.download = filename;
-            link.href = dataURL;
-            link.click();
-            
-            console.log(`✅ Chart exported: ${filename} (${exportWidth}x${exportHeight}px)`);
+    const link = document.createElement('a');
+    link.download = filename;
+    link.href = dataURL;
+    link.click();
+    
+    console.log(`✅ Chart exported: ${filename} (${exportWidth}x${exportHeight}px)`);
           } finally {
-            // Always restore original size
+            // Always restore original size and force chart regeneration
             chart.resize(originalWidth, originalHeight);
             if (originalStyle.width) originalCanvas.style.width = originalStyle.width;
             if (originalStyle.height) originalCanvas.style.height = originalStyle.height;
-            chart.update('none');
+            chart.update(); // Regenerate chart with original options
           }
         }, 100);
       } catch (error) {
@@ -124,6 +124,7 @@ export const downloadChartAsImage = (
         chart.resize(originalWidth, originalHeight);
         if (originalStyle.width) originalCanvas.style.width = originalStyle.width;
         if (originalStyle.height) originalCanvas.style.height = originalStyle.height;
+        chart.update(); // Regenerate chart
         throw error;
       }
     }, 50);
@@ -200,7 +201,7 @@ export const renderChartAtHighRes = async (
         setTimeout(() => {
           try {
             chart.resize(exportWidth, exportHeight);
-            chart.update('none');
+            chart.update();
             
             setTimeout(() => {
               try {
@@ -210,43 +211,44 @@ export const renderChartAtHighRes = async (
                 );
                 resolve(dataURL);
               } finally {
-                // Restore original size
+                // Restore original size and force chart regeneration
                 chart.resize(originalWidth, originalHeight);
                 if (originalStyle.width) canvas.style.width = originalStyle.width;
                 if (originalStyle.height) canvas.style.height = originalStyle.height;
-                chart.update('none');
+                chart.update(); // Regenerate chart with original options
               }
             }, 100);
           } catch (error) {
             chart.resize(originalWidth, originalHeight);
             if (originalStyle.width) canvas.style.width = originalStyle.width;
             if (originalStyle.height) canvas.style.height = originalStyle.height;
+            chart.update(); // Regenerate chart
             reject(error);
           }
         }, 50);
       } else {
         // For raw canvas without Chart.js instance, scale directly
-        const exportCanvas = document.createElement('canvas');
+      const exportCanvas = document.createElement('canvas');
         const ctx = exportCanvas.getContext('2d', { alpha: true }); // Allow transparency
-        
-        if (!ctx) {
-          reject(new Error('Could not get canvas context'));
-          return;
-        }
+      
+      if (!ctx) {
+        reject(new Error('Could not get canvas context'));
+        return;
+      }
 
-        exportCanvas.width = exportWidth;
-        exportCanvas.height = exportHeight;
+      exportCanvas.width = exportWidth;
+      exportCanvas.height = exportHeight;
 
-        // Only fill background if it's not transparent
-        if (CHART_EXPORT_CONFIG.backgroundColor !== 'transparent') {
-          ctx.fillStyle = CHART_EXPORT_CONFIG.backgroundColor;
-          ctx.fillRect(0, 0, exportWidth, exportHeight);
-        }
+      // Only fill background if it's not transparent
+      if (CHART_EXPORT_CONFIG.backgroundColor !== 'transparent') {
+        ctx.fillStyle = CHART_EXPORT_CONFIG.backgroundColor;
+        ctx.fillRect(0, 0, exportWidth, exportHeight);
+      }
 
-        ctx.imageSmoothingEnabled = true;
-        ctx.imageSmoothingQuality = 'high';
-        
-        ctx.drawImage(canvas, 0, 0, exportWidth, exportHeight);
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+      
+      ctx.drawImage(canvas, 0, 0, exportWidth, exportHeight);
 
         resolve(exportCanvas.toDataURL(CHART_EXPORT_CONFIG.format, CHART_EXPORT_CONFIG.quality));
       }
