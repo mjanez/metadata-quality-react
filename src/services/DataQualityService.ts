@@ -68,7 +68,10 @@ export class DataQualityService {
         report,
         observations,
         score: this.calculateOverallScore(report),
-        status: 'completed'
+        status: 'completed',
+        sourceUrl: input.url,
+        downloadUrl: input.downloadURL,
+        title: input.title
       };
       
     } catch (error) {
@@ -217,10 +220,26 @@ export class DataQualityService {
    */
   private detectCSVDelimiter(csvText: string): string {
     const delimiters = [',', ';', '\t', '|'];
-    const lines = csvText.trim().split('\n').slice(0, 5); // Check first 5 lines
+    const lines = csvText.trim().split('\n').slice(0, 10); // Check first 10 lines
     
     const delimiterCounts = delimiters.map(delimiter => {
-      const counts = lines.map(line => (line.match(new RegExp(delimiter, 'g')) || []).length);
+      const counts = lines.map(line => {
+        // Ignore delimiters inside quoted strings
+        let count = 0;
+        let inQuotes = false;
+        for (let i = 0; i < line.length; i++) {
+          if (line[i] === '"') {
+            if (inQuotes && line[i + 1] === '"') {
+              i++; // Skip escaped quote
+            } else {
+              inQuotes = !inQuotes;
+            }
+          } else if (line[i] === delimiter && !inQuotes) {
+            count++;
+          }
+        }
+        return count;
+      });
       const avgCount = counts.reduce((sum, count) => sum + count, 0) / counts.length;
       const consistency = counts.every(count => Math.abs(count - avgCount) <= 1);
       return { delimiter, avgCount, consistency };
@@ -372,7 +391,7 @@ export class DataQualityService {
       
       // Completeness  
       completeness: {
-        completenessRatioByColumn: this.calculateCompletenessRatio(data, numericColumns),
+        completenessRatioByColumn: this.calculateCompletenessRatio(data, columns),
         overallCompletenessRatio: this.calculateOverallCompleteness(data, columns),
         temporalCompleteness: this.calculateTemporalCompleteness(data, dateColumns)
       },
@@ -451,7 +470,7 @@ export class DataQualityService {
     
     columns.forEach(col => {
       missing[col] = data.filter(row => 
-        row[col] === null || 
+        row[col] === null ||
         row[col] === undefined || 
         row[col] === '' || 
         String(row[col]).trim() === ''
@@ -486,13 +505,19 @@ export class DataQualityService {
     return outliers;
   }
 
-  private calculateCompletenessRatio(data: any[], numericColumns: string[]): Record<string, number> {
+  private calculateCompletenessRatio(data: any[], allColumns: string[]): Record<string, number> {
     const ratios: Record<string, number> = {};
     
-    numericColumns.forEach(col => {
-      const nonNullCount = data.filter(row => 
-        row[col] !== null && row[col] !== undefined && row[col] !== '' && !isNaN(Number(row[col]))
-      ).length;
+    allColumns.forEach(col => {
+      const nonNullCount = data.filter(row => {
+        const value = row[col];
+        // Considerar null, undefined, cadena vacía, o string "null" como valores ausentes
+        return value !== null && 
+               value !== undefined && 
+               value !== '' && 
+               String(value).trim() !== '' &&
+               String(value).toLowerCase() !== 'null';
+      }).length;
       ratios[col] = data.length > 0 ? nonNullCount / data.length : 0;
     });
     
@@ -645,28 +670,28 @@ export class DataQualityService {
   }
 
   private identifyProvenanceColumns(columns: string[]): string[] {
-    const provenanceKeywords = ['source', 'fuente', 'origin', 'origen', 'provider', 'proveedor'];
+    const provenanceKeywords = ['source', 'fuente', 'origin', 'origen', 'provider', 'proveedor', 'referencia', 'reference', 'creator', 'creador', 'author', 'autor', 'publisher', 'editor', 'rights', 'licence', 'license', 'license', 'licencia', 'provenance'];
     return columns.filter(col => 
       provenanceKeywords.some(keyword => col.toLowerCase().includes(keyword))
     );
   }
 
   private identifyTemporalColumns(columns: string[]): string[] {
-    const temporalKeywords = ['fecha', 'date', 'año', 'year', 'anio', 'time', 'tiempo', 'created', 'updated'];
+    const temporalKeywords = ['fecha', 'date', 'año', 'year', 'anio', 'time', 'tiempo', 'created', 'updated', 'temporal', 'period', 'interval', 'month', 'day', 'día', 'dia', 'year', 'año', 'anio', 'timestamp'];
     return columns.filter(col => 
       temporalKeywords.some(keyword => col.toLowerCase().includes(keyword))
     );
   }
 
   private identifySpatialColumns(columns: string[]): string[] {
-    const spatialKeywords = ['lat', 'lng', 'lon', 'coordenada', 'coord', 'ubicacion', 'location', 'direccion', 'address', 'provincia', 'municipio', 'comunidad'];
+    const spatialKeywords = ['lat', 'lng', 'lon', 'coordenada', 'coord', 'ubicacion', 'location', 'direccion', 'address', 'provincia', 'municipio', 'comunidad', 'country', 'pais', 'region', 'state', 'geo', 'geometry', 'longitud', 'long', 'latitude', 'longitud', 'longitude', 'latitud', 'localidad', 'ciudad', 'city', 'spatial', 'map', 'postal', 'zip', 'código postal', 'cp', 'geom', 'point', 'polygon', 'area', 'surface'];
     return columns.filter(col => 
       spatialKeywords.some(keyword => col.toLowerCase().includes(keyword))
     );
   }
 
   private identifyIdColumns(columns: string[]): string[] {
-    const idKeywords = ['id', '_id', 'identifier', 'code', 'codigo', 'uri', 'url'];
+    const idKeywords = ['id', '_id', 'identifier', 'code', 'codigo', 'uri', 'identificador', 'identificador', 'key', 'clave', 'ref', 'reference', 'referencia'];
     return columns.filter(col => 
       idKeywords.some(keyword => col.toLowerCase().includes(keyword)) ||
       col.toLowerCase().endsWith('_id') ||

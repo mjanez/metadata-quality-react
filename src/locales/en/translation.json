@@ -591,7 +591,9 @@
       "noDataAvailable": "No CSV or JSON distributions available in the catalog at this time.",
       "trySearch": "Try searching for specific terms like \"companies\", \"population\", \"economy\", etc.",
       "fileSizeWarning": "File size exceeds the recommended limit of {{maxSize}} for analysis. Processing may be slow or fail.",
-      "sizeWarning": "Exceeds limit"
+      "sizeWarning": "Exceeds limit",
+      "copy": "Copy to clipboard",
+      "copied": "Copied!"
     },
 
     "report": {
@@ -615,11 +617,13 @@
       "noSampleData": "No sample data available",
       "error": "Analysis error",
       "analyzing": "Analyzing data...",
-      "downloadAll": "Download All (ZIP)",
+      "downloadAll": "Download all (ZIP)",
       "downloadAllDescription": "Download a ZIP file with 3 CSV files (indicators, sample records, observations) and 1 JSON summary",
-      "exportIndicators": "Export Indicators (CSV)",
-      "exportSamples": "Export Sample Records (CSV)",
-      "exportObservations": "Export Observations (CSV)"
+      "exportIndicators": "Export indicators (CSV)",
+      "exportSamples": "Export sample records (CSV)",
+      "exportObservations": "Export observations (CSV)",
+      "originalFile": "Original file",
+      "viewOriginalFile": "View original file"
     },
 
     "export": {

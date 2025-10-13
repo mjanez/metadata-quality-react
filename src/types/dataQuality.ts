@@ -139,6 +139,9 @@ export interface QualityAnalysisResult {
   score: number;
   status: 'completed' | 'error' | 'loading';
   error?: string;
+  sourceUrl?: string;
+  downloadUrl?: string;
+  title?: string;
 }
 
 // Quality observations for each characteristic

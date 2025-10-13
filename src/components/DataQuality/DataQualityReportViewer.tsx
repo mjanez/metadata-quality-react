@@ -64,9 +64,26 @@ const DataQualityReportViewer: React.FC<DataQualityReportViewerProps> = ({ resul
       <div className="card mb-3 border-primary">
         <div className="card-body py-2">
           <div className="d-flex justify-content-between align-items-center flex-wrap gap-2">
-            <div className="d-flex align-items-center">
-              <i className="bi bi-download me-2 text-primary"></i>
-              <strong className="text-primary">{t('common.actions.export')}</strong>
+            <div className="d-flex align-items-center gap-3">
+              <div className="d-flex align-items-center">
+                <i className="bi bi-download me-2 text-primary"></i>
+                <strong className="text-primary">{t('common.actions.export')}</strong>
+              </div>
+              {(result.downloadUrl || result.sourceUrl) && (
+                <div className="d-flex align-items-center">
+                  <i className="bi bi-link-45deg me-1 text-secondary"></i>
+                  <a 
+                    href={result.downloadUrl || result.sourceUrl} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-decoration-none small"
+                    title={t('data_quality.report.viewOriginalFile')}
+                  >
+                    <i className="bi bi-box-arrow-up-right me-1"></i>
+                    {t('data_quality.report.originalFile')}
+                  </a>
+                </div>
+              )}
             </div>
             <div className="btn-group" role="group">
               <button 
@@ -192,29 +209,102 @@ const DataQualityReportViewer: React.FC<DataQualityReportViewerProps> = ({ resul
           <div className="tab-content">
             {/* Basic Info Tab */}
             <div className="tab-pane fade show active" id="basicInfo" role="tabpanel" aria-labelledby="basicInfo-tab">
-              <div className="row">
-                <div className="col-md-6">
-                  <table className="table table-sm">
-                    <tbody>
-                      <tr>
-                        <td><strong>{t('data_quality.report.columns')}:</strong></td>
-                        <td>{report.basicInfo.columns.length}</td>
-                      </tr>
-                      <tr>
-                        <td><strong>{t('data_quality.report.records')}:</strong></td>
-                        <td>{report.basicInfo.records.toLocaleString()}</td>
-                      </tr>
-                    </tbody>
-                  </table>
+              <div className="row g-3">
+                {/* Primera fila: Columnas y Registros */}
+                <div className="col-12">
+                  <div className="row">
+                    <div className="col-auto">
+                      <table className="table table-sm table-borderless mb-0">
+                        <tbody>
+                          <tr>
+                            <td className="text-muted pe-1">
+                              <strong>{t('data_quality.report.columns')}:</strong>
+                            </td>
+                            <td><span className="badge bg-primary">{report.basicInfo.columns.length}</span></td>
+                            <td className="text-muted pe-1">
+                              <strong>{t('data_quality.report.records')}:</strong>
+                            </td>
+                            <td><span className="badge bg-info">{report.basicInfo.records.toLocaleString()}</span></td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
                 </div>
+                
+                {/* Segunda fila: Nombres de columnas y Valores ausentes */}
                 <div className="col-md-6">
-                  <h6>{t('data_quality.report.columnNames')}:</h6>
-                  <div className="d-flex flex-wrap gap-1">
-                    {report.basicInfo.columns.map((col: string) => (
-                      <span key={col} className="badge bg-light text-dark">
-                        {col}
-                      </span>
-                    ))}
+                  <div className="border rounded p-2 bg-light" style={{ height: '200px' }}>
+                    <div className="d-flex justify-content-between align-items-center mb-2">
+                      <h6 className="mb-0 small">
+                        <i className="bi bi-list-columns me-1"></i>
+                        {t('data_quality.report.columnNames')}
+                      </h6>
+                      <div>
+                        <span className="badge bg-secondary me-2">{report.basicInfo.columns.length}</span>
+                        <button 
+                          className="btn btn-sm btn-outline-secondary py-0 px-2" 
+                          style={{ fontSize: '0.75rem' }}
+                          onClick={() => {
+                            navigator.clipboard.writeText(JSON.stringify(report.basicInfo.columns, null, 2));
+                          }}
+                          title={t('data_quality.selector.copy')}
+                        >
+                          <i className="bi bi-clipboard"></i>
+                        </button>
+                      </div>
+                    </div>
+                    <pre className="mb-0 small" style={{ fontSize: '0.8rem', maxHeight: '160px', overflowY: 'auto', overflowX: 'hidden', background: 'transparent', border: 'none', padding: 0, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                      <code>{JSON.stringify(report.basicInfo.columns, null, 2)}</code>
+                    </pre>
+                  </div>
+                </div>
+                
+                <div className="col-md-6">
+                  <div className="border rounded p-2 bg-light" style={{ height: '200px' }}>
+                    <div className="d-flex justify-content-between align-items-center mb-2">
+                      <h6 className="mb-0 small">
+                        <i className="bi bi-exclamation-circle me-1"></i>
+                        Valores ausentes
+                      </h6>
+                      <div>
+                        <span className="badge bg-warning text-dark me-2">
+                          {Object.values(
+                            report.basicInfo.columns.reduce((acc: Record<string, number>, col: string) => {
+                              const completenessRatio = report.completeness.completenessRatioByColumn[col] || 1;
+                              acc[col] = Math.round(report.basicInfo.records * (1 - completenessRatio));
+                              return acc;
+                            }, {})
+                          ).reduce((sum: number, val: number) => sum + val, 0)}
+                        </span>
+                        <button 
+                          className="btn btn-sm btn-outline-secondary py-0 px-2" 
+                          style={{ fontSize: '0.75rem' }}
+                          onClick={() => {
+                            const missingValues = report.basicInfo.columns.reduce((acc: Record<string, number>, col: string) => {
+                              const completenessRatio = report.completeness.completenessRatioByColumn[col] || 1;
+                              acc[col] = Math.round(report.basicInfo.records * (1 - completenessRatio));
+                              return acc;
+                            }, {});
+                            navigator.clipboard.writeText(JSON.stringify(missingValues, null, 2));
+                          }}
+                          title={t('data_quality.selector.copy')}
+                        >
+                          <i className="bi bi-clipboard"></i>
+                        </button>
+                      </div>
+                    </div>
+                    <pre className="mb-0 small" style={{ fontSize: '0.8rem', maxHeight: '160px', overflowY: 'auto', overflowX: 'hidden', background: 'transparent', border: 'none', padding: 0, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                      <code>{JSON.stringify(
+                        report.basicInfo.columns.reduce((acc: Record<string, number>, col: string) => {
+                          const completenessRatio = report.completeness.completenessRatioByColumn[col] || 1;
+                          acc[col] = Math.round(report.basicInfo.records * (1 - completenessRatio));
+                          return acc;
+                        }, {}),
+                        null,
+                        2
+                      )}</code>
+                    </pre>
                   </div>
                 </div>
               </div>
@@ -559,34 +649,86 @@ const SampleRecordsViewer: React.FC<{ records: any[] }> = ({ records }) => {
   return (
     <div className="card">
       <div className="card-header">
-        <h6 className="mb-0">
-          <i className="bi bi-collection me-2"></i>
-          {t('data_quality.report.sampleRecords')}
-        </h6>
+        <ul className="nav nav-tabs card-header-tabs" role="tablist">
+          <li className="nav-item" role="presentation">
+            <button 
+              className="nav-link active" 
+              id="csv-tab" 
+              data-bs-toggle="tab" 
+              data-bs-target="#csv-view" 
+              type="button" 
+              role="tab" 
+              aria-controls="csv-view" 
+              aria-selected="true"
+            >
+              <i className="bi bi-table me-2"></i>
+              {t('data_quality.report.sampleRecords')}
+            </button>
+          </li>
+          <li className="nav-item" role="presentation">
+            <button 
+              className="nav-link" 
+              id="json-tab" 
+              data-bs-toggle="tab" 
+              data-bs-target="#json-view" 
+              type="button" 
+              role="tab" 
+              aria-controls="json-view" 
+              aria-selected="false"
+            >
+              <i className="bi bi-code-square me-2"></i>
+              JSON
+            </button>
+          </li>
+        </ul>
       </div>
       <div className="card-body">
         {records.length > 0 ? (
-          <div className="table-responsive">
-            <table className="table table-sm">
-              <thead>
-                <tr>
-                  {Object.keys(records[0]).map((key: string) => (
-                    <th key={key} className="small">{key}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {records.slice(0, 5).map((record: any, index: number) => (
-                  <tr key={index}>
-                    {Object.values(record).map((value: any, valueIndex: number) => (
-                      <td key={valueIndex} className="small text-truncate" style={{ maxWidth: '100px' }}>
-                        {String(value)}
-                      </td>
+          <div className="tab-content">
+            {/* CSV View Tab */}
+            <div className="tab-pane fade show active" id="csv-view" role="tabpanel" aria-labelledby="csv-tab">
+              <div className="table-responsive" style={{ maxHeight: '300px', overflowY: 'auto' }}>
+                <table className="table table-sm table-striped">
+                  <thead className="sticky-top bg-white">
+                    <tr>
+                      {Object.keys(records[0]).map((key: string) => (
+                        <th key={key} className="small">{key}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {records.slice(0, 5).map((record: any, index: number) => (
+                      <tr key={index}>
+                        {Object.values(record).map((value: any, valueIndex: number) => (
+                          <td key={valueIndex} className="small text-truncate" style={{ maxWidth: '150px' }}>
+                            {String(value)}
+                          </td>
+                        ))}
+                      </tr>
                     ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            
+            {/* JSON View Tab */}
+            <div className="tab-pane fade" id="json-view" role="tabpanel" aria-labelledby="json-tab">
+              <div className="position-relative">
+                <button 
+                  className="btn btn-sm btn-outline-secondary position-absolute top-0 end-0 m-2" 
+                  style={{ zIndex: 10 }}
+                  onClick={() => {
+                    navigator.clipboard.writeText(JSON.stringify(records.slice(0, 5), null, 2));
+                  }}
+                  title={t('data_quality.selector.copy')}
+                >
+                  <i className="bi bi-clipboard me-1"></i>
+                </button>
+                <pre className="bg-light p-3 rounded" style={{ fontSize: '0.85rem', maxHeight: '300px', overflowY: 'auto' }}>
+                  <code>{JSON.stringify(records.slice(0, 5), null, 2)}</code>
+                </pre>
+              </div>
+            </div>
           </div>
         ) : (
           <p className="text-muted">{t('data_quality.report.noSampleData')}</p>

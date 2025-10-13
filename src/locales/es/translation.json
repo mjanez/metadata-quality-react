@@ -591,7 +591,9 @@
       "noDataAvailable": "No hay distribuciones CSV o JSON disponibles en el catálogo en este momento.",
       "trySearch": "Prueba buscando términos específicos como \"empresas\", \"población\", \"economía\", etc.",
       "fileSizeWarning": "El tamaño del archivo excede el límite recomendado de {{maxSize}} para análisis. El procesamiento puede ser lento o fallar.",
-      "sizeWarning": "Excede límite"
+      "sizeWarning": "Excede límite",
+      "copy": "Copiar al portapapeles",
+      "copied": "Copiado"
     },
 
     "report": {
@@ -619,7 +621,9 @@
       "downloadAllDescription": "Descarga un archivo ZIP con 3 CSV (indicadores, registros de muestra, observaciones) y 1 JSON de resumen",
       "exportIndicators": "Exportar indicadores (CSV)",
       "exportSamples": "Exportar registros de muestra (CSV)",
-      "exportObservations": "Exportar observaciones (CSV)"
+      "exportObservations": "Exportar observaciones (CSV)",
+      "originalFile": "Fichero original",
+      "viewOriginalFile": "Ver fichero original"
     },
 
     "export": {
