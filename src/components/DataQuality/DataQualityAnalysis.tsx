@@ -109,12 +109,15 @@ const DataQualityAnalysis: React.FC = () => {
 
     } catch (error) {
       console.error('Analysis error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido durante el análisis';
+      const downloadUrl = selectedDistribution.downloadURL || selectedDistribution.accessURL;
+      
       setAnalysisResult({
         report: {} as any,
         observations: [],
         score: 0,
         status: 'error',
-        error: error instanceof Error ? error.message : 'Error desconocido durante el análisis'
+        error: `${errorMessage}\n\nURL intentada: ${downloadUrl}`
       });
       setCurrentStep('results');
     } finally {
@@ -144,7 +147,7 @@ const DataQualityAnalysis: React.FC = () => {
   };
 
   return (
-    <div className="data-quality-analysis">
+    <div className="data-quality-analysis container-fluid p-4">
       {/* Header */}
       <div className="d-flex justify-content-between align-items-center mb-4">
         <div>
@@ -353,7 +356,7 @@ const DataQualityAnalysis: React.FC = () => {
                 </div>
                 <div className="mt-2">
                   <small className="text-muted">
-                    {t(`dataQuality.progress.${progress.step}`, progress.step)}
+                    {t(`data_quality.progress.${progress.step}`, progress.step)}
                   </small>
                 </div>
               </div>
@@ -367,53 +370,6 @@ const DataQualityAnalysis: React.FC = () => {
           <DataQualityReportViewer result={analysisResult} />
         </div>
       )}
-
-      {/* Information Panel */}
-      <div className="card mt-5 border-info">
-        <div className="card-header bg-info text-white">
-          <h5 className="mb-0">
-            <i className="bi bi-info-circle me-2"></i>
-            {t('data_quality.about.title')}
-          </h5>
-        </div>
-        <div className="card-body">
-          <p className="mb-3">
-            {t('data_quality.about.description')}
-          </p>
-          
-          <div className="row">
-            <div className="col-md-6">
-              <h6 className="text-primary">
-                {t('data_quality.about.inherent')}
-              </h6>
-              <ul className="small">
-                <li>{t('data_quality.characteristics.accuracy')}</li>
-                <li>{t('data_quality.characteristics.completeness')}</li>
-                <li>{t('data_quality.characteristics.consistency')}</li>
-                <li>{t('data_quality.characteristics.credibility')}</li>
-                <li>{t('data_quality.characteristics.currentness')}</li>
-                <li>{t('data_quality.characteristics.precision')}</li>
-                <li>{t('data_quality.characteristics.relevance')}</li>
-              </ul>
-            </div>
-            <div className="col-md-6">
-              <h6 className="text-success">
-                {t('data_quality.about.systemDependent')}
-              </h6>
-              <ul className="small">
-                <li>{t('data_quality.characteristics.accessibility')}</li>
-                <li>{t('data_quality.characteristics.portability')}</li>
-                <li>{t('data_quality.characteristics.recoverability')}</li>
-                <li>{t('data_quality.characteristics.security')}</li>
-                <li>{t('data_quality.characteristics.traceability')}</li>
-                <li>{t('data_quality.characteristics.understandability')}</li>
-                <li>{t('data_quality.characteristics.compliance')}</li>
-                <li>{t('data_quality.characteristics.availability')}</li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
   );
 };

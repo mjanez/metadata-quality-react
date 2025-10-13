@@ -561,7 +561,7 @@
     },
 
     "progress": {
-      "downloading": "Downloading data",
+      "downloading": "Downloading data...",
       "parsing": "Analyzing structure",
       "analyzing": "Evaluating quality",
       "generating": "Generating observations",

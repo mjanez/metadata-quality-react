@@ -34,41 +34,35 @@ export class DataQualityService {
     onProgress?: (progress: DataQualityAnalysisProgress) => void
   ): Promise<QualityAnalysisResult> {
     try {
-      onProgress?.({ step: 'downloading', progress: 5, message: t('data_quality.progress.url_validating') });
-      
       // Download the data - use downloadURL if available, otherwise accessURL
       const downloadUrl = input.downloadURL || input.url;
       
-      // Validate URL before attempting download (lazy validation)
-      const DataDiscoveryService = (await import('./DataDiscoveryService')).DataDiscoveryService;
-      const discoveryService = DataDiscoveryService.getInstance();
-      const isValid = await discoveryService.validateDataURL(downloadUrl, input.format);
-      
-      if (!isValid) {
-        throw new Error(t('data_quality.progress.url_invalid') + input.format.toUpperCase() + t('data_quality.progress.url_unknown_source'));
-      }
-      
-      onProgress?.({ step: 'downloading', progress: 10, message: 'Descargando datos...' });
+      onProgress?.({ step: 'downloading', progress: 10, message: t('data_quality.progress.downloading') });  
       const data = await this.downloadData(downloadUrl);
       
-      onProgress?.({ step: 'parsing', progress: 30, message: 'Analizando estructura de datos...' });
+      // Validate the downloaded content instead of the URL
+      if (!this.isValidDataContent(data, input.format)) {
+        throw new Error(t('data_quality.progress.url_invalid', { format: input.format.toUpperCase() }) + t('data_quality.progress.url_unknown_source'));
+      }
+      
+      onProgress?.({ step: 'parsing', progress: 30, message: t('data_quality.progress.parsing') });
       
       // Parse based on format
       const parsedData = input.format === 'csv' 
         ? await this.parseCSV(data)
         : await this.parseJSON(data);
         
-      onProgress?.({ step: 'analyzing', progress: 60, message: 'Evaluando calidad de datos...' });
+      onProgress?.({ step: 'analyzing', progress: 60, message: t('data_quality.progress.analyzing') });
       
       // Analyze quality
       const report = await this.performQualityAnalysis(parsedData, input);
       
-      onProgress?.({ step: 'generating', progress: 90, message: 'Generando observaciones...' });
+      onProgress?.({ step: 'generating', progress: 90, message: t('data_quality.progress.generating') });
       
       // Generate observations
       const observations = this.generateObservations(report, input.format);
       
-      onProgress?.({ step: 'completed', progress: 100, message: 'Análisis completado' });
+      onProgress?.({ step: 'completed', progress: 100, message: t('data_quality.progress.completed') });
       
       return {
         report,
@@ -148,6 +142,74 @@ export class DataQualityService {
         throw new Error(`No se pudo descargar los datos: Backend falló (${backendError}), fetch directo falló (${directError}), y todos los proxies CORS fallaron`);
       }
     }
+  }
+
+  /**
+   * Validate that the downloaded content is valid data (not HTML)
+   */
+  private isValidDataContent(content: string, expectedFormat: string): boolean {
+    if (!content || content.trim().length === 0) {
+      return false;
+    }
+
+    const trimmedContent = content.trim();
+    
+    // Check if content looks like HTML
+    const htmlIndicators = [
+      '<!DOCTYPE',
+      '<html',
+      '<HTML',
+      '<?xml version',
+      '<head>',
+      '<body>',
+      '<title>'
+    ];
+    
+    const looksLikeHTML = htmlIndicators.some(indicator => 
+      trimmedContent.toLowerCase().startsWith(indicator.toLowerCase())
+    );
+    
+    if (looksLikeHTML) {
+      console.warn('Content appears to be HTML, not data');
+      return false;
+    }
+
+    // For CSV, check if it has CSV-like structure
+    if (expectedFormat === 'csv') {
+      const lines = trimmedContent.split('\n').filter(line => line.trim().length > 0);
+      
+      if (lines.length === 0) {
+        return false;
+      }
+      
+      // Check if first line looks like a header (has separators)
+      const firstLine = lines[0];
+      const hasDelimiters = [',', ';', '\t', '|'].some(delimiter => 
+        firstLine.includes(delimiter)
+      );
+      
+      // If it has delimiters, consider it valid CSV
+      if (hasDelimiters) {
+        return true;
+      }
+      
+      // Even without delimiters, if it's not HTML and has multiple lines, might be valid CSV
+      return lines.length > 1;
+    }
+
+    // For JSON, check if it's valid JSON structure
+    if (expectedFormat === 'json') {
+      try {
+        JSON.parse(trimmedContent);
+        return true;
+      } catch (e) {
+        console.warn('Content is not valid JSON:', e);
+        return false;
+      }
+    }
+
+    // For unknown formats, accept if not HTML
+    return !looksLikeHTML;
   }
 
   /**

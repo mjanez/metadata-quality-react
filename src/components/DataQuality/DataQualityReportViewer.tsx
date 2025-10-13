@@ -137,38 +137,161 @@ const DataQualityReportViewer: React.FC<DataQualityReportViewerProps> = ({ resul
         </div>
       </div>
 
-      {/* Basic Information */}
+      {/* Basic Information, Observations & About Tabs */}
       <div className="card mb-4">
         <div className="card-header">
-          <h5 className="mb-0">
-            <i className="bi bi-info-circle me-2"></i>
-            {t('data_quality.report.basicInfo')}
-          </h5>
+          <ul className="nav nav-tabs card-header-tabs" role="tablist">
+            <li className="nav-item" role="presentation">
+              <button 
+                className="nav-link active" 
+                id="basicInfo-tab" 
+                data-bs-toggle="tab" 
+                data-bs-target="#basicInfo" 
+                type="button" 
+                role="tab" 
+                aria-controls="basicInfo" 
+                aria-selected="true"
+              >
+                <i className="bi bi-info-circle me-2"></i>
+                {t('data_quality.report.basicInfo')}
+              </button>
+            </li>
+            <li className="nav-item" role="presentation">
+              <button 
+                className="nav-link" 
+                id="observations-tab" 
+                data-bs-toggle="tab" 
+                data-bs-target="#observations" 
+                type="button" 
+                role="tab" 
+                aria-controls="observations" 
+                aria-selected="false"
+              >
+                <i className="bi bi-chat-left-text me-2"></i>
+                {t('data_quality.report.observations')}
+              </button>
+            </li>
+            <li className="nav-item" role="presentation">
+              <button 
+                className="nav-link" 
+                id="about-tab" 
+                data-bs-toggle="tab" 
+                data-bs-target="#about" 
+                type="button" 
+                role="tab" 
+                aria-controls="about" 
+                aria-selected="false"
+              >
+                <i className="bi bi-book me-2"></i>
+                {t('data_quality.about.title')}
+              </button>
+            </li>
+          </ul>
         </div>
         <div className="card-body">
-          <div className="row">
-            <div className="col-md-6">
-              <table className="table table-sm">
-                <tbody>
-                  <tr>
-                    <td><strong>{t('data_quality.report.columns')}:</strong></td>
-                    <td>{report.basicInfo.columns.length}</td>
-                  </tr>
-                  <tr>
-                    <td><strong>{t('data_quality.report.records')}:</strong></td>
-                    <td>{report.basicInfo.records.toLocaleString()}</td>
-                  </tr>
-                </tbody>
-              </table>
+          <div className="tab-content">
+            {/* Basic Info Tab */}
+            <div className="tab-pane fade show active" id="basicInfo" role="tabpanel" aria-labelledby="basicInfo-tab">
+              <div className="row">
+                <div className="col-md-6">
+                  <table className="table table-sm">
+                    <tbody>
+                      <tr>
+                        <td><strong>{t('data_quality.report.columns')}:</strong></td>
+                        <td>{report.basicInfo.columns.length}</td>
+                      </tr>
+                      <tr>
+                        <td><strong>{t('data_quality.report.records')}:</strong></td>
+                        <td>{report.basicInfo.records.toLocaleString()}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                <div className="col-md-6">
+                  <h6>{t('data_quality.report.columnNames')}:</h6>
+                  <div className="d-flex flex-wrap gap-1">
+                    {report.basicInfo.columns.map((col: string) => (
+                      <span key={col} className="badge bg-light text-dark">
+                        {col}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
             </div>
-            <div className="col-md-6">
-              <h6>{t('data_quality.report.columnNames')}:</h6>
-              <div className="d-flex flex-wrap gap-1">
-                {report.basicInfo.columns.map((col: string) => (
-                  <span key={col} className="badge bg-light text-dark">
-                    {col}
-                  </span>
+            
+            {/* Observations Tab */}
+            <div className="tab-pane fade" id="observations" role="tabpanel" aria-labelledby="observations-tab">
+              <div style={{ maxHeight: '400px', overflowY: 'auto' }} className="pe-2">
+                {observations.map((obs: QualityObservation, index: number) => (
+                  <div key={index} className="mb-3 pb-3 border-bottom">
+                    <h6 className="text-capitalize mb-2">
+                      <i className={`${getCharacteristicIcon(obs.characteristic)} me-2`}></i>
+                      {t(`data_quality.characteristics.${obs.characteristic}`, obs.characteristic)}
+                    </h6>
+                    <div className="row">
+                      <div className="col-md-6">
+                        <p className="small text-muted mb-1"><strong>{t('data_quality.report.definition')}:</strong></p>
+                        <p className="small">{obs.definition}</p>
+                      </div>
+                      <div className="col-md-6">
+                        <p className="small text-muted mb-1"><strong>{t('data_quality.report.observations')}:</strong></p>
+                        <p className="small">{obs.observations}</p>
+                        {obs.recommendations && obs.recommendations.length > 0 && (
+                          <div>
+                            <p className="small text-muted mb-1"><strong>{t('data_quality.report.recommendations')}:</strong></p>
+                            <ul className="small mb-0">
+                              {obs.recommendations.map((rec: string, recIndex: number) => (
+                                <li key={recIndex}>{rec}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
                 ))}
+              </div>
+            </div>
+
+            {/* About ISO/IEC 25012 Tab */}
+            <div className="tab-pane fade" id="about" role="tabpanel" aria-labelledby="about-tab">
+              <p className="mb-3">
+                {t('data_quality.about.description')}
+              </p>
+              
+              <div className="row">
+                <div className="col-md-6">
+                  <h6 className="text-primary">
+                    <i className="bi bi-database me-2"></i>
+                    {t('data_quality.about.inherent')}
+                  </h6>
+                  <ul className="small">
+                    <li>{t('data_quality.characteristics.accuracy')}</li>
+                    <li>{t('data_quality.characteristics.completeness')}</li>
+                    <li>{t('data_quality.characteristics.consistency')}</li>
+                    <li>{t('data_quality.characteristics.credibility')}</li>
+                    <li>{t('data_quality.characteristics.currentness')}</li>
+                    <li>{t('data_quality.characteristics.precision')}</li>
+                    <li>{t('data_quality.characteristics.relevance')}</li>
+                  </ul>
+                </div>
+                <div className="col-md-6">
+                  <h6 className="text-secondary">
+                    <i className="bi bi-gear me-2"></i>
+                    {t('data_quality.about.systemDependent')}
+                  </h6>
+                  <ul className="small">
+                    <li>{t('data_quality.characteristics.accessibility')}</li>
+                    <li>{t('data_quality.characteristics.portability')}</li>
+                    <li>{t('data_quality.characteristics.recoverability')}</li>
+                    <li>{t('data_quality.characteristics.security')}</li>
+                    <li>{t('data_quality.characteristics.traceability')}</li>
+                    <li>{t('data_quality.characteristics.understandability')}</li>
+                    <li>{t('data_quality.characteristics.compliance')}</li>
+                    <li>{t('data_quality.characteristics.availability')}</li>
+                  </ul>
+                </div>
               </div>
             </div>
           </div>
@@ -187,20 +310,6 @@ const DataQualityReportViewer: React.FC<DataQualityReportViewerProps> = ({ resul
         </div>
       </div>
 
-      {/* Quality Observations */}
-      <div className="card mt-4">
-        <div className="card-header">
-          <h5 className="mb-0">
-            <i className="bi bi-chat-left-text me-2"></i>
-            {t('data_quality.report.observations')}
-          </h5>
-        </div>
-        <div className="card-body">
-          {observations.map((obs: QualityObservation, index: number) => (
-            <ObservationCard key={index} observation={obs} />
-          ))}
-        </div>
-      </div>
     </div>
   );
 };
@@ -243,7 +352,7 @@ const QualityMetricsTable: React.FC<{ report: DataQualityReport }> = ({ report }
 
               {/* Completeness */}
               <tr>
-                <td rowSpan={3} className="fw-bold text-success">
+                <td rowSpan={3} className="fw-bold text-primary">
                   {t('data_quality.characteristics.completeness')}
                 </td>
                 <td>{t('data_quality.indicators.completenessRatio')}</td>
@@ -272,7 +381,7 @@ const QualityMetricsTable: React.FC<{ report: DataQualityReport }> = ({ report }
 
               {/* Consistency */}
               <tr>
-                <td className="fw-bold text-info">
+                <td className="fw-bold text-primary">
                   {t('data_quality.characteristics.consistency')}
                 </td>
                 <td>{t('data_quality.indicators.duplicatedRecords')}</td>
@@ -285,7 +394,7 @@ const QualityMetricsTable: React.FC<{ report: DataQualityReport }> = ({ report }
 
               {/* Currentness */}
               <tr>
-                <td rowSpan={3} className="fw-bold text-warning">
+                <td rowSpan={3} className="fw-bold text-primary">
                   {t('data_quality.characteristics.currentness')}
                 </td>
                 <td>{t('data_quality.indicators.mostRecentDate')}</td>
@@ -376,7 +485,7 @@ const QualityMetricsTable: React.FC<{ report: DataQualityReport }> = ({ report }
 
               {/* Understandability */}
               <tr>
-                <td rowSpan={2} className="fw-bold text-dark">
+                <td rowSpan={2} className="fw-bold text-secondary">
                   {t('data_quality.characteristics.understandability')}
                 </td>
                 <td>{t('data_quality.indicators.confusingColumns')}</td>
@@ -409,7 +518,7 @@ const QualityMetricsTable: React.FC<{ report: DataQualityReport }> = ({ report }
 
               {/* Portability */}
               <tr>
-                <td rowSpan={3} className="fw-bold text-success">
+                <td rowSpan={3} className="fw-bold text-secondary">
                   {t('data_quality.characteristics.portability')}
                 </td>
                 <td>{t('data_quality.indicators.portable')}</td>
@@ -496,7 +605,7 @@ const ObservationCard: React.FC<{ observation: QualityObservation; key?: React.K
       <div className="card-header">
         <h6 className="mb-0 text-capitalize">
           <i className={`${getCharacteristicIcon(observation.characteristic)} me-2`}></i>
-          {t(`dataQuality.characteristics.${observation.characteristic}`, observation.characteristic)}
+          {t(`data_quality.characteristics.${observation.characteristic}`, observation.characteristic)}
         </h6>
       </div>
       <div className="card-body">

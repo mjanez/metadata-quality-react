@@ -205,7 +205,7 @@ export function exportObservationsCSV(observations: QualityObservation[]): strin
   ];
   
   const rows = observations.map(obs => ({
-    [headerLabels[0]]: t(`dataQuality.characteristics.${obs.characteristic}`),
+    [headerLabels[0]]: t(`data_quality.characteristics.${obs.characteristic}`),
     [headerLabels[1]]: obs.definition,
     [headerLabels[2]]: obs.observations,
     [headerLabels[3]]: obs.recommendations?.join(' | ') || ''
@@ -309,7 +309,7 @@ export async function exportAllCSVs(
         }
       },
       observations: observations.map(obs => ({
-        characteristic: t(`dataQuality.characteristics.${obs.characteristic}`),
+        characteristic: t(`data_quality.characteristics.${obs.characteristic}`),
         definition: obs.definition,
         observations: obs.observations,
         recommendations: obs.recommendations
