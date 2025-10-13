@@ -79,13 +79,11 @@ echo ""
 
 # Start backend server in background
 echo "🚀 Starting backend server on port ${BACKEND_PORT}..."
-cd backend
-PORT=${BACKEND_PORT} npm start &
+(cd backend && PORT=${BACKEND_PORT} NODE_TLS_REJECT_UNAUTHORIZED=${NODE_TLS_REJECT_UNAUTHORIZED:-1} node server.js) &
 BACKEND_PID=$!
-cd ..
 
 # Wait a moment for backend to start
-sleep 3
+sleep 5
 
 # Check if backend is running
 if curl -s http://localhost:${BACKEND_PORT}/api/health > /dev/null; then
