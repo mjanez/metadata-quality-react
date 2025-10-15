@@ -210,18 +210,38 @@ const DataQualityReportViewer: React.FC<DataQualityReportViewerProps> = ({ resul
             {/* Basic Info Tab */}
             <div className="tab-pane fade show active" id="basicInfo" role="tabpanel" aria-labelledby="basicInfo-tab">
               <div className="row g-3">
-                {/* Primera fila: Columnas y Registros */}
+                {/* Primera fila: Título, Columnas y Registros */}
                 <div className="col-12">
+                  {result.title && (
+                    <div className="mb-3">
+                      <h5 className="mb-1">
+                        {(result.downloadUrl || result.sourceUrl) && (
+                          <a 
+                            href={result.downloadUrl || result.sourceUrl} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-decoration-none me-2"
+                            title={t('data_quality.report.viewOriginalFile')}
+                          >
+                            <i className="bi bi-link-45deg text-secondary"></i>
+                          </a>
+                        )}
+                        {result.title}
+                      </h5>
+                    </div>
+                  )}
                   <div className="row">
                     <div className="col-auto">
                       <table className="table table-sm table-borderless mb-0">
                         <tbody>
                           <tr>
                             <td className="text-muted pe-1">
+                              <i className="bi bi-grid-3x3 me-2"></i>
                               <strong>{t('data_quality.report.columns')}:</strong>
                             </td>
                             <td><span className="badge bg-primary">{report.basicInfo.columns.length}</span></td>
                             <td className="text-muted pe-1">
+                              <i className="bi bi-collection me-2"></i>
                               <strong>{t('data_quality.report.records')}:</strong>
                             </td>
                             <td><span className="badge bg-info">{report.basicInfo.records.toLocaleString()}</span></td>
@@ -404,6 +424,53 @@ const DataQualityReportViewer: React.FC<DataQualityReportViewerProps> = ({ resul
   );
 };
 
+// Helper component for result cell with copy button
+const ResultCell: React.FC<{ value: any; type?: 'json' | 'text' | 'badge' | 'array'; badgeClass?: string }> = ({ value, type = 'text', badgeClass }) => {
+  const { t } = useTranslation();
+  
+  const getCopyValue = () => {
+    if (type === 'json' || type === 'array') {
+      return JSON.stringify(value, null, 2);
+    }
+    return String(value);
+  };
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(getCopyValue());
+  };
+
+  return (
+    <div className="d-flex align-items-start gap-2">
+      <div className="flex-grow-1">
+        {type === 'json' && (
+          <pre className="mb-0 small" style={{ fontSize: '0.85rem', maxHeight: '150px', overflowY: 'auto', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+            {JSON.stringify(value, null, 2)}
+          </pre>
+        )}
+        {type === 'array' && (
+          <pre className="mb-0 small" style={{ fontSize: '0.85rem', maxHeight: '150px', overflowY: 'auto', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+            {JSON.stringify(value, null, 2)}
+          </pre>
+        )}
+        {type === 'badge' && (
+          <span className={badgeClass}>
+            {String(value)}
+          </span>
+        )}
+        {type === 'text' && String(value)}
+      </div>
+      <button 
+        className="btn btn-sm btn-outline-secondary py-0 px-1 flex-shrink-0" 
+        style={{ fontSize: '0.7rem', lineHeight: '1' }}
+        onClick={handleCopy}
+        title={t('data_quality.selector.copy')}
+      >
+        <i className="bi bi-clipboard"></i>
+      </button>
+    </div>
+  );
+};
+
 // Quality Metrics Table Component
 const QualityMetricsTable: React.FC<{ report: DataQualityReport }> = ({ report }) => {
   const { t } = useTranslation();
@@ -423,7 +490,7 @@ const QualityMetricsTable: React.FC<{ report: DataQualityReport }> = ({ report }
               <tr>
                 <th>{t('data_quality.report.category')}</th>
                 <th>{t('data_quality.report.indicator')}</th>
-                <th>{t('data_quality.report.result')}</th>
+                <th style={{ minWidth: '250px' }}>{t('data_quality.report.result')}</th>
               </tr>
             </thead>
             <tbody>
@@ -434,9 +501,7 @@ const QualityMetricsTable: React.FC<{ report: DataQualityReport }> = ({ report }
                 </td>
                 <td>{t('data_quality.indicators.outliersByColumn')}</td>
                 <td>
-                  <pre className="mb-0 small">
-                    {JSON.stringify(report.accuracy.outliersByColumn, null, 2)}
-                  </pre>
+                  <ResultCell value={report.accuracy.outliersByColumn} type="json" />
                 </td>
               </tr>
 
@@ -447,25 +512,23 @@ const QualityMetricsTable: React.FC<{ report: DataQualityReport }> = ({ report }
                 </td>
                 <td>{t('data_quality.indicators.completenessRatio')}</td>
                 <td>
-                  <pre className="mb-0 small">
-                    {JSON.stringify(report.completeness.completenessRatioByColumn, null, 2)}
-                  </pre>
+                  <ResultCell value={report.completeness.completenessRatioByColumn} type="json" />
                 </td>
               </tr>
               <tr>
                 <td>{t('data_quality.indicators.overallCompleteness')}</td>
                 <td>
-                  <span className={`badge ${report.completeness.overallCompletenessRatio >= 0.9 ? 'bg-success' : report.completeness.overallCompletenessRatio >= 0.7 ? 'bg-warning' : 'bg-danger'}`}>
-                    {(report.completeness.overallCompletenessRatio * 100).toFixed(1)}%
-                  </span>
+                  <ResultCell 
+                    value={`${(report.completeness.overallCompletenessRatio * 100).toFixed(1)}%`} 
+                    type="badge" 
+                    badgeClass={`badge ${report.completeness.overallCompletenessRatio >= 0.9 ? 'bg-success' : report.completeness.overallCompletenessRatio >= 0.7 ? 'bg-warning' : 'bg-danger'}`}
+                  />
                 </td>
               </tr>
               <tr>
                 <td>{t('data_quality.indicators.temporalCompleteness')}</td>
                 <td>
-                  <pre className="mb-0 small">
-                    {JSON.stringify(report.completeness.temporalCompleteness, null, 2)}
-                  </pre>
+                  <ResultCell value={report.completeness.temporalCompleteness} type="json" />
                 </td>
               </tr>
 
@@ -476,9 +539,11 @@ const QualityMetricsTable: React.FC<{ report: DataQualityReport }> = ({ report }
                 </td>
                 <td>{t('data_quality.indicators.duplicatedRecords')}</td>
                 <td>
-                  <span className={`badge ${report.consistency.duplicatedRecords === 0 ? 'bg-success' : 'bg-warning'}`}>
-                    {report.consistency.duplicatedRecords}
-                  </span>
+                  <ResultCell 
+                    value={report.consistency.duplicatedRecords} 
+                    type="badge" 
+                    badgeClass={`badge ${report.consistency.duplicatedRecords === 0 ? 'bg-success' : 'bg-warning'}`}
+                  />
                 </td>
               </tr>
 
@@ -488,15 +553,21 @@ const QualityMetricsTable: React.FC<{ report: DataQualityReport }> = ({ report }
                   {t('data_quality.characteristics.currentness')}
                 </td>
                 <td>{t('data_quality.indicators.mostRecentDate')}</td>
-                <td>{report.currentness.mostRecentDate || t('data_quality.report.notAvailable')}</td>
+                <td>
+                  <ResultCell value={report.currentness.mostRecentDate || t('data_quality.report.notAvailable')} type="text" />
+                </td>
               </tr>
               <tr>
                 <td>{t('data_quality.indicators.oldestDate')}</td>
-                <td>{report.currentness.oldestDate || t('data_quality.report.notAvailable')}</td>
+                <td>
+                  <ResultCell value={report.currentness.oldestDate || t('data_quality.report.notAvailable')} type="text" />
+                </td>
               </tr>
               <tr>
                 <td>{t('data_quality.indicators.temporalCoverage')}</td>
-                <td>{report.currentness.temporalCoverage || t('data_quality.report.notAvailable')}</td>
+                <td>
+                  <ResultCell value={report.currentness.temporalCoverage || t('data_quality.report.notAvailable')} type="text" />
+                </td>
               </tr>
 
               {/* Accessibility */}
@@ -506,9 +577,11 @@ const QualityMetricsTable: React.FC<{ report: DataQualityReport }> = ({ report }
                 </td>
                 <td>{t('data_quality.indicators.accessible')}</td>
                 <td>
-                  <span className={`badge ${report.accessibility.accessible ? 'bg-success' : 'bg-danger'}`}>
-                    {report.accessibility.accessible ? t('data_quality.report.true') : t('data_quality.report.false')}
-                  </span>
+                  <ResultCell 
+                    value={report.accessibility.accessible ? t('data_quality.report.true') : t('data_quality.report.false')} 
+                    type="badge" 
+                    badgeClass={`badge ${report.accessibility.accessible ? 'bg-success' : 'bg-danger'}`}
+                  />
                 </td>
               </tr>
 
@@ -519,57 +592,25 @@ const QualityMetricsTable: React.FC<{ report: DataQualityReport }> = ({ report }
                 </td>
                 <td>{t('data_quality.indicators.provenance')}</td>
                 <td>
-                  {report.traceability.provenance.length > 0 ? (
-                    <div className="d-flex flex-wrap gap-1">
-                      {report.traceability.provenance.map((item: string) => (
-                        <span key={item} className="badge bg-light text-dark">{item}</span>
-                      ))}
-                    </div>
-                  ) : (
-                    <span className="text-muted">[]</span>
-                  )}
+                  <ResultCell value={report.traceability.provenance} type="array" />
                 </td>
               </tr>
               <tr>
                 <td>{t('data_quality.indicators.temporalInformation')}</td>
                 <td>
-                  {report.traceability.temporalInformation.length > 0 ? (
-                    <div className="d-flex flex-wrap gap-1">
-                      {report.traceability.temporalInformation.map((item: string) => (
-                        <span key={item} className="badge bg-light text-dark">{item}</span>
-                      ))}
-                    </div>
-                  ) : (
-                    <span className="text-muted">[]</span>
-                  )}
+                  <ResultCell value={report.traceability.temporalInformation} type="array" />
                 </td>
               </tr>
               <tr>
                 <td>{t('data_quality.indicators.spatialInformation')}</td>
                 <td>
-                  {report.traceability.spatialInformation.length > 0 ? (
-                    <div className="d-flex flex-wrap gap-1">
-                      {report.traceability.spatialInformation.map((item: string) => (
-                        <span key={item} className="badge bg-light text-dark">{item}</span>
-                      ))}
-                    </div>
-                  ) : (
-                    <span className="text-muted">[]</span>
-                  )}
+                  <ResultCell value={report.traceability.spatialInformation} type="array" />
                 </td>
               </tr>
               <tr>
                 <td>{t('data_quality.indicators.identification')}</td>
                 <td>
-                  {report.traceability.identification.length > 0 ? (
-                    <div className="d-flex flex-wrap gap-1">
-                      {report.traceability.identification.map((item: string) => (
-                        <span key={item} className="badge bg-light text-dark">{item}</span>
-                      ))}
-                    </div>
-                  ) : (
-                    <span className="text-muted">[]</span>
-                  )}
+                  <ResultCell value={report.traceability.identification} type="array" />
                 </td>
               </tr>
 
@@ -580,29 +621,13 @@ const QualityMetricsTable: React.FC<{ report: DataQualityReport }> = ({ report }
                 </td>
                 <td>{t('data_quality.indicators.confusingColumns')}</td>
                 <td>
-                  {report.understandability.confusingColumns.length > 0 ? (
-                    <div className="d-flex flex-wrap gap-1">
-                      {report.understandability.confusingColumns.map((item: string) => (
-                        <span key={item} className="badge bg-warning text-dark">{item}</span>
-                      ))}
-                    </div>
-                  ) : (
-                    <span className="text-muted">[]</span>
-                  )}
+                  <ResultCell value={report.understandability.confusingColumns} type="array" />
                 </td>
               </tr>
               <tr>
                 <td>{t('data_quality.indicators.uncommonColumns')}</td>
                 <td>
-                  {report.understandability.uncommonColumns.length > 0 ? (
-                    <div className="d-flex flex-wrap gap-1">
-                      {report.understandability.uncommonColumns.map((item: string) => (
-                        <span key={item} className="badge bg-warning text-dark">{item}</span>
-                      ))}
-                    </div>
-                  ) : (
-                    <span className="text-muted">[]</span>
-                  )}
+                  <ResultCell value={report.understandability.uncommonColumns} type="array" />
                 </td>
               </tr>
 
@@ -613,25 +638,31 @@ const QualityMetricsTable: React.FC<{ report: DataQualityReport }> = ({ report }
                 </td>
                 <td>{t('data_quality.indicators.portable')}</td>
                 <td>
-                  <span className={`badge ${report.portability.portable ? 'bg-success' : 'bg-danger'}`}>
-                    {report.portability.portable ? t('data_quality.report.true') : t('data_quality.report.false')}
-                  </span>
+                  <ResultCell 
+                    value={report.portability.portable ? t('data_quality.report.true') : t('data_quality.report.false')} 
+                    type="badge" 
+                    badgeClass={`badge ${report.portability.portable ? 'bg-success' : 'bg-danger'}`}
+                  />
                 </td>
               </tr>
               <tr>
                 <td>{t('data_quality.indicators.machineReadable')}</td>
                 <td>
-                  <span className={`badge ${report.portability.machineReadable ? 'bg-success' : 'bg-danger'}`}>
-                    {report.portability.machineReadable ? t('data_quality.report.true') : t('data_quality.report.false')}
-                  </span>
+                  <ResultCell 
+                    value={report.portability.machineReadable ? t('data_quality.report.true') : t('data_quality.report.false')} 
+                    type="badge" 
+                    badgeClass={`badge ${report.portability.machineReadable ? 'bg-success' : 'bg-danger'}`}
+                  />
                 </td>
               </tr>
               <tr>
                 <td>{t('data_quality.indicators.openFormat')}</td>
                 <td>
-                  <span className={`badge ${report.portability.openFormat ? 'bg-success' : 'bg-danger'}`}>
-                    {report.portability.openFormat ? t('data_quality.report.true') : t('data_quality.report.false')}
-                  </span>
+                  <ResultCell 
+                    value={report.portability.openFormat ? t('data_quality.report.true') : t('data_quality.report.false')} 
+                    type="badge" 
+                    badgeClass={`badge ${report.portability.openFormat ? 'bg-success' : 'bg-danger'}`}
+                  />
                 </td>
               </tr>
             </tbody>

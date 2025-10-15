@@ -518,7 +518,8 @@ export class DataQualityService {
                String(value).trim() !== '' &&
                String(value).toLowerCase() !== 'null';
       }).length;
-      ratios[col] = data.length > 0 ? nonNullCount / data.length : 0;
+      const ratio = data.length > 0 ? nonNullCount / data.length : 0;
+      ratios[col] = Number(ratio.toFixed(2));
     });
     
     return ratios;
@@ -691,7 +692,7 @@ export class DataQualityService {
   }
 
   private identifyIdColumns(columns: string[]): string[] {
-    const idKeywords = ['id', '_id', 'identifier', 'code', 'codigo', 'uri', 'identificador', 'identificador', 'key', 'clave', 'ref', 'reference', 'referencia'];
+    const idKeywords = ['id', '_id', 'identifier', 'code', 'cod', 'codigo', 'uri', 'identificador', 'identificador', 'key', 'clave', 'ref', 'reference', 'referencia'];
     return columns.filter(col => 
       idKeywords.some(keyword => col.toLowerCase().includes(keyword)) ||
       col.toLowerCase().endsWith('_id') ||
