@@ -227,7 +227,7 @@ Generated: ${metricsData.created || new Date().toISOString()}
     }
   };
 
-  // Bar Chart Configuration
+  // Bar Chart Configuration with stacked bars (score with pattern over remaining)
   const barData = {
     labels: dimensionData.map(dim => t(`results.dimensions.${dim.name}`) || dim.name),
     datasets: [
@@ -237,13 +237,26 @@ Generated: ${metricsData.created || new Date().toISOString()}
         backgroundColor: 'rgba(13, 110, 253, 0.2)',
         borderColor: 'rgba(13, 110, 253, 1)',
         borderWidth: 2,
+        datalabels: {
+          anchor: 'center' as const,
+          align: 'center' as const,
+          color: '#ffffff',
+          font: {
+            weight: 'bold' as const,
+            size: 12
+          },
+          formatter: (value: number) => value.toFixed(1)
+        }
       },
       {
         label: t('dashboard.table.max_score'),
-        data: dimensionData.map(dim => dim.maxScore),
-        backgroundColor: 'rgba(108, 117, 125, 0.3)',
-        borderColor: 'rgba(108, 117, 125, 1)',
+        data: dimensionData.map(dim => dim.maxScore - dim.score),
+        backgroundColor: 'rgba(108, 117, 125, 0.15)',
+        borderColor: 'rgba(108, 117, 125, 0.8)',
         borderWidth: 1,
+        datalabels: {
+          display: false
+        }
       },
     ],
   };
@@ -255,24 +268,34 @@ Generated: ${metricsData.created || new Date().toISOString()}
   const barOptions = {
     responsive: true,
     maintainAspectRatio: false,
+    indexAxis: 'x' as const,
     plugins: {
       legend: {
         position: 'bottom' as const,
         labels: {
-          color: textColor,
+          color: textColor
         }
       },
       tooltip: {
         callbacks: {
-          afterLabel: (context: any) => {
+          label: (context: any) => {
             const dimension = dimensionData[context.dataIndex];
-            return `${t('dashboard.table.percentage')}: ${dimension.percentage.toFixed(1)}%`;
+            if (context.datasetIndex === 0) {
+              return `${context.dataset.label}: ${dimension.score.toFixed(1)} / ${dimension.maxScore} (${dimension.percentage.toFixed(1)}%)`;
+            } else if (context.datasetIndex === 2) {
+              return `${context.dataset.label}: ${dimension.maxScore}`;
+            }
+            return '';
           },
         },
       },
+      datalabels: {
+        display: true
+      }
     },
     scales: {
       x: {
+        stacked: true,
         ticks: {
           color: textColor,
         },
@@ -281,9 +304,11 @@ Generated: ${metricsData.created || new Date().toISOString()}
         },
       },
       y: {
+        stacked: true,
         beginAtZero: true,
         ticks: {
           color: textColor,
+          callback: (value: any) => value
         },
         grid: {
           color: gridColor,

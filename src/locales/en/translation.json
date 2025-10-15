@@ -321,8 +321,9 @@
     "table": {
       "metric_id": "Metric ID",
       "score": "Score",
-      "max_score": "Max score",
-      "percentage": "Percentage", 
+      "max_score": "Max Score",
+      "percentage": "Percentage",
+      "remaining": "Remaining",
       "weight": "Weight",
       "found": "Found",
       "entity_compliance": "Entity compliance",
