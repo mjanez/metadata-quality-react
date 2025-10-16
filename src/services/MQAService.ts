@@ -1859,17 +1859,17 @@ export class MQAService {
 
         // Fallback strategies if backend not available or failed
         if (!accessible) {
-          // Strategy 2: Enhanced heuristic analysis (faster and more reliable)
-          const heuristicResult = this.enhancedUrlHeuristics(url);
-          if (heuristicResult.accessible) {
+          // Strategy 2: Try corsproxy.io first (more reliable than heuristics)
+          const proxyResult = await this.checkUrlViaProxy(url);
+          if (proxyResult.accessible) {
             accessible = true;
-            method = 'heuristic';
+            method = 'proxy';
           } else {
-            // Strategy 3: Try public CORS proxy services (only if heuristics fail)
-            const proxyResult = await this.checkUrlViaProxy(url);
-            if (proxyResult.accessible) {
+            // Strategy 3: Enhanced heuristic analysis (fallback if proxy fails)
+            const heuristicResult = this.enhancedUrlHeuristics(url);
+            if (heuristicResult.accessible) {
               accessible = true;
-              method = 'proxy';
+              method = 'heuristic';
             }
           }
         }
@@ -1969,17 +1969,18 @@ export class MQAService {
    * Check URL accessibility via public CORS proxy services
    */
   private async checkUrlViaProxy(url: string): Promise<{ accessible: boolean; proxy?: string; error?: string }> {
-    // Skip proxy checks in GitHub Pages environment due to CORS limitations
-    if (window.location.hostname === 'github.io' || window.location.hostname.endsWith('.github.io')) {
-      console.info('ℹ️ GitHub Pages detected: Using heuristic analysis instead of proxy verification for URL accessibility');
-      console.debug('🚫 Skipping proxy checks in GitHub Pages environment for:', url);
-      return { accessible: false, error: 'GitHub Pages CORS limitations - using heuristic analysis' };
-    }
-
-    // Lista de proxies públicos gratuitos (con limitaciones)
     // Get CORS proxies from configuration
     const configProxies = backendService.getBackendConfig().cors_proxy.fallback_proxies;
-    const publicProxies = configProxies.map(proxy => {
+    
+    // Determine timeout - use longer timeout in all cases for proxy requests
+    const timeout = 6000; // Longer timeout for proxy requests
+    
+    // Prioritize corsproxy.io from config and ensure it's first
+    const corsProxyUrl = configProxies.find(proxy => proxy.includes('corsproxy.io'));
+    const otherProxies = configProxies.filter(proxy => !proxy.includes('corsproxy.io'));
+    const orderedProxies = corsProxyUrl ? [corsProxyUrl, ...otherProxies] : configProxies;
+    
+    const publicProxies = orderedProxies.map(proxy => {
       // Use URL parsing to verify actual host name for security
       try {
         const proxyUrl = new URL(proxy);
@@ -1987,7 +1988,7 @@ export class MQAService {
         if (proxyHost === 'allorigins.win' || proxyHost === 'api.allorigins.win') {
           return (url: string) => `${proxy}${encodeURIComponent(url)}`;
         } else if (proxyHost === 'corsproxy.io') {
-          return (url: string) => `${proxy}${url}`;
+          return (url: string) => `${proxy}${encodeURIComponent(url)}`;
         } else {
           return (url: string) => `${proxy}${url}`;
         }
@@ -2002,7 +2003,7 @@ export class MQAService {
       try {
         const proxyUrl = proxyFn(url);
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 5000); // Reduced timeout for better performance
+        const timeoutId = setTimeout(() => controller.abort(), timeout);
 
         
         const response = await fetch(proxyUrl, {
@@ -2359,25 +2360,27 @@ export class MQAService {
 
       // Fallback strategies if backend not available or failed
       if (!accessible) {
-        // Strategy 2: Enhanced heuristic analysis (faster and more reliable in CORS-restricted environments)
-        const heuristicResult = this.enhancedUrlHeuristics(url);
-        if (heuristicResult.accessible) {
-          accessible = true;
-          method = 'heuristic';
-          confidence = heuristicResult.confidence || 0;
-          reasons = heuristicResult.reasons || [];
-          heuristicSuccess++;
-        } else {
-          // Strategy 3: Only try proxy if heuristics fail AND proxy is specifically requested AND not in GitHub Pages
-          if (useProxyFirst && !(window.location.hostname === 'github.io' || window.location.hostname.endsWith('.github.io'))) {
-            const proxyResult = await this.checkUrlViaProxy(url);
-            if (proxyResult.accessible) {
-              accessible = true;
-              method = 'proxy';
-              confidence = 85; // Slightly lower confidence due to proxy limitations
-              reasons = ['Accessible via CORS proxy'];
-              proxySuccess++;
-            }
+        // Strategy 2: Try corsproxy.io first (prioritized from mqa-config)
+        if (useProxyFirst) {
+          const proxyResult = await this.checkUrlViaProxy(url);
+          if (proxyResult.accessible) {
+            accessible = true;
+            method = 'proxy';
+            confidence = 85; // High confidence for successful proxy validation
+            reasons = ['Verified via CORS proxy'];
+            proxySuccess++;
+          }
+        }
+        
+        // Strategy 3: Enhanced heuristic analysis (fallback if proxy fails)
+        if (!accessible) {
+          const heuristicResult = this.enhancedUrlHeuristics(url);
+          if (heuristicResult.accessible && heuristicResult.confidence >= confidenceThreshold) {
+            accessible = true;
+            method = 'heuristic';
+            confidence = heuristicResult.confidence || 0;
+            reasons = heuristicResult.reasons || [];
+            heuristicSuccess++;
           }
         }
       }
