@@ -91,10 +91,10 @@
             "https://raw.githubusercontent.com/datosgobes/DCAT-AP-ES/refs/heads/develop/shacl/1.0.0/shacl_dataservice_shape.ttl",
             "https://raw.githubusercontent.com/datosgobes/DCAT-AP-ES/refs/heads/develop/shacl/1.0.0/shacl_dataset_shape.ttl",
             "https://raw.githubusercontent.com/datosgobes/DCAT-AP-ES/refs/heads/develop/shacl/1.0.0/shacl_distribution_shape.ttl",
-            "https://raw.githubusercontent.com/datosgobes/DCAT-AP-ES/refs/heads/develop/shacl/1.0.0/hvd/shacl_common_shapes.ttl",
-            "https://raw.githubusercontent.com/datosgobes/DCAT-AP-ES/refs/heads/develop/shacl/1.0.0/hvd/shacl_dataservice_shape.ttl",
-            "https://raw.githubusercontent.com/datosgobes/DCAT-AP-ES/refs/heads/develop/shacl/1.0.0/hvd/shacl_dataset_shape.ttl",
-            "https://raw.githubusercontent.com/datosgobes/DCAT-AP-ES/refs/heads/develop/shacl/1.0.0/hvd/shacl_distribution_shape.ttl"
+            "https://raw.githubusercontent.com/datosgobes/DCAT-AP-ES/refs/heads/develop/shacl/1.0.0/hvd/shacl_common_hvd_shapes.ttl",
+            "https://raw.githubusercontent.com/datosgobes/DCAT-AP-ES/refs/heads/develop/shacl/1.0.0/hvd/shacl_dataservice_hvd_shape.ttl",
+            "https://raw.githubusercontent.com/datosgobes/DCAT-AP-ES/refs/heads/develop/shacl/1.0.0/hvd/shacl_dataset_hvd_shape.ttl",
+            "https://raw.githubusercontent.com/datosgobes/DCAT-AP-ES/refs/heads/develop/shacl/1.0.0/hvd/shacl_distribution_hvd_shape.ttl"
           ],
           "dimensions": {
             "findability": { "maxScore": 100 },
