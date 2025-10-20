@@ -35,6 +35,7 @@ jobs:
   build-and-push:
     name: Build and Push to GHCR
     needs: test
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -65,20 +66,15 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
-            # Tag with branch name
-            type=ref,event=branch
-            # Tag with PR number
-            type=ref,event=pr,prefix=pr-
-            # Tag with semver
+            # Tag para develop y main
+            type=ref,event=branch,enable={{is_default_branch}}
+            type=ref,event=branch,pattern=develop
+            # Tags semver para releases
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
-            # Tag with git short SHA
-            type=sha,prefix={{branch}}-,format=short
-            # Tag latest for default branch
+            # Latest solo para main
             type=raw,value=latest,enable={{is_default_branch}}
-            # Tag with date
-            type=raw,value={{date 'YYYYMMDD'}}-{{sha}}
           labels: |
             org.opencontainers.image.title=MQA React
             org.opencontainers.image.description=Metadata Quality Assessment Tool
@@ -125,6 +121,7 @@ jobs:
   scan:
     name: Security Scan
     needs: build-and-push
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -134,7 +131,7 @@ jobs:
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}
           format: 'sarif'
           output: 'trivy-results.sarif'
 

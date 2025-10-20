@@ -1,4 +1,4 @@
-# Metadata Quality Assessment Tool - React App
+# Metadata Quality Assessment Tool - WebApp
 
 > [!TIP]
 > **Live Demo**: [https://mjanez.github.io/metadata-quality-react/](https://mjanez.github.io/metadata-quality-react/)
@@ -6,24 +6,24 @@
 A modern web application for evaluating RDF metadata quality based on FAIR+C principles, built with [React](https://es.react.dev/) + [TypeScript](https://www.typescriptlang.org/docs/).
 
 ## Features
+> [!TIP]
+> **For Docker Compose deployment with backend support see**: [Docker](#docker-full-stack---self-hosted)
 
 - **Complete [MQA](https://data.europa.eu/mqa/methodology) evaluation** with real metrics for [DCAT-AP](https://semiceu.github.io/DCAT-AP/), [DCAT-AP-ES](https://datosgobes.github.io/DCAT-AP-ES/) and [NTI-RISP](https://datosgobes.github.io/NTI-RISP/)
 - **Data Quality Analysis** [ISO/IEC 25012](https://iso25000.com/index.php/en/iso-25000-standards/iso-25012)-based assessment for `CSV`/`JSON` distributions (*Only backend enabled*)
 - **Multi-format support** `RDF/XML`, `Turtle`, `JSON-LD`, `N-Triples`, `GeoJSON` with auto-detection
 - **Remote URL processing** to validate online datasets (*Full option only if backend enabled*)
 - **SPARQL endpoint integration** with predefined queries for data portals
+- **Dashboard** for monitoring and managing metadata quality results.
 - **Interactive visualization** with [FAIR+C](https://www.go-fair.org/fair-principles/) radar charts and detailed tables
-- **Controlled vocabularies** integrated (formats, licenses, access rights)
-- **Performance optimized** with vocabulary caching, batch URL validation, and smart caching (6-10x faster)
+- **Controlled [vocabularies](/public/data/)** integrated (formats, licenses, access rights, etc.) from [data.europa.eu](https://gitlab.com/dataeuropa/vocabularies)
 - **Responsive interface** with [Bootstrap 5](https://getbootstrap.com/docs/5.0/) and modern components
 - **Full TypeScript** for safe and maintainable development
-- **Internationalization** English/Spanish support with react-i18next
-- **Dark/Light themes** with user preference persistence
-- **Tabbed results** keeping original form visible during validation
-- **Accordion metrics** grouped by [FAIR+C](https://www.go-fair.org/fair-principles/) dimensions
 
-> [!TIP]
-> **For Docker Compose deployment with backend support see**: [Docker](#docker-full-stack---self-hosted)
+![IMG 1](./docs/img/validation-1.png)
+![IMG 2](./docs/img/validation-2.png)
+![IMG 3](./docs/img/validation-3.png)
+![IMG 4](./docs/img/dashboard-1.png)
 
 ## Table of Contents
 
