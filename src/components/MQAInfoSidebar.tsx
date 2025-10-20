@@ -60,6 +60,10 @@ const MQAInfoSidebar: React.FC<MQAInfoSidebarProps> = ({
         icon: 'img/icons/esp.svg',
         url: 'https://datosgobes.github.io/DCAT-AP-ES/'
       },
+      'dcat_ap_es_hvd': {
+        icon: 'img/icons/esp.svg',
+        url: 'https://datosgobes.github.io/DCAT-AP-ES/'
+      },
       'dcat_ap': {
         icon: 'img/icons/eur.svg',
         url: 'https://semiceu.github.io/DCAT-AP/'

@@ -239,9 +239,10 @@ const ValidationForm: React.FC<ValidationFormProps> = ({ onValidate, isLoading }
             value={profile}
             onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setProfile(e.target.value as ValidationProfile)}
           >
-            <option value="dcat_ap">{t('validation.profiles.dcat_ap')}</option>
             <option value="dcat_ap_es">{t('validation.profiles.dcat_ap_es')}</option>
+            <option value="dcat_ap_es_hvd">{t('validation.profiles.dcat_ap_es_hvd')}</option>
             <option value="nti_risp">{t('validation.profiles.nti_risp')}</option>
+            <option value="dcat_ap">{t('validation.profiles.dcat_ap')}</option>
           </select>
         </div>
         <div className="col-md-4">

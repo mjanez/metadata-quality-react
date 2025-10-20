@@ -130,6 +130,8 @@
       "dcat_ap_description": "DCAT Application Profile for data portals in Europe",
       "dcat_ap_es": "DCAT-AP-ES", 
       "dcat_ap_es_description": "DCAT-AP Application Profile in Spain",
+      "dcat_ap_es_hvd": "DCAT-AP-ES-HVD",
+      "dcat_ap_es_hvd_description": "DCAT-AP Application Profile in Spain included HVD extension",
       "nti_risp": "NTI-RISP",
       "nti_risp_description": "Metadata model of the Technical Interoperability Standard (2013)"
     },
@@ -261,7 +263,36 @@
     },
     
     "help": {
-      "more_info": "More information"
+      "more_info": "More information",
+      "guide_info": "Documentation"
+    },
+    "constraints": {
+      "minCount": "Property '{{path}}' does not meet the minimum number of required values (minimum: {{min}})",
+      "maxCount": "Property '{{path}}' exceeds the maximum number of allowed values (maximum: {{max}})",
+      "pattern": "Value '{{value}}' in '{{path}}' does not match the expected pattern (pattern: {{pattern}})",
+      "minLength": "Value '{{value}}' in '{{path}}' is too short (minimum length: {{min}})",
+      "maxLength": "Value '{{value}}' in '{{path}}' is too long (maximum length: {{max}})",
+      "datatype": "Value '{{value}}' in '{{path}}' does not have the correct data type (expected type: {{datatype}})",
+      "nodeKind": "Node in '{{path}}' is not of the expected type (required type: {{nodeKind}})",
+      "class": "Resource in '{{path}}' is not of the required class (required class: {{class}})",
+      "orConstraint": "None of the alternative constraints are met for '{{path}}'",
+      "andConstraint": "Not all required constraints are met for '{{path}}'",
+      "notConstraint": "The negation constraint failed for '{{path}}'",
+      "xone": "Exactly one constraint should be met for '{{path}}', but this is not the case",
+      "closed": "Unpermitted properties were found in the resource",
+      "hasValue": "The required value was not found in '{{path}}'",
+      "in": "Value '{{value}}' in '{{path}}' is not in the list of allowed values",
+      "languageIn": "The language of the literal in '{{path}}' is not allowed",
+      "uniqueLang": "Multiple literals with the same language were found in '{{path}}'",
+      "equals": "The values in '{{path}}' are not equal as required",
+      "disjoint": "Values that should be disjoint were found in '{{path}}'",
+      "lessThan": "The value in '{{path}}' does not meet the comparison constraint",
+      "lessThanOrEquals": "The value in '{{path}}' does not meet the comparison constraint",
+      "qualifiedMinCount": "The number of values meeting the condition in '{{path}}' is not correct (minimum: {{min}})",
+      "qualifiedMaxCount": "The number of values meeting the condition in '{{path}}' is not correct (maximum: {{max}})",
+      "generic": "The validation constraint {{constraintType}} is not met",
+      "genericWithPath": "The constraint {{constraintType}} failed for property '{{path}}'",
+      "genericWithPathValue": "The constraint {{constraintType}} failed for property '{{path}}' with value '{{value}}'"
     }
   },
 

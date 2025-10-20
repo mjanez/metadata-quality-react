@@ -74,6 +74,39 @@
       },
       "defaultVersion": "1.0.0"
     },
+    "dcat_ap_es_hvd": {
+      "versions": {
+        "1.0.0": {
+          "name": "DCAT-AP-ES HVD 1.0.0", 
+          "maxScore": 405,
+          "icon": "img/icons/esp.svg",
+          "url": "https://datosgobes.github.io/DCAT-AP-ES/",
+          "sampleUrl": "https://raw.githubusercontent.com/datosgobes/DCAT-AP-ES/refs/heads/develop/examples/ttl/1.0.0/E_DCAT-AP-ES_Catalog.ttl",
+          "shaclFiles": [
+            "https://raw.githubusercontent.com/datosgobes/DCAT-AP-ES/refs/heads/develop/shacl/1.0.0/shacl_imports.ttl",
+            "https://raw.githubusercontent.com/datosgobes/DCAT-AP-ES/refs/heads/develop/shacl/1.0.0/shacl_mdr_imports.ttl",
+            "https://raw.githubusercontent.com/datosgobes/DCAT-AP-ES/refs/heads/develop/shacl/1.0.0/shacl_mdr-vocabularies.shape.ttl",
+            "https://raw.githubusercontent.com/datosgobes/DCAT-AP-ES/refs/heads/develop/shacl/1.0.0/shacl_common_shapes.ttl",
+            "https://raw.githubusercontent.com/datosgobes/DCAT-AP-ES/refs/heads/develop/shacl/1.0.0/shacl_catalog_shape.ttl",
+            "https://raw.githubusercontent.com/datosgobes/DCAT-AP-ES/refs/heads/develop/shacl/1.0.0/shacl_dataservice_shape.ttl",
+            "https://raw.githubusercontent.com/datosgobes/DCAT-AP-ES/refs/heads/develop/shacl/1.0.0/shacl_dataset_shape.ttl",
+            "https://raw.githubusercontent.com/datosgobes/DCAT-AP-ES/refs/heads/develop/shacl/1.0.0/shacl_distribution_shape.ttl",
+            "https://raw.githubusercontent.com/datosgobes/DCAT-AP-ES/refs/heads/develop/shacl/1.0.0/hvd/shacl_common_shapes.ttl",
+            "https://raw.githubusercontent.com/datosgobes/DCAT-AP-ES/refs/heads/develop/shacl/1.0.0/hvd/shacl_dataservice_shape.ttl",
+            "https://raw.githubusercontent.com/datosgobes/DCAT-AP-ES/refs/heads/develop/shacl/1.0.0/hvd/shacl_dataset_shape.ttl",
+            "https://raw.githubusercontent.com/datosgobes/DCAT-AP-ES/refs/heads/develop/shacl/1.0.0/hvd/shacl_distribution_shape.ttl"
+          ],
+          "dimensions": {
+            "findability": { "maxScore": 100 },
+            "accessibility": { "maxScore": 100 },
+            "interoperability": { "maxScore": 110 },
+            "reusability": { "maxScore": 75 },
+            "contextuality": { "maxScore": 20 }
+          }
+        }
+      },
+      "defaultVersion": "1.0.0"
+    },
     "nti_risp": {
       "versions": {
         "2013": {
@@ -141,6 +174,42 @@
       ]
     },
     "dcat_ap_es": {
+      "findability": [
+        { "id": "dcat_keyword", "weight": 30, "property": "dcat:keyword" },
+        { "id": "dcat_theme", "weight": 30, "property": "dcat:theme" },
+        { "id": "dct_spatial", "weight": 20, "property": "dct:spatial" },
+        { "id": "dct_temporal", "weight": 20, "property": "dct:temporal" }
+      ],
+      "accessibility": [
+        { "id": "dcat_access_url_status", "weight": 50, "property": "dcat:accessURL" },
+        { "id": "dcat_download_url", "weight": 20, "property": "dcat:downloadURL" },
+        { "id": "dcat_download_url_status", "weight": 30, "property": "dcat:downloadURL" }
+      ],
+      "interoperability": [
+        { "id": "dct_format", "weight": 20, "property": "dct:format" },
+        { "id": "dcat_media_type", "weight": 10, "property": "dcat:mediaType" },
+        { "id": "dct_format_vocabulary", "weight": 5, "property": "dct:format" },
+        { "id": "dcat_media_type_vocabulary", "weight": 5, "property": "dcat:mediaType" },
+        { "id": "dct_format_nonproprietary", "weight": 20, "property": "dct:format" },
+        { "id": "dct_format_machine_readable", "weight": 20, "property": "dct:format" },
+        { "id": "dcat_ap_es_compliance", "weight": 30, "property": "rdf:type" }
+      ],
+      "reusability": [
+        { "id": "dct_license", "weight": 20, "property": "dct:license" },
+        { "id": "dct_license_vocabulary", "weight": 10, "property": "dct:license" },
+        { "id": "dct_access_rights", "weight": 10, "property": "dct:accessRights" },
+        { "id": "dct_access_rights_vocabulary", "weight": 5, "property": "dct:accessRights" },
+        { "id": "dcat_contact_point", "weight": 20, "property": "dcat:contactPoint" },
+        { "id": "dct_publisher_nti_risp", "weight": 10, "property": "dct:publisher" }
+      ],
+      "contextuality": [
+        { "id": "dcat_byte_size", "weight": 5, "property": "dcat:byteSize" },
+        { "id": "dct_issued", "weight": 5, "property": "dct:issued" },
+        { "id": "dct_modified", "weight": 5, "property": "dct:modified" },
+        { "id": "dct_rights", "weight": 5, "property": "dct:rights" }
+      ]
+    },
+    "dcat_ap_es_hvd": {
       "findability": [
         { "id": "dcat_keyword", "weight": 30, "property": "dcat:keyword" },
         { "id": "dcat_theme", "weight": 30, "property": "dcat:theme" },
@@ -304,7 +373,7 @@
     "description": "Proportional evaluation calculates metric scores based on the percentage of entities that comply with each metric, rather than binary all-or-nothing scoring"
   },
   "backend_server": {
-    "enabled": true,
+    "enabled": false,
     "url": "",
     "_comment": "Empty url means it will use REACT_APP_BACKEND_URL from env or default to /api (relative path for Docker/Nginx)",
     "_deployment_config": {
@@ -320,16 +389,13 @@
     },
     "cors_proxy": {
       "fallback_proxies": [
-        "https://corsproxy.io/?url=",
-        "https://api.allorigins.win/get?url=",
-        "https://cors-anywhere.herokuapp.com/",
-        "https://thingproxy.freeboard.io/fetch/"
+        "https://corsproxy.io/?url="
       ],
       "enable_heuristics": true
     }
   },
   "data_quality": {
-    "enabled": true,
+    "enabled": false,
     "require_backend": true,
     "_deployment_config": {
       "github_pages": "Set enabled: false - No backend available for data quality analysis",
