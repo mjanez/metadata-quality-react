@@ -34,9 +34,6 @@ class BackendService {
     cors_proxy: {
       fallback_proxies: [
         "https://corsproxy.io/?url=",
-        "https://api.allorigins.win/get?url=",
-        "https://cors-anywhere.herokuapp.com/",
-        "https://thingproxy.freeboard.io/fetch/"
       ],
       enable_heuristics: true
     }
@@ -77,9 +74,7 @@ class BackendService {
         },
         cors_proxy: {
           fallback_proxies: [
-            'https://cors-anywhere.herokuapp.com/',
-            'https://api.allorigins.win/get?url=',
-            'https://thingproxy.freeboard.io/fetch/'
+            'https://corsproxy.io/?url=',
           ],
           enable_heuristics: true
         }

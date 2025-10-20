@@ -91,6 +91,26 @@ const SHACLReportViewer: React.FC<SHACLReportViewerProps> = ({
     
     return <strong>{profileName}</strong>;
   };
+
+  /**
+   * Get translated message for a violation
+   * If translationKey is available, use it for dynamic translation
+   * Otherwise, parse existing messages
+   */
+  const getViolationMessages = (violation: SHACLViolation): LocalizedMessage[] => {
+    // If we have translation metadata, use it for dynamic translation
+    if (violation.translationKey && violation.translationParams) {
+      const translatedText = t(violation.translationKey, violation.translationParams) as string;
+      return [{
+        text: translatedText,
+        language: i18n.language
+      }];
+    }
+    
+    // Otherwise, use the existing message parsing logic
+    return filterMessagesByLanguage(violation.message);
+  };
+
   const filterMessagesByLanguage = (messages: string[]): LocalizedMessage[] => {
     const currentLanguage = i18n.language;
     const allMessages: LocalizedMessage[] = [];
@@ -373,6 +393,10 @@ const SHACLReportViewer: React.FC<SHACLReportViewerProps> = ({
    */
   const renderGroupedViolationCard = (group: GroupedSHACLViolation, index: number) => {
     const isExpanded = expandedMessages.has(group.messageKey);
+    // Check if any violation in the group has foaf:page
+    const foafPage = group.violations.find(v => v.foafPage)?.foafPage;
+    // Get messages dynamically based on current language
+    const localizedMessages = getViolationMessages(group.violations[0]);
     
     return (
       <div key={`${group.messageKey}-${index}`} className="card mb-3">
@@ -390,6 +414,18 @@ const SHACLReportViewer: React.FC<SHACLReportViewerProps> = ({
                             {group.count} {group.count === 1 ? t('shacl.results.occurrence') : t('shacl.results.occurrences')}
                           </span>
                           {renderEntityBadges(group.violations)}
+                          {foafPage && (
+                            <a 
+                              href={foafPage} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="badge bg-info text-decoration-none ms-2"
+                              onClick={(e: React.MouseEvent) => e.stopPropagation()}
+                            >
+                              <i className="bi bi-info-circle me-1"></i>
+                              {t('shacl.help.guide_info')}
+                            </a>
+                          )}
                         </h6>
                         <button
                           className="btn btn-outline-secondary btn-sm"
@@ -400,7 +436,7 @@ const SHACLReportViewer: React.FC<SHACLReportViewerProps> = ({
                           <i className={`bi bi-chevron-${isExpanded ? 'up' : 'down'}`}></i>
                         </button>
                       </div>              <div className="mb-2">
-                {group.localizedMessages.map((msg, msgIndex) => (
+                {localizedMessages.map((msg, msgIndex) => (
                   <p key={msgIndex} className="mb-1 text-muted">
                     {renderMessageWithURLs(msg)}
                     {msg.language && (
@@ -459,20 +495,6 @@ const SHACLReportViewer: React.FC<SHACLReportViewerProps> = ({
                               <code className="text-info small">{formatPath(violation.sourceShape)}</code>
                             </div>
                           )}
-                          
-                          {violation.foafPage && (
-                            <div className="mt-2">
-                              <a 
-                                href={violation.foafPage} 
-                                target="_blank" 
-                                rel="noopener noreferrer"
-                                className="btn btn-outline-info btn-sm"
-                              >
-                                <i className="bi bi-info-circle me-1"></i>
-                                {t('shacl.help.more_info')}
-                              </a>
-                            </div>
-                          )}
                         </div>
                       </div>
                     ))}
@@ -507,7 +529,7 @@ const SHACLReportViewer: React.FC<SHACLReportViewerProps> = ({
             </div>
             
             <div className="mb-2">
-              {filterMessagesByLanguage(violation.message).map((msg, msgIndex) => (
+              {getViolationMessages(violation).map((msg, msgIndex) => (
                 <p key={msgIndex} className="mb-1 text-muted">
                   {renderMessageWithURLs(msg)}
                   {msg.language && (

@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { Routes, Route, Link, useLocation, Navigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import i18n from './i18n';
 import { AppStateProvider, useAppState } from './contexts/AppStateContext';
 import { backendService } from './services/BackendService';
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -341,7 +342,7 @@ function ValidationApp() {
           currentStep: t('common.states.processing', 'Ejecutando análisis MQA...')
         }));
         
-        const { quality: qualityResult, shaclReport } = await mqaService.calculateQualityWithSHACL(normalizedContent, profileSelection, 'turtle', true);
+        const { quality: qualityResult, shaclReport } = await mqaService.calculateQualityWithSHACL(normalizedContent, profileSelection, 'turtle', true, i18n.language);
         
         // Calculate validation duration
         const validationDuration = Date.now() - startTime;

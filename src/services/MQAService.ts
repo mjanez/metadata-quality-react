@@ -1435,7 +1435,8 @@ export class MQAService {
     content: string, 
     profileSelection: ProfileSelection | ValidationProfile,
     format?: string,
-    skipSyntaxValidation?: boolean
+    skipSyntaxValidation?: boolean,
+    language: string = 'es'
   ): Promise<{ quality: QualityResult; shaclReport: SHACLReport }> {
     try {
       // Extract profile string from ProfileSelection or use as-is if it's a string
@@ -1465,7 +1466,7 @@ export class MQAService {
       const quality = await this.calculateQuality(content, profile, format, true); // Skip syntax validation in calculateQuality too
 
       // Run SHACL validation
-      const shaclReport = await RDFService.validateWithSHACL(content, profile);
+      const shaclReport = await RDFService.validateWithSHACL(content, profile, 'turtle', language);
 
       // Update compliance metric if it exists
       const complianceMetric = quality.metrics.find(m => m.id.includes('compliance'));
@@ -1969,45 +1970,26 @@ export class MQAService {
    * Check URL accessibility via public CORS proxy services
    */
   private async checkUrlViaProxy(url: string): Promise<{ accessible: boolean; proxy?: string; error?: string }> {
-    // Get CORS proxies from configuration
+    // Get CORS proxies from configuration in their defined order
     const configProxies = backendService.getBackendConfig().cors_proxy.fallback_proxies;
     
-    // Determine timeout - use longer timeout in all cases for proxy requests
-    const timeout = 6000; // Longer timeout for proxy requests
+    if (!configProxies || configProxies.length === 0) {
+      return { accessible: false, error: 'No proxies configured' };
+    }
     
-    // Prioritize corsproxy.io from config and ensure it's first
-    const corsProxyUrl = configProxies.find(proxy => proxy.includes('corsproxy.io'));
-    const otherProxies = configProxies.filter(proxy => !proxy.includes('corsproxy.io'));
-    const orderedProxies = corsProxyUrl ? [corsProxyUrl, ...otherProxies] : configProxies;
+    const timeout = 5000; // 5 second timeout for proxy requests
     
-    const publicProxies = orderedProxies.map(proxy => {
-      // Use URL parsing to verify actual host name for security
+    // Use proxies directly in the order they appear in config
+    for (let index = 0; index < configProxies.length; index++) {
+      const proxy = configProxies[index];
       try {
-        const proxyUrl = new URL(proxy);
-        const proxyHost = proxyUrl.hostname.toLowerCase();
-        if (proxyHost === 'allorigins.win' || proxyHost === 'api.allorigins.win') {
-          return (url: string) => `${proxy}${encodeURIComponent(url)}`;
-        } else if (proxyHost === 'corsproxy.io') {
-          return (url: string) => `${proxy}${encodeURIComponent(url)}`;
-        } else {
-          return (url: string) => `${proxy}${url}`;
-        }
-      } catch (e) {
-        // Fallback: treat as generic proxy if URL parsing fails
-        return (url: string) => `${proxy}${url}`;
-      }
-    });
-
-    for (let index = 0; index < publicProxies.length; index++) {
-      const proxyFn = publicProxies[index];
-      try {
-        const proxyUrl = proxyFn(url);
+        // Build proxy URL - most proxies expect URL-encoded target
+        const proxyUrl = `${proxy}${encodeURIComponent(url)}`;
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), timeout);
-
         
         const response = await fetch(proxyUrl, {
-          method: 'HEAD', // Use HEAD instead of GET for faster response
+          method: 'HEAD',
           signal: controller.signal,
           headers: {
             'Accept': '*/*',
@@ -2018,18 +2000,15 @@ export class MQAService {
         clearTimeout(timeoutId);
         
         if (response.ok) {
-          //console.debug(`✅ Proxy verification successful: ${url} via proxy ${index + 1}`);
-          return { accessible: true, proxy: `proxy-${index + 1}` };
+          return { accessible: true, proxy: configProxies[index] };
         }
       } catch (error: any) {
-        //console.debug(`❌ Proxy ${index + 1} failed for ${url}:`, error?.message || 'Unknown error');
-        // Don't break immediately, try next proxy
+        // Continue to next proxy on error
         continue;
       }
     }
 
-    //console.debug(`🚫 All proxies failed for: ${url}`);
-    return { accessible: false, error: 'All proxies failed or CORS blocked' };
+    return { accessible: false, error: 'All configured proxies failed' };
   }
 
   /**

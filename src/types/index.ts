@@ -228,6 +228,9 @@ export interface SHACLViolation {
   resultSeverity?: string;
   foafPage?: string; // URL with additional information about the rule
   entityContext?: string; // Entity type (e.g., dcat:Dataset, dcat:Distribution) that the constraint applies to
+  // Translation metadata for dynamic message generation
+  translationKey?: string; // i18n key for the message template
+  translationParams?: Record<string, any>; // Parameters for the translation
 }
 
 export type SHACLSeverity = 'Violation' | 'Warning' | 'Info';

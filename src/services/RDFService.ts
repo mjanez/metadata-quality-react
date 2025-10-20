@@ -451,7 +451,8 @@ export class RDFService {
   public static async validateWithSHACL(
     content: string, 
     profileSelection: ProfileSelection | ValidationProfile,
-    format: RDFFormat = 'turtle'
+    format: RDFFormat = 'turtle',
+    language: string = 'es'
   ): Promise<SHACLReport> {
     try {
       // Extract profile string from ProfileSelection or use as-is if it's a string
@@ -466,7 +467,7 @@ export class RDFService {
       }
 
       // Perform SHACL validation
-      return await SHACLValidationService.validateRDF(normalizedContent, profile, 'turtle');
+      return await SHACLValidationService.validateRDF(normalizedContent, profile, 'turtle', language);
     } catch (error) {
       console.error('SHACL validation error in RDFService:', error);
       throw error;

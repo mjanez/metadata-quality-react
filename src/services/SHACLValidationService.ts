@@ -13,6 +13,7 @@ import {
   ProfileSelection
 } from '../types';
 import mqaConfigData from '../config/mqa-config.json';
+import i18n from '../i18n';
 
 export class SHACLValidationService {
   private static shaclShapesCache: Map<ValidationProfile, any> = new Map();
@@ -346,7 +347,7 @@ export class SHACLValidationService {
   /**
    * Parse SHACL validation result from shacl-engine
    */
-  private static parseSHACLResult(validationReport: any, shaclShapes?: any, profile?: ValidationProfile): SHACLValidationResult {
+  private static parseSHACLResult(validationReport: any, shaclShapes?: any, profile?: ValidationProfile, language: string = 'es'): SHACLValidationResult {
     const results: SHACLViolation[] = [];
 
     // shacl-engine returns results in validationReport.results
@@ -368,16 +369,20 @@ export class SHACLValidationService {
         //   fullResult: result
         // });
 
+        const { translationKey, translationParams } = this.getTranslationMetadata(result);
+        
         const violation: SHACLViolation = {
           focusNode: this.extractTermValue(result.focusNode),
           path: this.extractPath(result.path),
           value: this.extractTermValue(result.value),
-          message: this.extractMessages(result),
+          message: this.extractMessages(result, language),
           severity: this.mapSeverityFromSHACLEngine(result.severity),
           sourceConstraintComponent: this.extractSourceConstraintComponent(result),
           sourceShape: this.extractSourceShape(result),
           resultSeverity: this.extractTermValue(result.resultSeverity),
-          foafPage: this.extractFoafPage(result, shaclShapes)
+          foafPage: this.extractFoafPage(result, shaclShapes),
+          translationKey,
+          translationParams
         };
 
         results.push(violation);
@@ -395,7 +400,7 @@ export class SHACLValidationService {
   /**
    * Extract messages from SHACL result
    */
-  private static extractMessages(result: any): string[] {
+  private static extractMessages(result: any, language: string = 'es'): string[] {
     const messages: string[] = [];
     
     if (result.message) {
@@ -426,12 +431,289 @@ export class SHACLValidationService {
       }
     }
     
-    // If no messages found, provide a default
+    // If no messages found, generate a descriptive message based on constraint type
     if (messages.length === 0) {
-      messages.push('"Validation constraint violated"');
+      const generatedMessage = this.generateConstraintMessage(result, language);
+      messages.push(`"${generatedMessage}"`);
     }
     
     return messages;
+  }
+
+  /**
+   * Generate a descriptive message based on constraint component and available information
+   */
+  private static generateConstraintMessage(result: any, language: string = 'es'): string {
+    const constraint = this.extractSourceConstraintComponent(result);
+    const path = this.extractPath(result.path);
+    const value = this.extractTermValue(result.value);
+    
+    // Extract constraint parameters if available
+    const params: Record<string, any> = {
+      path,
+      value,
+      constraintType: constraint.replace('sh:', '').replace('ConstraintComponent', '')
+    };
+    
+    // Check for common SHACL constraint parameters
+    if (result.constraint) {
+      if (result.constraint.minCount !== undefined) {
+        params.min = result.constraint.minCount;
+      }
+      if (result.constraint.maxCount !== undefined) {
+        params.max = result.constraint.maxCount;
+      }
+      if (result.constraint.pattern) {
+        params.pattern = this.extractTermValue(result.constraint.pattern);
+      }
+      if (result.constraint.minLength !== undefined) {
+        params.min = result.constraint.minLength;
+      }
+      if (result.constraint.maxLength !== undefined) {
+        params.max = result.constraint.maxLength;
+      }
+      if (result.constraint.datatype) {
+        params.datatype = this.extractTermValue(result.constraint.datatype);
+      }
+      if (result.constraint.nodeKind) {
+        params.nodeKind = this.extractTermValue(result.constraint.nodeKind);
+      }
+      if (result.constraint.class) {
+        params.class = this.extractTermValue(result.constraint.class);
+      }
+    }
+    
+    // Generate message based on constraint type using i18n
+    const constraintType = params.constraintType;
+    let translationKey = '';
+    
+    switch (constraintType) {
+      case 'MinCount':
+        translationKey = 'shacl.constraints.minCount';
+        break;
+      case 'MaxCount':
+        translationKey = 'shacl.constraints.maxCount';
+        break;
+      case 'Pattern':
+        translationKey = 'shacl.constraints.pattern';
+        break;
+      case 'MinLength':
+        translationKey = 'shacl.constraints.minLength';
+        break;
+      case 'MaxLength':
+        translationKey = 'shacl.constraints.maxLength';
+        break;
+      case 'Datatype':
+        translationKey = 'shacl.constraints.datatype';
+        break;
+      case 'NodeKind':
+        translationKey = 'shacl.constraints.nodeKind';
+        break;
+      case 'Class':
+        translationKey = 'shacl.constraints.class';
+        break;
+      case 'Or':
+        translationKey = 'shacl.constraints.orConstraint';
+        break;
+      case 'And':
+        translationKey = 'shacl.constraints.andConstraint';
+        break;
+      case 'Not':
+        translationKey = 'shacl.constraints.notConstraint';
+        break;
+      case 'Xone':
+        translationKey = 'shacl.constraints.xone';
+        break;
+      case 'Closed':
+        translationKey = 'shacl.constraints.closed';
+        break;
+      case 'HasValue':
+        translationKey = 'shacl.constraints.hasValue';
+        break;
+      case 'In':
+        translationKey = 'shacl.constraints.in';
+        break;
+      case 'LanguageIn':
+        translationKey = 'shacl.constraints.languageIn';
+        break;
+      case 'UniqueLang':
+        translationKey = 'shacl.constraints.uniqueLang';
+        break;
+      case 'Equals':
+        translationKey = 'shacl.constraints.equals';
+        break;
+      case 'Disjoint':
+        translationKey = 'shacl.constraints.disjoint';
+        break;
+      case 'LessThan':
+        translationKey = 'shacl.constraints.lessThan';
+        break;
+      case 'LessThanOrEquals':
+        translationKey = 'shacl.constraints.lessThanOrEquals';
+        break;
+      case 'QualifiedMinCount':
+        translationKey = 'shacl.constraints.qualifiedMinCount';
+        break;
+      case 'QualifiedMaxCount':
+        translationKey = 'shacl.constraints.qualifiedMaxCount';
+        break;
+      default:
+        // Generic message with more context
+        if (path && value) {
+          translationKey = 'shacl.constraints.genericWithPathValue';
+        } else if (path) {
+          translationKey = 'shacl.constraints.genericWithPath';
+        } else {
+          translationKey = 'shacl.constraints.generic';
+        }
+    }
+    
+    // Use i18n to translate the message
+    return i18n.t(translationKey, { ...params, lng: language });
+  }
+
+  /**
+   * Get translation metadata (key and params) for a SHACL result
+   * This allows dynamic translation when language changes
+   */
+  private static getTranslationMetadata(result: any): { 
+    translationKey?: string; 
+    translationParams?: Record<string, any> 
+  } {
+    // Check if the result already has explicit messages
+    if (result.message && Array.isArray(result.message) && result.message.length > 0) {
+      // Has explicit SHACL messages, don't need translation metadata
+      return {};
+    }
+    
+    const constraint = this.extractSourceConstraintComponent(result);
+    const path = this.extractPath(result.path);
+    const value = this.extractTermValue(result.value);
+    
+    // Extract constraint parameters if available
+    const params: Record<string, any> = {
+      path,
+      value,
+      constraintType: constraint.replace('sh:', '').replace('ConstraintComponent', '')
+    };
+    
+    // Check for common SHACL constraint parameters
+    if (result.constraint) {
+      if (result.constraint.minCount !== undefined) {
+        params.min = result.constraint.minCount;
+      }
+      if (result.constraint.maxCount !== undefined) {
+        params.max = result.constraint.maxCount;
+      }
+      if (result.constraint.pattern) {
+        params.pattern = this.extractTermValue(result.constraint.pattern);
+      }
+      if (result.constraint.minLength !== undefined) {
+        params.min = result.constraint.minLength;
+      }
+      if (result.constraint.maxLength !== undefined) {
+        params.max = result.constraint.maxLength;
+      }
+      if (result.constraint.datatype) {
+        params.datatype = this.extractTermValue(result.constraint.datatype);
+      }
+      if (result.constraint.nodeKind) {
+        params.nodeKind = this.extractTermValue(result.constraint.nodeKind);
+      }
+      if (result.constraint.class) {
+        params.class = this.extractTermValue(result.constraint.class);
+      }
+    }
+    
+    // Determine translation key based on constraint type
+    const constraintType = params.constraintType;
+    let translationKey = '';
+    
+    switch (constraintType) {
+      case 'MinCount':
+        translationKey = 'shacl.constraints.minCount';
+        break;
+      case 'MaxCount':
+        translationKey = 'shacl.constraints.maxCount';
+        break;
+      case 'Pattern':
+        translationKey = 'shacl.constraints.pattern';
+        break;
+      case 'MinLength':
+        translationKey = 'shacl.constraints.minLength';
+        break;
+      case 'MaxLength':
+        translationKey = 'shacl.constraints.maxLength';
+        break;
+      case 'Datatype':
+        translationKey = 'shacl.constraints.datatype';
+        break;
+      case 'NodeKind':
+        translationKey = 'shacl.constraints.nodeKind';
+        break;
+      case 'Class':
+        translationKey = 'shacl.constraints.class';
+        break;
+      case 'Or':
+        translationKey = 'shacl.constraints.orConstraint';
+        break;
+      case 'And':
+        translationKey = 'shacl.constraints.andConstraint';
+        break;
+      case 'Not':
+        translationKey = 'shacl.constraints.notConstraint';
+        break;
+      case 'Xone':
+        translationKey = 'shacl.constraints.xone';
+        break;
+      case 'Closed':
+        translationKey = 'shacl.constraints.closed';
+        break;
+      case 'HasValue':
+        translationKey = 'shacl.constraints.hasValue';
+        break;
+      case 'In':
+        translationKey = 'shacl.constraints.in';
+        break;
+      case 'LanguageIn':
+        translationKey = 'shacl.constraints.languageIn';
+        break;
+      case 'UniqueLang':
+        translationKey = 'shacl.constraints.uniqueLang';
+        break;
+      case 'Equals':
+        translationKey = 'shacl.constraints.equals';
+        break;
+      case 'Disjoint':
+        translationKey = 'shacl.constraints.disjoint';
+        break;
+      case 'LessThan':
+        translationKey = 'shacl.constraints.lessThan';
+        break;
+      case 'LessThanOrEquals':
+        translationKey = 'shacl.constraints.lessThanOrEquals';
+        break;
+      case 'QualifiedMinCount':
+        translationKey = 'shacl.constraints.qualifiedMinCount';
+        break;
+      case 'QualifiedMaxCount':
+        translationKey = 'shacl.constraints.qualifiedMaxCount';
+        break;
+      default:
+        // Generic message with more context
+        if (path && value) {
+          translationKey = 'shacl.constraints.genericWithPathValue';
+        } else if (path) {
+          translationKey = 'shacl.constraints.genericWithPath';
+        } else {
+          translationKey = 'shacl.constraints.generic';
+        }
+    }
+    
+    return {
+      translationKey,
+      translationParams: params
+    };
   }
 
   /**
@@ -501,19 +783,81 @@ export class SHACLValidationService {
    * Extract foaf:page URL from SHACL shapes for additional information
    */
   private static extractFoafPage(result: any, shaclShapes?: any): string | undefined {
-    if (!shaclShapes || !result.sourceShape) {
+    if (!shaclShapes) {
       return undefined;
     }
 
     try {
+      const foafPagePredicate = 'http://xmlns.com/foaf/0.1/page';
+      const possibleSubjects: string[] = [];
+      
+      // 1. Try sourceShape URI
       const sourceShapeUri = result.sourceShape?.value || result.sourceShape?.toString();
-      if (!sourceShapeUri) return undefined;
+      if (sourceShapeUri) {
+        possibleSubjects.push(sourceShapeUri);
+      }
+      
+      // 2. Try constraint component URI
+      if (result.constraintComponent) {
+        const constraintUri = this.extractTermValue(result.constraintComponent);
+        if (constraintUri) {
+          possibleSubjects.push(constraintUri);
+        }
+      }
+      
+      // 3. Try to extract from shape structure
+      if (result.shape && result.shape.ptr && result.shape.ptr.ptrs) {
+        for (const ptr of result.shape.ptr.ptrs) {
+          if (ptr._term && ptr._term.value) {
+            possibleSubjects.push(ptr._term.value);
+          }
+          
+          // Also check edges for shape URIs
+          if (ptr.edges) {
+            for (const edge of ptr.edges) {
+              if (edge.subject && edge.subject.value) {
+                possibleSubjects.push(edge.subject.value);
+              }
+            }
+          }
+        }
+      }
+      
+      // 4. Try path predicate (the property being validated)
+      const pathValue = this.extractPath(result.path);
+      if (pathValue) {
+        possibleSubjects.push(pathValue);
+      }
 
-      // Search for foaf:page in the SHACL shapes dataset
-      for (const quad of shaclShapes) {
-        if (quad.subject.value === sourceShapeUri && 
-            quad.predicate.value === 'http://xmlns.com/foaf/0.1/page') {
-          return quad.object.value;
+      // Search for foaf:page associated with any of the possible subjects
+      for (const subject of possibleSubjects) {
+        for (const quad of shaclShapes) {
+          if (quad.subject.value === subject && 
+              quad.predicate.value === foafPagePredicate) {
+            const foafPage = quad.object.value;
+            // Return the first foaf:page found
+            return foafPage;
+          }
+        }
+      }
+      
+      // 5. Also check for foaf:page in property shapes related to the path
+      // Sometimes the foaf:page is defined on the PropertyShape, not the NodeShape
+      if (pathValue) {
+        for (const quad of shaclShapes) {
+          // Look for PropertyShapes that have sh:path matching our path
+          if (quad.predicate.value === 'http://www.w3.org/ns/shacl#path' &&
+              quad.object.value === pathValue) {
+            const propertyShapeSubject = quad.subject.value;
+            
+            // Now look for foaf:page on this PropertyShape
+            for (const foafQuad of shaclShapes) {
+              if (foafQuad.subject.value === propertyShapeSubject &&
+                  foafQuad.predicate.value === foafPagePredicate) {
+                return foafQuad.object.value;
+              }
+            }
+          }
         }
       }
     } catch (error) {
@@ -548,7 +892,8 @@ export class SHACLValidationService {
   public static async validateRDF(
     rdfContent: string,
     profile: ValidationProfile,
-    format: string = 'turtle'
+    format: string = 'turtle',
+    language: string = 'es'
   ): Promise<SHACLReport> {
     try {
       
@@ -641,7 +986,7 @@ export class SHACLValidationService {
       }
       
       // Parse results
-      const validationResult = this.parseSHACLResult(report, shapes, profile);
+      const validationResult = this.parseSHACLResult(report, shapes, profile, language);
 
       // Categorize violations by severity
       const violations = validationResult.results.filter(r => r.severity === 'Violation');
