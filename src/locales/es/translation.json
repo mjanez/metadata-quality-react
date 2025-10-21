@@ -58,6 +58,7 @@
       "home": "Inicio",
       "validation_tab": "Validación",
       "dashboard_tab": "Cuadro de mandos de calidad",
+      "data_quality_tab": "Calidad de Datos",
       "results": "Resultados",
       "about": "Acerca de"
     },
@@ -129,6 +130,8 @@
       "dcat_ap_description": "Perfil de aplicación DCAT para portales de datos en Europa",
       "dcat_ap_es": "DCAT-AP-ES", 
       "dcat_ap_es_description": "Perfil de aplicación DCAT-AP en España",
+      "dcat_ap_es_hvd": "DCAT-AP-ES-HVD",
+      "dcat_ap_es_hvd_description": "Perfil de aplicación DCAT-AP en España con la extensión HVD incluida",
       "nti_risp": "NTI-RISP",
       "nti_risp_description": "Modelo de metadatos de la Norma Técnica de Interoperabilidad (2013)"
     },
@@ -160,15 +163,15 @@
     },
     
     "dimensions": {
-      "findability": "Descubrimiento",
+      "findability": "Encontrabilidad",
       "findability_description": "Qué tan fácil es encontrar el conjunto de datos",
       "accessibility": "Accesibilidad",
       "accessibility_description": "Qué tan accesibles son los datos",
       "interoperability": "Interoperabilidad",
       "interoperability_description": "Interoperabilidad técnica de los datos",
-      "reusability": "Reutilización", 
+      "reusability": "Reusabilidad", 
       "reusability_description": "Qué tan fácil es reutilizar los datos",
-      "contextuality": "Contexto",
+      "contextuality": "Contextualidad",
       "contextuality_description": "Información contextual sobre los datos"
     },
     
@@ -260,7 +263,36 @@
     },
     
     "help": {
-      "more_info": "Más información"
+      "more_info": "Más información",
+      "guide_info": "Documentación"
+    },
+    "constraints": {
+      "minCount": "Propiedad '{{path}}' no cumple con el número mínimo de valores requeridos (mínimo: {{min}})",
+      "maxCount": "Propiedad '{{path}}' excede el número máximo de valores permitidos (máximo: {{max}})",
+      "pattern": "Valor '{{value}}' en '{{path}}' no coincide con el patrón esperado (patrón: {{pattern}})",
+      "minLength": "Valor '{{value}}' en '{{path}}' es demasiado corto (longitud mínima: {{min}})",
+      "maxLength": "Valor '{{value}}' en '{{path}}' es demasiado largo (longitud máxima: {{max}})",
+      "datatype": "Valor '{{value}}' en '{{path}}' no tiene el tipo de dato correcto (tipo esperado: {{datatype}})",
+      "nodeKind": "Nodo en '{{path}}' no es del tipo esperado (tipo requerido: {{nodeKind}})",
+      "class": "Recurso en '{{path}}' no es de la clase requerida (clase requerida: {{class}})",
+      "orConstraint": "Ninguna de las restricciones alternativas se cumple para '{{path}}'",
+      "andConstraint": "No se cumplen todas las restricciones requeridas para '{{path}}'",
+      "notConstraint": "La restricción de negación falló para '{{path}}'",
+      "xone": "Exactamente una restricción debería cumplirse para '{{path}}', pero no es el caso",
+      "closed": "Se encontraron propiedades no permitidas en el recurso",
+      "hasValue": "El valor requerido no se encontró en '{{path}}'",
+      "in": "Valor '{{value}}' en '{{path}}' no está en la lista de valores permitidos",
+      "languageIn": "El idioma del literal en '{{path}}' no está permitido",
+      "uniqueLang": "Se encontraron múltiples literales con el mismo idioma en '{{path}}'",
+      "equals": "Los valores en '{{path}}' no son iguales como se requiere",
+      "disjoint": "Se encontraron valores que deberían ser disjuntos en '{{path}}'",
+      "lessThan": "El valor en '{{path}}' no cumple con la restricción de comparación",
+      "lessThanOrEquals": "El valor en '{{path}}' no cumple con la restricción de comparación",
+      "qualifiedMinCount": "El número de valores que cumplen la condición en '{{path}}' no es correcto (mínimo: {{min}})",
+      "qualifiedMaxCount": "El número de valores que cumplen la condición en '{{path}}' no es correcto (máximo: {{max}})",
+      "generic": "La restricción de validación {{constraintType}} no se cumple",
+      "genericWithPath": "La restricción {{constraintType}} falló para la propiedad '{{path}}'",
+      "genericWithPathValue": "La restricción {{constraintType}} falló para la propiedad '{{path}}' con valor '{{value}}'"
     }
   },
 
@@ -290,7 +322,7 @@
     "formats": {
       "expected_formats": "Formatos de archivo esperados",
       "json_metrics": "Métricas JSON:",
-      "json_format": "Contiene dimensiones (descubrimiento, accesibilidad, etc.) y métricas individuales con puntuaciones",
+      "json_format": "Contiene dimensiones (encontrabilidad, accesibilidad, etc.) y métricas individuales con puntuaciones",
       "ttl_shacl": "TTL SHACL",
       "ttl_format": "Formato Turtle con resultados de validación SHACL incluyendo violaciones, advertencias y mensajes informativos"
     },
@@ -310,7 +342,7 @@
     
     "visualizations": {
       "dimension_scores": "Puntuaciones por dimensión",
-      "quality_radar": "Radar de calidad",
+      "quality_radar": "Radar de calidad FAIR+C",
       "detailed_metrics": "Métricas detalladas por dimensión", 
       "dimension_specific_charts": "Gráficos de métricas por dimensión",
       "metrics_breakdown": "Desglose de métricas",
@@ -321,9 +353,11 @@
       "metric_id": "Identificador de métrica",
       "score": "Puntuación",
       "max_score": "Puntuación máxima",
-      "percentage": "Porcentaje", 
+      "percentage": "Porcentaje",
+      "remaining": "Restante", 
       "weight": "Peso",
       "found": "Encontrado",
+      "entity_compliance": "Cumplimiento de entidades",
       "search_results": "Buscar resultados...",
       "all_severities": "Todas las severidades",
       "severity": "Severidad",
@@ -432,24 +466,30 @@
       "dcat_media_type": "Tipo de medio",
       "dct_format_vocabulary": "Vocabulario de formato",
       "dcat_media_type_vocabulary": "Vocabulario de tipo de medio",
-      "dct_format_nonproprietary": "Formato no propietario", 
+      "dct_format_nonproprietary": "Formato no propietario",
+      "dct_format_nonproprietary_nti_risp": "Formato no propietario (NTI)",
       "dct_format_machine_readable": "Formato legible por máquina",
+      "dct_format_machine_readable_nti_risp": "Formato legible por máquina (NTI)",
       "dcat_ap_compliance": "Conformidad con DCAT-AP",
       "dcat_ap_es_compliance": "Conformidad con DCAT-AP-ES",
       "nti_risp_compliance": "Conformidad con NTI-RISP",
       "dct_license": "Licencia",
-      "dct_license_nti_risp": "Licencia NTI-RISP (Dataset)",
+      "dct_license_nti_risp": "Licencia (Dataset NTI)",
       "dct_license_vocabulary": "Vocabulario de licencia",
+      "dct_license_vocabulary_nti_risp": "Vocabulario de licencia (NTI)",
       "dct_access_rights": "Derechos de acceso",
       "dct_access_rights_vocabulary": "Vocabulario de derechos de acceso",
       "dcat_contact_point": "Punto de contacto",
       "dct_publisher": "Publicador",
+      "dct_publisher_nti_risp": "Publicador (NTI DIR3)",
       "dct_rights": "Derechos",
       "dcat_byte_size": "Tamaño en bytes",
-      "dct_issued": "Fecha de emisión",
+      "dct_issued": "Fecha de publicación",
+      "dct_issued_nti_risp": "Fecha de creación (NTI)",
       "dct_modified": "Fecha de modificación",
-      "dct_format_vocabulary_nti_risp": "Vocabulario de formato (NTI-RISP)",
-      "dcat_media_type_vocabulary_nti_risp": "Vocabulario de tipo de medio (NTI-RISP)"
+      "dct_modified_nti_risp": "Fecha de última modificación (NTI)",
+      "dct_format_vocabulary_nti_risp": "Vocabulario de formato (NTI)",
+      "dcat_media_type_vocabulary_nti_risp": "Vocabulario de tipo de medio (NTI)"
     }
   },
 
@@ -491,9 +531,11 @@
     },
     
     "entities": {
+      "multi": "Múltiple",
       "datasets": "Conjuntos de datos",
       "data_services": "Servicios de datos",
       "distributions": "Distribuciones",
+      "catalogs": "Catálogos",
       "total_entities": "Total de entidades"
     }
   },
@@ -528,5 +570,241 @@
     "title": "Procesamiento RDF Aplicado",
     "description": "Se corrigieron automáticamente algunos problemas en tus datos RDF para permitir la validación:",
     "note": "Estas correcciones no afectan tus datos originales, solo la copia utilizada para el análisis."
+  },
+
+  "data_quality": {
+    "title": "Análisis de Calidad de Datos",
+    "subtitle": "Evaluación basada en la norma ISO/IEC 25012 para distribuciones CSV y JSON",
+    "newAnalysis": "Nuevo Análisis",
+    "analyzeButton": "Analizar Calidad de Datos",
+    "analyzeHelp": "Se analizará la distribución seleccionada según el estándar ISO/IEC 25012",
+    "analyzing": "Analizando Calidad de Datos...",
+    
+    "steps": {
+      "selection": "Selección",
+      "analysis": "Análisis", 
+      "results": "Resultados"
+    },
+
+    "analysisInfo": {
+      "dataset": "Dataset",
+      "distribution": "Distribución",
+      "format": "Formato"
+    },
+
+    "progress": {
+      "downloading": "Descargando datos...",
+      "parsing": "Analizando estructura",
+      "analyzing": "Evaluando calidad",
+      "generating": "Generando observaciones",
+      "completed": "Completado",
+      "url_validating": "Validando URL",
+      "url_invalid": "La URL no devuelve datos válidos en formato {{format}}",
+      "url_unknown_source": ". Puede que la URL dirija a una página HTML en lugar de datos."
+    },
+
+    "selector": {
+      "title": "Buscar Datasets para Análisis de Calidad",
+      "searchQuery": "Buscar",
+      "searchPlaceholder": "Buscar por título, descripción o tema...",
+      "searchExamples": "Prueba buscando términos específicos como \"empresas\", \"población\", \"economía\", etc.",
+      "format": "Formato",
+      "allFormats": "Todos los formatos",
+      "limit": "Límite",
+      "loading": "Buscando datasets...",
+      "noResults": "No se encontraron datasets",
+      "noResultsHelp": "Prueba con términos de búsqueda diferentes o cambia los filtros.",
+      "distributions": "distribuciones",
+      "availableDistributions": "Distribuciones disponibles",
+      "untitledDistribution": "Distribución sin título",
+      "selected": "Seleccionado",
+      "selectedDistribution": "Distribución Seleccionada",
+      "dataset": "Dataset",
+      "noDataAvailable": "No hay distribuciones CSV o JSON disponibles en el catálogo en este momento.",
+      "trySearch": "Prueba buscando términos específicos como \"empresas\", \"población\", \"economía\", etc.",
+      "fileSizeWarning": "El tamaño del archivo excede el límite recomendado de {{maxSize}} para análisis. El procesamiento puede ser lento o fallar.",
+      "sizeWarning": "Excede límite",
+      "copy": "Copiar al portapapeles",
+      "copied": "Copiado"
+    },
+
+    "report": {
+      "title": "Informe de calidad de datos",
+      "overallScore": "Puntuación global de calidad",
+      "basicInfo": "Información básica",
+      "columns": "Columnas",
+      "records": "Registros",
+      "columnNames": "Nombres de columnas",
+      "indicators": "Indicadores de calidad",
+      "category": "Categoría",
+      "indicator": "Indicador",
+      "result": "Resultado",
+      "sampleRecords": "Registros de muestra",
+      "observations": "Observaciones y recomendaciones",
+      "definition": "Definición",
+      "recommendations": "Recomendaciones",
+      "notAvailable": "N/A",
+      "true": "Verdadero",
+      "false": "Falso",
+      "noSampleData": "No hay datos de muestra disponibles",
+      "error": "Error en el análisis",
+      "analyzing": "Analizando datos...",
+      "downloadAll": "Descargar todo (ZIP)",
+      "downloadAllDescription": "Descarga un archivo ZIP con 3 CSV (indicadores, registros de muestra, observaciones) y 1 JSON de resumen",
+      "exportIndicators": "Exportar indicadores (CSV)",
+      "exportSamples": "Exportar registros de muestra (CSV)",
+      "exportObservations": "Exportar observaciones (CSV)",
+      "originalFile": "Fichero original",
+      "viewOriginalFile": "Ver fichero original"
+    },
+
+    "export": {
+      "metadata": {
+        "generated": "Generado",
+        "format": "Formato",
+        "standard": "Estándar"
+      },
+      "summary": "Resumen"
+    },
+
+    "characteristics": {
+      "accuracy": "Exactitud",
+      "completeness": "Completitud",
+      "consistency": "Consistencia",
+      "credibility": "Credibilidad",
+      "currentness": "Actualidad",
+      "precision": "Precisión",
+      "relevance": "Relevancia",
+      "accessibility": "Accesibilidad",
+      "portability": "Portabilidad",
+      "recoverability": "Recuperabilidad",
+      "security": "Seguridad",
+      "traceability": "Trazabilidad",
+      "understandability": "Comprensibilidad",
+      "compliance": "Conformidad",
+      "availability": "Disponibilidad"
+    },
+
+    "indicators": {
+      "outliersByColumn": "Valores atípicos por columna",
+      "completenessRatio": "Ratio de completitud por columna",
+      "overallCompleteness": "Ratio de completitud general",
+      "temporalCompleteness": "Completitud temporal",
+      "duplicatedRecords": "Registros duplicados",
+      "mostRecentDate": "Fecha más reciente",
+      "oldestDate": "Fecha más antigua",
+      "temporalCoverage": "Cobertura temporal",
+      "accessible": "Accesibilidad",
+      "provenance": "Procedencia",
+      "temporalInformation": "Información temporal",
+      "spatialInformation": "Información espacial",
+      "identification": "Identificación",
+      "confusingColumns": "Columnas confusas",
+      "uncommonColumns": "Columnas poco comunes",
+      "portable": "Portabilidad",
+      "machineReadable": "Legible por máquina",
+      "openFormat": "Formato abierto"
+    },
+
+    "score": {
+      "excellent": "Excelente calidad de datos",
+      "good": "Buena calidad de datos",
+      "fair": "Calidad de datos aceptable",
+      "poor": "Calidad de datos deficiente"
+    },
+
+    "about": {
+      "title": "Acerca del Análisis de Calidad de Datos",
+      "description": "Este análisis evalúa la calidad de distribuciones de datos CSV y JSON basándose en la norma ISO/IEC 25012, que define 15 características de calidad divididas en dos categorías principales:",
+      "inherent": "Calidad de datos inherente",
+      "systemDependent": "Calidad de datos dependiente del sistema"
+    },
+
+    "noValidationData": {
+      "title": "No hay datos de validación disponibles",
+      "description": "Para usar el análisis de calidad de datos, primero necesitas validar un catálogo RDF en la pestaña de Validación.",
+      "step1": "Ve a la pestaña 'Validación'",
+      "step2": "Carga un catálogo RDF (URL o texto directo)",
+      "step3": "Ejecuta la validación",
+      "step4": "Regresa aquí para analizar la calidad de las distribuciones",
+      "goToValidation": "Ir a Validación"
+    },
+
+    "checkingBackend": "Verificando disponibilidad del servicio...",
+    
+    "notAvailable": {
+      "title": "Funcionalidad no disponible",
+      "githubPages": "La funcionalidad de análisis de calidad de datos no está disponible en GitHub Pages debido a restricciones CORS.",
+      "backend": "El servidor backend no está disponible. Esta funcionalidad requiere un servidor backend para descargar y analizar datos."
+    },
+
+    "setup": {
+      "title": "Configuración para desarrollo:",
+      "step1": "Crear un servidor Node.js en el puerto 3001",
+      "step2": "Implementar endpoints: /api/health, /api/validate-url, /api/download-data",
+      "step3": "Habilitar CORS para el origen de la aplicación",
+      "step4": "Establecer backend_server.enabled = true en mqa-config.json",
+      "note": "Ver documentación del proyecto para más detalles sobre la configuración del backend."
+    },
+
+    "errors": {
+      "zipNotSupported": "No se soportan archivos ZIP. Por favor proporciona un enlace directo a datos CSV o JSON.",
+      "invalidJsonStructure": "El JSON debe contener un array de objetos, o tener una propiedad 'data', 'results' o 'features' con un array.",
+      "jsonParseError": "Error al parsear JSON: {{message}}",
+      "invalidFormat": "Formato de datos inválido"
+    },
+
+    "observations": {
+      "accuracy": {
+        "definition": "Grado en que los datos representan correctamente el valor verdadero.",
+        "withOutliers": "Se detectaron {{count}} valores atípicos. Aunque la cantidad es relativamente baja, se recomienda analizar estos registros para determinar si son errores o reflejan situaciones excepcionales.",
+        "noOutliers": "No se detectaron valores atípicos significativos en los datos numéricos.",
+        "recommendations": {
+          "reviewOutliers": "Revisar valores atípicos identificados",
+          "implementValidation": "Implementar validaciones en la entrada de datos"
+        }
+      },
+      "completeness": {
+        "definition": "Grado en que los datos necesarios están presentes.",
+        "general": "Completitud general del {{percentage}}%. ",
+        "perfect": "No hay valores ausentes, indicando una completitud excelente.",
+        "missing": "Se detectaron algunos valores ausentes que podrían afectar el análisis.",
+        "recommendations": {
+          "reviewMissing": "Revisar columnas con valores ausentes",
+          "implementImputation": "Implementar estrategias de imputación si es necesario"
+        }
+      },
+      "consistency": {
+        "definition": "Grado en que los datos son uniformes y libres de contradicciones.",
+        "noDuplicates": "No se encontraron registros duplicados, lo que indica una buena consistencia.",
+        "withDuplicates": "Se detectaron {{count}} registros duplicados que podrían afectar la calidad del análisis.",
+        "recommendations": {
+          "removeDuplicates": "Eliminar o consolidar registros duplicados",
+          "implementUniqueKeys": "Implementar claves únicas para prevenir duplicados"
+        }
+      },
+      "accessibility": {
+        "definition": "Facilidad con la que se puede acceder y utilizar los datos.",
+        "observation": "Los datos están disponibles en formato {{format}}, lo que facilita su procesamiento y análisis.",
+        "recommendations": {
+          "documentStructure": "Documentar la estructura de los datos",
+          "provideMetadata": "Proporcionar metadatos descriptivos"
+        }
+      },
+      "portability": {
+        "definition": "Grado en que los datos pueden ser utilizados en diferentes entornos.",
+        "compliant": "Los datos {{meets}} con los criterios de portabilidad. {{machineReadable}} {{openFormat}}",
+        "meets": "cumplen",
+        "doesNotMeet": "no cumplen",
+        "machineReadableYes": "El formato es legible por máquina.",
+        "machineReadableNo": "El formato no es fácilmente legible por máquina.",
+        "openFormatYes": "Es un formato abierto.",
+        "openFormatNo": "No es un formato abierto.",
+        "recommendations": {
+          "convertToStandard": "Considerar convertir a formatos más estándar",
+          "ensureOpenFormat": "Asegurar que el formato sea abierto y legible por máquina"
+        }
+      }
+    }
   }
 }

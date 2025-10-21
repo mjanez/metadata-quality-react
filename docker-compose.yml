@@ -1,0 +1,71 @@
+services:
+  # MQA React Application (Frontend + Backend)
+  mqa-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - NODE_ENV=production
+        - PUBLIC_URL=${PUBLIC_URL:-/}
+    container_name: mqa-react-app
+    environment:
+      - NODE_ENV=production
+      - REACT_APP_BACKEND_URL=${REACT_APP_BACKEND_URL:-/api}
+      - PUBLIC_URL=${PUBLIC_URL:-/}
+      - FRONTEND_PORT=${FRONTEND_PORT:-3000}
+      - BACKEND_PORT=${BACKEND_PORT:-3001}
+      # Security configuration
+      - NODE_TLS_REJECT_UNAUTHORIZED=${NODE_TLS_REJECT_UNAUTHORIZED:-1}
+      - ALLOWED_DOMAINS=${ALLOWED_DOMAINS:-}
+    volumes:
+      # Optional: Mount config for runtime changes
+      - ./mqa-config.json:/app/build/config/mqa-config.json:ro
+      # Optional: Mount custom data files
+      - ./public/data:/app/build/data:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/", "&&", "curl", "-f", "http://localhost:3001/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    networks:
+      - mqa-network
+    labels:
+      - "com.mqa.service=react-app"
+      - "com.mqa.description=Metadata Quality Assessment Tool"
+
+  # (HTTPS enabled by default)
+  nginx:
+    image: nginx:alpine
+    container_name: mqa-nginx
+    ports:
+      - "${NGINX_HTTP_PORT:-80}:80"
+      - "${NGINX_HTTPS_PORT:-443}:443"
+    environment:
+      - BACKEND_PORT=${BACKEND_PORT:-3001}
+      - FRONTEND_PORT=${FRONTEND_PORT:-3000}
+    volumes:
+      - ./docker/nginx/nginx.conf.template:/etc/nginx/nginx.conf.template:ro
+      - ./docker/nginx/entrypoint.sh:/docker-entrypoint.sh:ro
+      - ./docker/nginx/ssl:/etc/nginx/ssl:ro
+      - nginx-cache:/var/cache/nginx
+    entrypoint: ["/bin/sh", "/docker-entrypoint.sh"]
+    depends_on:
+      - mqa-app
+    restart: unless-stopped
+    networks:
+      - mqa-network
+    labels:
+      - "com.mqa.service=reverse-proxy"
+      - "com.mqa.description=Nginx Reverse Proxy with HTTPS"
+
+volumes:
+  nginx-cache:
+    driver: local
+
+networks:
+  mqa-network:
+    driver: bridge
+    labels:
+      - "com.mqa.network=main"

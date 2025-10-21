@@ -1,4 +1,4 @@
-{"source": "docs/vocabularies/file_types.csv", "generated": "2025-08-21T15:04:29Z", "format": "jsonl", "type": "uri_label", "name": "file_types", "count": 203}
+{"source": "https://raw.githubusercontent.com/mjanez/metadata-quality-react/refs/heads/develop/docs/vocabularies/file_types.csv", "generated": "2025-10-09T13:41:16Z", "format": "jsonl", "type": "uri_label", "name": "file_types", "count": 203}
 {"uri": "http://publications.europa.eu/resource/authority/file-type/7Z", "label": "7Z"}
 {"uri": "http://publications.europa.eu/resource/authority/file-type/AAB", "label": "AAB"}
 {"uri": "http://publications.europa.eu/resource/authority/file-type/AAC", "label": "AAC"}

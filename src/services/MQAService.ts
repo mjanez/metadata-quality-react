@@ -5,11 +5,22 @@ import { RDFService } from './RDFService';
 import { detectRDFFormat } from '../utils/formatDetection';
 import mqaConfig from '../config/mqa-config.json';
 import i18n from '../i18n';
+import { backendService } from './BackendService';
 
 export class MQAService {
+  // Consistent rounding function for all score calculations
+  private static roundScore(value: number): number {
+    return Math.round(value * 1000) / 1000; // 3 decimal places for consistency
+  }
+  
   private static instance: MQAService;
   private config: MQAConfig;
   private vocabularies: Map<string, VocabularyItem[]> = new Map();
+  private vocabularyLoadPromises: Map<string, Promise<VocabularyItem[]>> = new Map();
+  
+  // Performance caches - static to persist across instances
+  private static propertyCache: Map<string, boolean> = new Map();
+  private static complianceCache: Map<string, number> = new Map();
 
   // RDF URI constants for better maintainability
   private static readonly RDF_URIS = {
@@ -20,6 +31,32 @@ export class MQAService {
 
   private constructor() {
     this.config = mqaConfig as unknown as MQAConfig;
+    // Pre-load common vocabularies to avoid repeated requests
+    this.preloadVocabularies();
+  }
+
+  /**
+   * Pre-load commonly used vocabularies
+   */
+  private async preloadVocabularies(): Promise<void> {
+    const commonVocabularies = [
+      'licenses',
+      'access_rights',
+      'file_types',
+      'media_types',
+      'non_proprietary',
+      'machine_readable'
+    ];
+
+    console.log('Pre-loading common vocabularies...');
+    const loadPromises = commonVocabularies.map(name => this.loadVocabulary(name));
+    
+    try {
+      await Promise.all(loadPromises);
+      console.log('✅ All common vocabularies loaded');
+    } catch (error) {
+      console.warn('⚠️ Some vocabularies failed to pre-load:', error);
+    }
   }
 
   public static getInstance(): MQAService {
@@ -30,34 +67,69 @@ export class MQAService {
   }
 
   /**
-   * Load vocabulary from JSONL file
+   * Clear performance caches to free memory
+   */
+  public static clearCaches(): void {
+    MQAService.propertyCache.clear();
+    MQAService.complianceCache.clear();
+    console.debug('Cleared MQA performance caches');
+  }
+
+  /**
+   * Get cache statistics
+   */
+  public static getCacheStats(): { propertyCache: number; complianceCache: number } {
+    return {
+      propertyCache: MQAService.propertyCache.size,
+      complianceCache: MQAService.complianceCache.size
+    };
+  }
+
+  /**
+   * Load vocabulary from JSONL file (with deduplication of concurrent requests)
    */
   private async loadVocabulary(name: string): Promise<VocabularyItem[]> {
     try {
+      // Return cached vocabulary if available
       if (this.vocabularies.has(name)) {
         return this.vocabularies.get(name)!;
       }
 
-      console.debug(`📚 Loading vocabulary: ${name}`);
-      const basePath = process.env.NODE_ENV === 'production' 
-        ? '/metadata-quality-react/data/'
-        : '/data/';
-      const response = await fetch(`${basePath}${name}.jsonl`);
-      if (!response.ok) {
-        throw new Error(`Failed to load vocabulary ${name}: ${response.statusText}`);
+      // Return existing load promise if already loading (prevents duplicate requests)
+      if (this.vocabularyLoadPromises.has(name)) {
+        return this.vocabularyLoadPromises.get(name)!;
       }
 
-      const text = await response.text();
-      const items: VocabularyItem[] = text
-        .split('\n')
-        .filter(line => line.trim())
-        .map(line => JSON.parse(line));
 
-      this.vocabularies.set(name, items);
-      console.log(`✅ Loaded ${items.length} items for vocabulary: ${name}`);
-      return items;
+      // Create load promise
+      const loadPromise = (async () => {
+    let basePath = process.env.PUBLIC_URL || '/';
+    // Ensure basePath ends with exactly one /
+    if (!basePath.endsWith('/')) basePath += '/';
+    const response = await fetch(`${basePath}data/${name}.jsonl`);
+        if (!response.ok) {
+          throw new Error(`Failed to load vocabulary ${name}: ${response.statusText}`);
+        }
+
+        const text = await response.text();
+        const items: VocabularyItem[] = text
+          .split('\n')
+          .filter(line => line.trim())
+          .map(line => JSON.parse(line));
+
+        this.vocabularies.set(name, items);
+        this.vocabularyLoadPromises.delete(name); // Clean up promise
+        console.log(`✅ Loaded ${items.length} items for vocabulary: ${name}`);
+        return items;
+      })();
+
+      // Store promise to prevent duplicate requests
+      this.vocabularyLoadPromises.set(name, loadPromise);
+      
+      return await loadPromise;
     } catch (error) {
       console.warn(`⚠️ Failed to load vocabulary ${name}:`, error);
+      this.vocabularyLoadPromises.delete(name); // Clean up on error
       return [];
     }
   }
@@ -69,7 +141,6 @@ export class MQAService {
     // Auto-detect format if not specified or is 'auto'
     const detectedFormat = (!format || format === 'auto') ? detectRDFFormat(content) : format;
     
-    console.debug(`Validating RDF syntax for detected format: ${detectedFormat}`);
     
     switch (detectedFormat) {
       case 'rdfxml':
@@ -316,6 +387,53 @@ export class MQAService {
   }
 
   /**
+   * Extract values from NTI-RISP dct:IMT structure
+   * @param quad - The quad containing the dct:format property
+   * @param store - The RDF store
+   * @param propertyToExtract - Either 'rdfs:label' or 'rdf:value'
+   * @returns Array of extracted values
+   */
+  private extractNTIRISPIMTValues(quad: any, store: N3Store, propertyToExtract: string): string[] {
+    const values: string[] = [];
+    
+    try {
+      // Check if the object is a dct:IMT resource
+      const imtResource = quad.object;
+      
+      // First check if it's typed as dct:IMT
+      const typeQuads = store.getQuads().filter(q => 
+        q.subject.equals(imtResource) && 
+        q.predicate.value === MQAService.RDF_URIS.RDF_TYPE &&
+        q.object.value.includes('IMT')
+      );
+      
+      if (typeQuads.length > 0) {
+        // It's a dct:IMT resource, extract the requested property
+        const propertyURI = this.expandProperty(propertyToExtract);
+        const propertyQuads = store.getQuads().filter(q => 
+          q.subject.equals(imtResource) && 
+          q.predicate.value === propertyURI
+        );
+        
+        propertyQuads.forEach(propQuad => {
+          if (propQuad.object.termType === 'Literal') {
+            values.push(propQuad.object.value.trim());
+          }
+        });
+      } else {
+        // Fallback: treat as regular literal value if not dct:IMT
+        if (quad.object.termType === 'Literal') {
+          values.push(quad.object.value.trim());
+        }
+      }
+    } catch (error) {
+      console.warn(`Warning extracting NTI-RISP IMT values:`, error);
+    }
+    
+    return values;
+  }
+
+  /**
    * Extract values from a quad based on object type and profile
    */
   private extractValuesFromQuad(quad: any, store: N3Store, property: string, profile?: ValidationProfile): string[] {
@@ -351,7 +469,6 @@ export class MQAService {
    * Extract values from BlankNode based on profile
    */
   private extractBlankNodeValues(blankNode: any, store: N3Store, property: string, profile?: ValidationProfile): string[] {
-    console.debug(`Found BlankNode for property ${property}: ${blankNode.value}`);
     
     if (profile === 'nti_risp') {
       return this.extractNTIRISPBlankNodeValues(blankNode, store);
@@ -410,8 +527,8 @@ export class MQAService {
       quads.forEach(quad => {
         if (quad.object.termType === 'Literal') {
           values.push(quad.object.value);
-          const propertyName = this.getPropertyDisplayName(propertyUri);
-          console.debug(`Found ${propertyName} from ${context}: ${quad.object.value}`);
+          //const propertyName = this.getPropertyDisplayName(propertyUri);
+          //console.debug(`Found ${propertyName} from ${context}: ${quad.object.value}`);
         }
       });
     });
@@ -435,16 +552,20 @@ export class MQAService {
   /**
    * Get vocabulary metric information for vocabulary-based metrics
    */
-  private getVocabularyMetricInfo(metricId: string): { baseProperty: string; vocabularyName: string } | null {
-    const vocabularyMetrics: { [key: string]: { baseProperty: string; vocabularyName: string } } = {
+  private getVocabularyMetricInfo(metricId: string): { baseProperty: string; vocabularyName: string; ntiRispProperty?: string } | null {
+    const vocabularyMetrics: { [key: string]: { baseProperty: string; vocabularyName: string; ntiRispProperty?: string } } = {
       'dct_format_vocabulary': { baseProperty: 'dct:format', vocabularyName: 'file_types' },
       'dcat_media_type_vocabulary': { baseProperty: 'dcat:mediaType', vocabularyName: 'media_types' },
-      'dct_format_vocabulary_nti_risp': { baseProperty: 'dct:format', vocabularyName: 'file_types' },
-      'dcat_media_type_vocabulary_nti_risp': { baseProperty: 'dcat:mediaType', vocabularyName: 'media_types' },
+      // NTI-RISP specific: evaluate different properties of dct:IMT
+      'dct_format_vocabulary_nti_risp': { baseProperty: 'dct:format', vocabularyName: 'file_types', ntiRispProperty: 'rdfs:label' },
+      'dcat_media_type_vocabulary_nti_risp': { baseProperty: 'dct:format', vocabularyName: 'media_types', ntiRispProperty: 'rdf:value' },
+      'dct_format_nonproprietary_nti_risp': { baseProperty: 'dct:format', vocabularyName: 'non_proprietary', ntiRispProperty: 'rdfs:label' },
+      'dct_format_machine_readable_nti_risp': { baseProperty: 'dct:format', vocabularyName: 'machine_readable', ntiRispProperty: 'rdfs:label' },
       'dct_format_nonproprietary': { baseProperty: 'dct:format', vocabularyName: 'non_proprietary' },
       'dct_format_machine_readable': { baseProperty: 'dct:format', vocabularyName: 'machine_readable' },
       'dct_license_vocabulary': { baseProperty: 'dct:license', vocabularyName: 'licenses' },
-      'dct_access_rights_vocabulary': { baseProperty: 'dct:accessRights', vocabularyName: 'access_rights' }
+      'dct_access_rights_vocabulary': { baseProperty: 'dct:accessRights', vocabularyName: 'access_rights' },
+      'dct_license_vocabulary_nti_risp': { baseProperty: 'dct:license', vocabularyName: 'licenses' },
     };
     
     return vocabularyMetrics[metricId] || null;
@@ -463,15 +584,14 @@ export class MQAService {
     const datasetMetrics = [
       'dcat_keyword', 'dcat_theme', 'dct_spatial', 'dct_temporal',
       'dct_creator', 'dct_language', 'dcat_contact_point', 
-      'dct_access_rights', 'dcat_ap_compliance', 'dcat_ap_es_compliance', 
-      'nti_risp_compliance', 'dct_publisher', 'dct_access_rights_vocabulary', 'dct_license_nti_risp'
+      'dct_access_rights', 'dct_publisher', 'dct_publisher_nti_risp', 'dct_access_rights_vocabulary', 'dct_license_nti_risp', 'dct_license_vocabulary_nti_risp', 'dct_issued_nti_risp', 'dct_modified_nti_risp'
     ];
     
     // Metrics that apply to Distributions only
     const distributionMetrics = [
       'dcat_access_url', 'dcat_download_url', 'dct_format', 'dcat_media_type',
-      'dcat_byte_size', 'dct_format_vocabulary', 'dct_format_machine_readable',
-      'dct_format_vocabulary_nti_risp', 'dcat_media_type_vocabulary_nti_risp',
+      'dcat_byte_size', 'dct_rights', 'dct_format_vocabulary', 'dct_format_machine_readable',
+      'dct_format_vocabulary_nti_risp', 'dcat_media_type_vocabulary_nti_risp', 'dct_format_nonproprietary_nti_risp', 'dct_format_machine_readable_nti_risp',
       'dcat_media_type_vocabulary', 'dct_format_nonproprietary',
       'dcat_access_url_status', 'dcat_download_url_status', 'dct_license',
       'dct_license_vocabulary'
@@ -480,12 +600,15 @@ export class MQAService {
     // Metrics that apply to Catalogs only
     const catalogMetrics = [
       // Catalog-specific metrics would go here
+      'dcat_ap_compliance', 'dcat_ap_es_compliance', 
+      'nti_risp_compliance'
     ];
     
     // Priority classification
     if (multiEntityMetrics.includes(metricId)) return 'Multi';
     if (distributionMetrics.includes(metricId)) return 'Distribution';
     if (datasetMetrics.includes(metricId)) return 'Dataset';
+    if (catalogMetrics.includes(metricId)) return 'Catalog';
     return 'Catalog'; // Default fallback
   }
 
@@ -513,7 +636,7 @@ export class MQAService {
     );
     
     const count = typeQuads.length;
-    console.debug(`Found ${count} entities of type ${entityType}`);
+    //console.debug(`Found ${count} entities of type ${entityType}`);
     
     return count;
   }
@@ -527,6 +650,12 @@ export class MQAService {
     entityType: 'Dataset' | 'Distribution' | 'Catalog',
     profile: ValidationProfile
   ): number {
+    // Create cache key for this compliance check
+    const cacheKey = `compliance:${property}:${entityType}:${profile}:${store.size}`;
+    if (MQAService.complianceCache.has(cacheKey)) {
+      return MQAService.complianceCache.get(cacheKey)!;
+    }
+
     const typeURI = this.getEntityTypeURI(entityType);
     const fullProperty = this.expandProperty(property);
     
@@ -558,6 +687,9 @@ export class MQAService {
     
     console.debug(`✅ ${compliantCount}/${entityQuads.length} ${entityType} entities comply with ${property}`);
     
+    // Cache the result
+    MQAService.complianceCache.set(cacheKey, compliantCount);
+    
     return compliantCount;
   }
 
@@ -570,7 +702,8 @@ export class MQAService {
     baseProperty: string, // e.g., 'dct:format'
     vocabularyName: string, // e.g., 'non_proprietary' 
     entityType: 'Dataset' | 'Distribution' | 'Catalog',
-    profile: ValidationProfile
+    profile: ValidationProfile,
+    ntiRispProperty?: string // For NTI-RISP: 'rdfs:label' or 'rdf:value'
   ): Promise<number> {
     const typeURI = this.getEntityTypeURI(entityType);
     const fullProperty = this.expandProperty(baseProperty);
@@ -582,6 +715,7 @@ export class MQAService {
     );
     
     let compliantCount = 0;
+    const nonCompliantValues = new Set<string>(); // Track unique non-compliant values
     
     for (const entityQuad of entityQuads) {
       const entityURI = entityQuad.subject;
@@ -596,8 +730,14 @@ export class MQAService {
         // Extract values from property
         const values: string[] = [];
         propertyQuads.forEach(quad => {
-          const extractedValues = this.extractValuesFromQuad(quad, store, baseProperty, profile);
-          values.push(...extractedValues);
+          if (ntiRispProperty) {
+            // Special handling for NTI-RISP dct:IMT structure
+            const imtValues = this.extractNTIRISPIMTValues(quad, store, ntiRispProperty);
+            values.push(...imtValues);
+          } else {
+            const extractedValues = this.extractValuesFromQuad(quad, store, baseProperty, profile);
+            values.push(...extractedValues);
+          }
         });
         
         // Filter valid values
@@ -608,6 +748,9 @@ export class MQAService {
           const isInVocabulary = await this.checkVocabularyMatch(validValues, vocabularyName);
           if (isInVocabulary) {
             compliantCount++;
+          } else {
+            // Track non-compliant values for debugging
+            validValues.forEach(value => nonCompliantValues.add(value));
           }
         }
       }
@@ -616,6 +759,11 @@ export class MQAService {
     }
     
     console.debug(`🏷️ ${compliantCount}/${entityQuads.length} ${entityType} entities have valid ${vocabularyName} vocabulary values for ${baseProperty}`);
+    
+    // Log non-compliant values for debugging if any exist
+    if (nonCompliantValues.size > 0) {
+      console.warn(`⚠️ Non-compliant values for ${vocabularyName} vocabulary (${baseProperty}):`, Array.from(nonCompliantValues).sort());
+    }
     
     return compliantCount;
   }
@@ -629,20 +777,26 @@ export class MQAService {
     store: N3Store, 
     profile: ValidationProfile
   ): boolean {
-    // For most metrics, presence is enough
-    // But for specific cases, we might need value validation
+    // For structural properties (BlankNodes, complex objects), presence of quads is enough
+    // Only validate actual literal values for vocabulary-based metrics
     
-    // Extract values for validation
-    const values: string[] = [];
-    propertyQuads.forEach(quad => {
-      const extractedValues = this.extractValuesFromQuad(quad, store, property, profile);
-      values.push(...extractedValues);
-    });
+    // If we have quads, check if any are structural (BlankNode/NamedNode) or have literal values
+    const hasStructuralValue = propertyQuads.some(quad => 
+      quad.object.termType === 'BlankNode' || 
+      quad.object.termType === 'NamedNode'
+    );
     
-    // Filter out empty values
-    const validValues = values.filter(value => value && value.trim().length > 0);
+    if (hasStructuralValue) {
+      return true; // Structural values are always valid
+    }
     
-    return validValues.length > 0;
+    // For literal values, check they're not empty
+    const literalValues = propertyQuads
+      .filter(quad => quad.object.termType === 'Literal')
+      .map(quad => quad.object.value)
+      .filter(value => value && value.trim().length > 0);
+    
+    return literalValues.length > 0;
   }
 
   /**
@@ -664,7 +818,7 @@ export class MQAService {
     const totalEntities = datasetTotal + distributionTotal;
     const compliantEntities = datasetCompliant + distributionCompliant;
     
-    console.debug(`🔄 Multi-entity metric evaluation: ${compliantEntities}/${totalEntities} total (Datasets: ${datasetCompliant}/${datasetTotal}, Distributions: ${distributionCompliant}/${distributionTotal})`);
+    //console.debug(`🔄 Multi-entity metric evaluation: ${compliantEntities}/${totalEntities} total (Datasets: ${datasetCompliant}/${datasetTotal}, Distributions: ${distributionCompliant}/${distributionTotal})`);
     
     return {
       totalEntities,
@@ -680,6 +834,70 @@ export class MQAService {
   private async isInVocabulary(value: string, vocabularyName: string): Promise<boolean> {
     console.warn(`⚠️ isInVocabulary is deprecated. Use checkVocabularyMatch instead.`);
     return this.checkVocabularyMatch([value], vocabularyName);
+  }
+
+  /**
+   * Validate if a publisher URI follows the Spanish government organism format
+   * Expected: https://datos.gob.es/recurso/sector-publico/org/Organismo/XX
+   */
+  private validateSpanishGovernmentPublisher(publisherUri: string): boolean {
+    if (!publisherUri) return false;
+    
+    // Simple regex check for Spanish government organism URIs
+    const pattern = /^https?:\/\/datos\.gob\.es\/recurso\/sector-publico\/org\/Organismo\/[A-Z0-9]+$/;
+    return pattern.test(publisherUri);
+  }
+
+  /**
+   * Count entities that have valid NTI-RISP publisher URIs
+   */
+  private countNTIRISPPublisherCompliantEntities(
+    store: N3Store,
+    baseProperty: string,
+    entityType: 'Dataset' | 'Distribution' | 'Catalog',
+    profile: ValidationProfile
+  ): number {
+    const typeURI = this.getEntityTypeURI(entityType);
+    const fullProperty = this.expandProperty(baseProperty);
+    
+    // Get all entities of the specified type
+    const entityQuads = store.getQuads().filter(quad => 
+      quad.predicate.value === MQAService.RDF_URIS.RDF_TYPE && 
+      quad.object.value === typeURI
+    );
+    
+    let compliantCount = 0;
+    
+    for (const entityQuad of entityQuads) {
+      const entityURI = entityQuad.subject;
+      
+      // Check if this entity has the publisher property
+      const publisherQuads = store.getQuads().filter(quad => 
+        quad.subject.equals(entityURI) && 
+        quad.predicate.value === fullProperty
+      );
+      
+      if (publisherQuads.length > 0) {
+        // Extract publisher values and validate them
+        const publisherValues: string[] = [];
+        publisherQuads.forEach(quad => {
+          const extractedValues = this.extractValuesFromQuad(quad, store, baseProperty, profile);
+          publisherValues.push(...extractedValues);
+        });
+        
+        // Check if any publisher value is a valid NTI-RISP government URI
+        const hasValidPublisher = publisherValues.some(value => 
+          this.validateSpanishGovernmentPublisher(value)
+        );
+        
+        if (hasValidPublisher) {
+          compliantCount++;
+        }
+      }
+      // If no publisher property exists, the entity is not compliant (needs publisher)
+    }
+    
+    return compliantCount;
   }
 
   /**
@@ -716,7 +934,7 @@ export class MQAService {
         distributionStats = multiStats.distributionStats;
         
         if (totalEntities === 0) {
-          console.debug(`⚠️ No Dataset or Distribution entities found for multi-entity metric ${id}`);
+          //console.debug(`⚠️ No Dataset or Distribution entities found for multi-entity metric ${id}`);
           
           return {
             id,
@@ -742,7 +960,7 @@ export class MQAService {
         totalEntities = this.countEntitiesByType(store, entityType as 'Dataset' | 'Distribution' | 'Catalog');
         
         if (totalEntities === 0) {
-          console.debug(`⚠️ No ${entityType} entities found for metric ${id}`);
+          //console.debug(`⚠️ No ${entityType} entities found for metric ${id}`);
           
           return {
             id,
@@ -772,7 +990,8 @@ export class MQAService {
             vocabularyMetricInfo.baseProperty, 
             vocabularyMetricInfo.vocabularyName, 
             entityType as 'Dataset' | 'Distribution' | 'Catalog', 
-            profile
+            profile,
+            vocabularyMetricInfo.ntiRispProperty
           );
         } else if (id === 'dcat_access_url_status' || id === 'dcat_downloadURL_status') {
           // Special handling for HTTP status check metrics
@@ -782,13 +1001,33 @@ export class MQAService {
             entityType as 'Dataset' | 'Distribution' | 'Catalog', 
             profile
           );
+        } else if (id === 'dct_publisher_nti_risp') {
+          // Special handling for NTI-RISP publisher validation
+          compliantEntities = this.countNTIRISPPublisherCompliantEntities(
+            store, 
+            property, 
+            entityType as 'Dataset' | 'Distribution' | 'Catalog', 
+            profile
+          );
+        } else if (id.includes('compliance')) {
+          // Special handling for SHACL compliance metrics
+          // These will be updated later in calculateQualityWithSHACL
+          // For now, assume non-compliant (will be corrected by SHACL validation)
+          compliantEntities = 0;
+          // Note: 'found' will be set based on totalEntities > 0 below
+          // Ensure we have the correct total entities for Catalog (always 1 unless multiple catalogs exist)
+          if (totalEntities === 0 && entityType === 'Catalog') {
+            totalEntities = 1; // Default to 1 catalog if none found in RDF (implicit catalog)
+          }
         } else {
           // Count compliant entities for regular single-entity metric
           compliantEntities = this.countCompliantEntities(store, property, entityType as 'Dataset' | 'Distribution' | 'Catalog', profile);
         }
       }
       
-      found = compliantEntities > 0;
+      // The 'found' field indicates if the metric is evaluable (i.e., there are entities to evaluate)
+      // This is different from compliance - a metric can be 'found' but have 0% compliance
+      found = totalEntities > 0;
       
       // Calculate proportional score
       const proportionalRatio = compliantEntities / totalEntities;
@@ -796,13 +1035,13 @@ export class MQAService {
       compliancePercentage = proportionalRatio * 100;
 
       // Get sample values for display (optional, for backwards compatibility)
-      if (found) {
+      if (found && compliantEntities > 0) {
         const fullProperty = this.expandProperty(property);
         const propertyCheck = this.hasProperty(store, fullProperty, profile);
         values = propertyCheck.values.slice(0, 3); // Limit to 3 examples
       }
 
-      console.debug(`Metric ${id}: ${compliantEntities}/${totalEntities} ${entityType} entities comply (${compliancePercentage.toFixed(1)}%)`);
+      //console.debug(`Metric ${id}: ${compliantEntities}/${totalEntities} ${entityType} entities comply (${compliancePercentage.toFixed(1)}%)`);
 
     } catch (error) {
       console.warn(`Warning evaluating metric ${id}:`, error);
@@ -814,7 +1053,10 @@ export class MQAService {
     // Prepare descriptive value showing compliance ratio
     let valueDescription: string;
     
-    if (entityType === 'Multi') {
+    if (id.includes('compliance')) {
+      // Special description for compliance metrics (will be updated by SHACL validation)
+      valueDescription = `${compliantEntities}/${totalEntities} Catalog comply (${compliancePercentage.toFixed(1)}%) - Pending SHACL validation`;
+    } else if (entityType === 'Multi') {
       const datasetPercent = datasetStats!.total > 0 ? ((datasetStats!.compliant / datasetStats!.total) * 100).toFixed(1) : '0';
       const distributionPercent = distributionStats!.total > 0 ? ((distributionStats!.compliant / distributionStats!.total) * 100).toFixed(1) : '0';
       
@@ -830,7 +1072,7 @@ export class MQAService {
     const result: any = {
       id,
       name: label.en || id,
-      score: Math.round(score * 100) / 100, // Round to 2 decimal places
+      score: MQAService.roundScore(score),
       maxScore: weight,
       weight,
       description: label.es || label.en || id,
@@ -842,7 +1084,7 @@ export class MQAService {
       entityType,
       totalEntities,
       compliantEntities,
-      compliancePercentage: Math.round(compliancePercentage * 100) / 100
+      compliancePercentage: Math.round(compliancePercentage * 10) / 10 // Round to 1 decimal place for percentages
     };
     
     // Add multi-entity specific fields if applicable
@@ -875,18 +1117,28 @@ export class MQAService {
 
       // NTI-RISP specific vocabulary metrics
       case 'dct_format_vocabulary_nti_risp':
-        console.debug(`🏷️ Evaluating NTI-RISP format vocabulary for values:`, values);
+        //console.debug(`🏷️ Evaluating NTI-RISP format vocabulary for values:`, values);
         return await this.checkNTIRISPVocabularyMatch(values, 'file_types', profile) ? maxWeight : 0;
         
       case 'dcat_media_type_vocabulary_nti_risp':
-        console.debug(`📱 Evaluating NTI-RISP media type vocabulary for values:`, values);
+        //console.debug(`📱 Evaluating NTI-RISP media type vocabulary for values:`, values);
         return await this.checkNTIRISPVocabularyMatch(values, 'media_types', profile) ? maxWeight : 0;
 
+      case 'dct_format_nonproprietary_nti_risp':
+        //console.debug(`📱 Evaluating NTI-RISP media type vocabulary for values:`, values);
+        return await this.checkNTIRISPVocabularyMatch(values, 'non_proprietary', profile) ? maxWeight : 0;
+
+      // NTI-RISP specific publisher validation
+      case 'dct_publisher_nti_risp':
+        const validPublisherUris = values.filter(value => this.validateSpanishGovernmentPublisher(value));
+        return validPublisherUris.length > 0 ? maxWeight : 0;
+
+      // Format non-proprietary-related metrics
       case 'dct_format_nonproprietary':
         return await this.checkVocabularyMatch(values, 'non_proprietary') ? maxWeight : 0;
 
       case 'dct_format_machine_readable':
-        console.debug(` Checking machine-readable formats for values:`, values);
+        //console.debug(` Checking machine-readable formats for values:`, values);
         return await this.checkVocabularyMatch(values, 'machine_readable') ? maxWeight : 0;
 
       // License-related metrics
@@ -912,8 +1164,9 @@ export class MQAService {
       case 'dct_spatial':
       case 'dct_temporal':
       case 'dct_format':
-      case 'dcat_accessURL':
-      case 'dcat_downloadURL':
+      case 'dcat_media_type':
+      case 'dcat_access_url':
+      case 'dcat_download_url':
       case 'dct_license':
       case 'dct_license_nti_risp':
       case 'dct_access_rights':
@@ -921,10 +1174,14 @@ export class MQAService {
       case 'dct_conformsTo':
       case 'dct_creator':
       case 'dct_publisher':
-      case 'dct_contactPoint':
+      case 'dcat_contact_point':
       case 'dcat_distribution':
+      case 'dcat_byte_size':
+      case 'dct_rights':
       case 'dct_issued':
       case 'dct_modified':
+      case 'dct_issued_nti_risp':
+      case 'dct_modified_nti_risp':
         return maxWeight; // Full score for presence
 
       // Quality-based metrics (can have partial scores)
@@ -949,7 +1206,16 @@ export class MQAService {
     // Filter out empty or invalid values
     const validValues = values.filter(value => value && typeof value === 'string' && value.trim().length > 0);
     
-    console.debug(`Checking ${validValues.length} values against vocabulary '${vocabularyName}' (${vocabulary.length} entries)`);
+    // Use cache key for performance
+    const cacheKey = `${vocabularyName}:${validValues.join('|')}`;
+    if (MQAService.propertyCache.has(cacheKey)) {
+      return MQAService.propertyCache.get(cacheKey)!;
+    }
+    
+    //console.debug(`Checking ${validValues.length} values against vocabulary '${vocabularyName}' (${vocabulary.length} entries)`);
+    
+    const matchedValues: string[] = [];
+    const unmatchedValues: string[] = [];
     
     const result = validValues.some(value => {
       const match = vocabulary.some(item => {
@@ -972,22 +1238,25 @@ export class MQAService {
         }
         
         if (uriMatch || valueMatch || labelMatch || mimeTypeMatch) {
-          console.debug(`✅ Found match for '${value}' in vocabulary '${vocabularyName}': ${item.uri || item.value} (${item.label})`);
+          //console.debug(`✅ Found match for '${value}' in vocabulary '${vocabularyName}': ${item.uri || item.value} (${item.label})`);
           return true;
         }
         return false;
       });
       
       if (match) {
-        console.debug(`✅ Found match for value in vocabulary '${vocabularyName}'`);
+        matchedValues.push(value);
       } else {
-        console.debug(`❌ No match found for value in vocabulary '${vocabularyName}'`);
+        unmatchedValues.push(value);
       }
       
       return match;
     });
     
-    console.debug(`🎯 Vocabulary match result for '${vocabularyName}': ${result}`);
+    // Cache the result for future use
+    MQAService.propertyCache.set(cacheKey, result);
+    
+    //console.debug(`🎯 Vocabulary match result for '${vocabularyName}': ${result}`);
     return result;
   }
 
@@ -1001,14 +1270,17 @@ export class MQAService {
       return this.checkVocabularyMatch(values, vocabularyName);
     }
 
-    console.debug(`🏷️ NTI-RISP vocabulary check for '${vocabularyName}' with values:`, values);
+    //console.debug(`🏷️ NTI-RISP vocabulary check for '${vocabularyName}' with values:`, values);
     
     const vocabulary = await this.loadVocabulary(vocabularyName);
     
     // Filter out empty or invalid values
     const validValues = values.filter(value => value && typeof value === 'string' && value.trim().length > 0);
     
-    console.debug(`Checking ${validValues.length} NTI-RISP values against vocabulary '${vocabularyName}' (${vocabulary.length} entries)`);
+    //console.debug(`Checking ${validValues.length} NTI-RISP values against vocabulary '${vocabularyName}' (${vocabulary.length} entries)`);
+    
+    const matchedValues: string[] = [];
+    const unmatchedValues: string[] = [];
     
     const result = validValues.some(value => {
       const match = vocabulary.some(item => {
@@ -1048,27 +1320,27 @@ export class MQAService {
           
           // Debug the comparison
           if (fileTypeMatch) {
-            console.debug(`🎯 Exact file type match: '${value}' matches '${item.label}' (URI: ${item.uri})`);
+            //console.debug(`🎯 Exact file type match: '${value}' matches '${item.label}' (URI: ${item.uri})`);
           }
         }
         
         if (uriMatch || valueMatch || labelMatch || mimeTypeMatch || fileTypeMatch) {
-          console.debug(`✅ NTI-RISP match found for '${value}' in vocabulary '${vocabularyName}': ${item.uri || item.value} (${item.label})`);
+          //console.debug(`✅ NTI-RISP match found for '${value}' in vocabulary '${vocabularyName}': ${item.uri || item.value} (${item.label})`);
           return true;
         }
         return false;
       });
       
       if (match) {
-        console.debug(`✅ NTI-RISP vocabulary match found for value '${value}' in vocabulary '${vocabularyName}'`);
+        matchedValues.push(value);
       } else {
-        console.debug(`❌ No NTI-RISP vocabulary match found for value '${value}' in vocabulary '${vocabularyName}'`);
+        unmatchedValues.push(value);
       }
       
       return match;
     });
     
-    console.debug(`🎯 NTI-RISP vocabulary match result for '${vocabularyName}': ${result}`);
+    //console.debug(`🎯 NTI-RISP vocabulary match result for '${vocabularyName}': ${result}`);
     return result;
   }
 
@@ -1148,7 +1420,7 @@ export class MQAService {
         return { en: enLabel, es: esLabel };
       }
     } catch (error) {
-      console.debug('Failed to get translation for metric:', metricId, error);
+      //console.debug('Failed to get translation for metric:', metricId, error);
     }
     
     // Fallback to metric ID if no translation found
@@ -1163,7 +1435,8 @@ export class MQAService {
     content: string, 
     profileSelection: ProfileSelection | ValidationProfile,
     format?: string,
-    skipSyntaxValidation?: boolean
+    skipSyntaxValidation?: boolean,
+    language: string = 'es'
   ): Promise<{ quality: QualityResult; shaclReport: SHACLReport }> {
     try {
       // Extract profile string from ProfileSelection or use as-is if it's a string
@@ -1193,22 +1466,33 @@ export class MQAService {
       const quality = await this.calculateQuality(content, profile, format, true); // Skip syntax validation in calculateQuality too
 
       // Run SHACL validation
-      const shaclReport = await RDFService.validateWithSHACL(content, profile);
+      const shaclReport = await RDFService.validateWithSHACL(content, profile, 'turtle', language);
 
       // Update compliance metric if it exists
       const complianceMetric = quality.metrics.find(m => m.id.includes('compliance'));
       if (complianceMetric) {
         const complianceScore = RDFService.calculateComplianceScore(shaclReport);
         complianceMetric.score = Math.round((complianceScore / 100) * complianceMetric.maxScore);
-        complianceMetric.found = shaclReport.conforms;
-        complianceMetric.value = shaclReport.conforms ? 'compliant' : 'non-compliant';
+        
+        // Update compliance entity information based on SHACL validation
+        // Compliance metrics evaluate the Catalog (1 catalog total)
+        complianceMetric.totalEntities = 1;
+        complianceMetric.compliantEntities = shaclReport.conforms ? 1 : 0;
+        complianceMetric.compliancePercentage = shaclReport.conforms ? 100.0 : 0.0;
+        complianceMetric.entityType = 'Catalog';
+        
+        // 'found' indicates if the metric is evaluable - for compliance, it's always true since we have a catalog
+        complianceMetric.found = true;
+        
+        // Update descriptive value to reflect SHACL compliance
+        complianceMetric.value = `${complianceMetric.compliantEntities}/1 Catalog comply (${complianceMetric.compliancePercentage.toFixed(1)}%) - SHACL ${shaclReport.conforms ? 'conformant' : 'non-conformant'}`;
 
         // Recalculate totals
         const totalScore = quality.metrics.reduce((sum, m) => sum + m.score, 0);
         const maxScore = quality.metrics.reduce((sum, m) => sum + m.maxScore, 0);
         const percentage = maxScore > 0 ? (totalScore / maxScore) * 100 : 0;
 
-        quality.totalScore = totalScore;
+        quality.totalScore = MQAService.roundScore(totalScore);
         quality.percentage = percentage;
 
         // Update category totals
@@ -1217,8 +1501,8 @@ export class MQAService {
           const categoryScore = categoryMetrics.reduce((sum: number, m: QualityMetric) => sum + m.score, 0);
           const categoryMaxScore = categoryMetrics.reduce((sum: number, m: QualityMetric) => sum + m.maxScore, 0);
           
-          categoryData.score = categoryScore;
-          categoryData.percentage = categoryMaxScore > 0 ? (categoryScore / categoryMaxScore) * 100 : 0;
+          categoryData.score = MQAService.roundScore(categoryScore);
+          categoryData.percentage = categoryMaxScore > 0 ? MQAService.roundScore((categoryScore / categoryMaxScore) * 100) : 0;
         }
       }
 
@@ -1243,6 +1527,9 @@ export class MQAService {
   ): Promise<QualityResult> {
     try {
       console.debug(`Starting MQA evaluation for profile: ${profile}`);
+      
+      // Clear caches for fresh evaluation to avoid memory buildup
+      MQAService.clearCaches();
       
       // Validate RDF syntax first (unless already validated)
       if (!skipSyntaxValidation) {
@@ -1274,7 +1561,7 @@ export class MQAService {
         
         // Get profile configuration to create empty metrics structure
         const profileConfig = this.config.profiles[profile];
-        const metricsConfig = this.config.metricsByProfile[profile];
+        const metricsConfig = this.config.profile_metrics[profile];
 
         if (!profileConfig || !metricsConfig) {
           throw new Error(`Profile ${profile} not found in configuration`);
@@ -1330,7 +1617,7 @@ export class MQAService {
 
       // Get profile configuration
       const profileConfig = this.config.profiles[profile];
-      const metricsConfig = this.config.metricsByProfile[profile];
+      const metricsConfig = this.config.profile_metrics[profile];
 
       if (!profileConfig || !metricsConfig) {
         throw new Error(`Profile ${profile} not found in configuration`);
@@ -1341,7 +1628,7 @@ export class MQAService {
       const byCategory: any = {};
 
       for (const [category, metrics] of Object.entries(metricsConfig)) {
-        console.debug(` Evaluating ${metrics.length} metrics for category: ${category}`);
+        //console.debug(` Evaluating ${metrics.length} metrics for category: ${category}`);
         
         const categoryMetrics: QualityMetric[] = [];
         
@@ -1351,7 +1638,7 @@ export class MQAService {
           allMetrics.push(metric);
         }
 
-        const categoryScore = categoryMetrics.reduce((sum, m) => sum + m.score, 0);
+        const categoryScore = MQAService.roundScore(categoryMetrics.reduce((sum, m) => sum + m.score, 0));
         const categoryMaxScore = categoryMetrics.reduce((sum, m) => sum + m.maxScore, 0);
         
         byCategory[category] = {
@@ -1363,11 +1650,11 @@ export class MQAService {
       }
 
       // Calculate totals
-      const totalScore = allMetrics.reduce((sum, m) => sum + m.score, 0);
+      const totalScore = MQAService.roundScore(allMetrics.reduce((sum, m) => sum + m.score, 0));
       const maxScore = allMetrics.reduce((sum, m) => sum + m.maxScore, 0);
       const percentage = maxScore > 0 ? (totalScore / maxScore) * 100 : 0;
 
-      console.log(`✅ MQA evaluation completed: ${totalScore}/${maxScore} (${percentage.toFixed(1)}%)`);
+      console.log(`✅ MQA evaluation completed: ${Math.round(totalScore)}/${maxScore} (${percentage.toFixed(1)}%)`);
 
       return {
         totalScore,
@@ -1387,7 +1674,7 @@ export class MQAService {
    * Validate RDF syntax (public method) with automatic preprocessing
    */
   public async validateRDF(content: string, format?: string): Promise<RDFValidationResult> {
-    console.debug(`Validating RDF syntax for format: ${format || 'auto'}...`);
+
     
     try {
       // Apply preprocessing to fix common IRI issues before validation
@@ -1431,18 +1718,44 @@ export class MQAService {
   }
 
   /**
+   * Calculate dynamic sample size based on total number of distributions
+   * Scales intelligently to balance validation thoroughness with performance
+   * 
+   * @param totalCount Total number of distributions
+   * @returns Optimal sample size
+   */
+  private calculateDynamicSampleSize(totalCount: number): number {
+    if (totalCount <= 10) {
+      // Very small catalogs: validate all
+      return totalCount;
+    } else if (totalCount <= 100) {
+      // Small catalogs: validate 15%
+      return 15;
+    } else if (totalCount <= 500) {
+      // Medium catalogs: validate 25
+      return 25;
+    } else if (totalCount <= 1000) {
+      // Large catalogs: validate 35
+      return 35;
+    } else {
+      // Very large catalogs: validate 50
+      return 50;
+    }
+  }
+
+  /**
    * Check URL accessibility using multiple strategies for client-side validation
    * @param urls Array of URLs to check
-   * @param maxSample Maximum number of URLs to sample (default: 20)
+   * @param maxSample Maximum number of URLs to sample (optional - auto-calculated if not provided)
    * @returns Object with accessibility results and proportional score
    */
-  public async checkURLAccessibility(urls: string[], maxSample: number = 20): Promise<{
+  public async checkURLAccessibility(urls: string[], maxSample?: number): Promise<{
     totalUrls: number;
     checkedUrls: number;
     accessibleUrls: number;
     successRate: number;
     score: number;
-    details: Array<{ url: string; accessible: boolean; method: 'direct' | 'pattern' | 'failed' | 'proxy' | 'heuristic'; }>;
+    details: Array<{ url: string; accessible: boolean; method: 'direct' | 'pattern' | 'failed' | 'proxy' | 'heuristic' | 'backend'; }>;
   }> {
     if (!urls || urls.length === 0) {
       return {
@@ -1476,40 +1789,100 @@ export class MQAService {
       };
     }
 
-    // Sample URLs if more than maxSample
+    // Calculate dynamic sample size if not provided
+    const effectiveSampleSize = maxSample ?? this.calculateDynamicSampleSize(validUrls.length);
+
+    // Sample URLs if more than effectiveSampleSize
     let urlsToCheck = validUrls;
-    if (validUrls.length > maxSample) {
+    if (validUrls.length > effectiveSampleSize) {
       // Random sampling
       const shuffled = [...validUrls].sort(() => 0.5 - Math.random());
-      urlsToCheck = shuffled.slice(0, maxSample);
-      console.debug(`Sampling ${maxSample} URLs out of ${validUrls.length} for accessibility check`);
+      urlsToCheck = shuffled.slice(0, effectiveSampleSize);
+      console.log(`Dynamic sampling: ${effectiveSampleSize} URLs out of ${validUrls.length} for accessibility check`);
+    } else {
+      console.log(`✅ Validating all ${validUrls.length} URLs (under threshold)`);
     }
 
-    let accessibleCount = 0;
-    const details: Array<{ url: string; accessible: boolean; method: 'direct' | 'pattern' | 'failed' | 'proxy' | 'heuristic'; }> = [];
+    // Check if backend is available
+    const isBackendAvailable = await backendService.isBackendAvailable();
+    console.debug(`Backend availability for URL checking: ${isBackendAvailable}`);
 
-    for (const url of urlsToCheck) {
-      let accessible = false;
-      let method: 'direct' | 'pattern' | 'failed' | 'proxy' | 'heuristic' = 'failed';
-      
-      // Strategy 1: Try public CORS proxy services
-      const proxyResult = await this.checkUrlViaProxy(url);
-      if (proxyResult.accessible) {
-        accessible = true;
-        method = 'proxy';
-      } else {
-        // Strategy 2: Enhanced heuristic analysis
-        const heuristicResult = this.enhancedUrlHeuristics(url);
-        accessible = heuristicResult.accessible;
-        method = heuristicResult.accessible ? 'heuristic' : 'failed';
+    let accessibleCount = 0;
+    const details: Array<{ url: string; accessible: boolean; method: 'direct' | 'pattern' | 'failed' | 'proxy' | 'heuristic' | 'backend'; }> = [];
+
+    // OPTIMIZATION: Use batch validation if backend is available
+    if (isBackendAvailable && urlsToCheck.length > 1) {
+      console.debug(`Using batch validation for ${urlsToCheck.length} URLs`);
+      try {
+        const batchResults = await backendService.validateURLAccessibilityBatch(urlsToCheck);
+        
+        for (const url of urlsToCheck) {
+          const result = batchResults[url];
+          if (result && result.accessible) {
+            accessibleCount++;
+            details.push({ url, accessible: true, method: 'backend' });
+          } else {
+            // Fallback to heuristics for failed URLs
+            const heuristicResult = this.enhancedUrlHeuristics(url);
+            if (heuristicResult.accessible) {
+              accessibleCount++;
+              details.push({ url, accessible: true, method: 'heuristic' });
+            } else {
+              details.push({ url, accessible: false, method: 'failed' });
+            }
+          }
+        }
+      } catch (error) {
+        console.warn('Batch validation failed, falling back to individual checks:', error);
+        // Fall through to individual validation below
       }
-      
-      if (accessible) accessibleCount++;
-      details.push({ url, accessible, method });
+    } else {
+      // Individual URL validation (original code)
+      for (const url of urlsToCheck) {
+        let accessible = false;
+        let method: 'direct' | 'pattern' | 'failed' | 'proxy' | 'heuristic' | 'backend' = 'failed';
+        
+        if (isBackendAvailable) {
+          // Strategy 1: Use backend server for accurate validation (preferred when available)
+          try {
+            const backendResult = await backendService.validateURLAccessibility(url);
+            accessible = backendResult.accessible;
+            method = 'backend';
+            
+            if (!accessible && backendResult.error) {
+              //console.debug(`Backend validation failed for ${url}: ${backendResult.error}`);
+            }
+          } catch (error) {
+            console.warn(`Backend validation error for ${url}:`, error);
+            // Fall through to heuristic methods if backend fails
+          }
+        }
+
+        // Fallback strategies if backend not available or failed
+        if (!accessible) {
+          // Strategy 2: Try corsproxy.io first (more reliable than heuristics)
+          const proxyResult = await this.checkUrlViaProxy(url);
+          if (proxyResult.accessible) {
+            accessible = true;
+            method = 'proxy';
+          } else {
+            // Strategy 3: Enhanced heuristic analysis (fallback if proxy fails)
+            const heuristicResult = this.enhancedUrlHeuristics(url);
+            if (heuristicResult.accessible) {
+              accessible = true;
+              method = 'heuristic';
+            }
+          }
+        }
+        
+        if (accessible) accessibleCount++;
+        details.push({ url, accessible, method });
+      }
     }
 
     const successRate = urlsToCheck.length > 0 ? (accessibleCount / urlsToCheck.length) : 0;
-    console.info(`Enhanced URL Accessibility: ${accessibleCount}/${urlsToCheck.length} accessible (${(successRate * 100).toFixed(1)}%)`);
+    const methodSummary = this.getMethodSummary(details);
+    console.info(`URL Accessibility Check: ${accessibleCount}/${urlsToCheck.length} accessible (${(successRate * 100).toFixed(1)}%) - Methods: ${methodSummary}`);
 
     return {
       totalUrls: urls.length,
@@ -1519,6 +1892,20 @@ export class MQAService {
       score: successRate,
       details
     };
+  }
+
+  /**
+   * Get summary of methods used for URL accessibility checking
+   */
+  private getMethodSummary(details: Array<{ url: string; accessible: boolean; method: string; }>): string {
+    const methodCounts = details.reduce((acc, detail) => {
+      acc[detail.method] = (acc[detail.method] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    return Object.entries(methodCounts)
+      .map(([method, count]) => `${method}: ${count}`)
+      .join(', ');
   }
 
   /**
@@ -1583,48 +1970,45 @@ export class MQAService {
    * Check URL accessibility via public CORS proxy services
    */
   private async checkUrlViaProxy(url: string): Promise<{ accessible: boolean; proxy?: string; error?: string }> {
-    // Lista de proxies públicos gratuitos (con limitaciones)
-    const publicProxies = [
-      // Proxy simple y rápido para verificación
-      (url: string) => `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`,
-      // Backup proxy
-      (url: string) => `https://corsproxy.io/?${encodeURIComponent(url)}`,
-    ];
-
-    for (let index = 0; index < publicProxies.length; index++) {
-      const proxyFn = publicProxies[index];
+    // Get CORS proxies from configuration in their defined order
+    const configProxies = backendService.getBackendConfig().cors_proxy.fallback_proxies;
+    
+    if (!configProxies || configProxies.length === 0) {
+      return { accessible: false, error: 'No proxies configured' };
+    }
+    
+    const timeout = 5000; // 5 second timeout for proxy requests
+    
+    // Use proxies directly in the order they appear in config
+    for (let index = 0; index < configProxies.length; index++) {
+      const proxy = configProxies[index];
       try {
-        const proxyUrl = proxyFn(url);
+        // Build proxy URL - most proxies expect URL-encoded target
+        const proxyUrl = `${proxy}${encodeURIComponent(url)}`;
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 8000); // Más tiempo para proxies
-
-        console.debug(`🔄 Trying proxy ${index + 1} for: ${url}`);
+        const timeoutId = setTimeout(() => controller.abort(), timeout);
         
         const response = await fetch(proxyUrl, {
-          method: 'GET',
+          method: 'HEAD',
           signal: controller.signal,
           headers: {
-            'Accept': 'application/json, text/plain, */*'
+            'Accept': '*/*',
+            'Cache-Control': 'no-cache'
           }
         });
         
         clearTimeout(timeoutId);
         
         if (response.ok) {
-          // Verificar que el proxy devolvió contenido válido
-          const data = await response.text();
-          if (data && data.length > 10) { // Contenido mínimo
-            console.debug(`✅ Proxy verification successful: ${url} via proxy ${index + 1}`);
-            return { accessible: true, proxy: `proxy-${index + 1}` };
-          }
+          return { accessible: true, proxy: configProxies[index] };
         }
-      } catch (error) {
-        console.debug(`❌ Proxy ${index + 1} failed for ${url}:`, error);
+      } catch (error: any) {
+        // Continue to next proxy on error
         continue;
       }
     }
 
-    return { accessible: false, error: 'All proxies failed' };
+    return { accessible: false, error: 'All configured proxies failed' };
   }
 
   /**
@@ -1720,8 +2104,8 @@ export class MQAService {
       const confidence = Math.max(0, Math.min(100, score));
       const accessible = confidence >= 60; // Umbral de confianza del 60%
       
-      console.debug(`🎯 Heuristic analysis for ${url}: ${confidence}% confidence, accessible: ${accessible}`);
-      console.debug(`   Reasons: ${reasons.join(', ')}`);
+      //console.debug(`🎯 Heuristic analysis for ${url}: ${confidence}% confidence, accessible: ${accessible}`);
+      //console.debug(`   Reasons: ${reasons.join(', ')}`);
       
       return { accessible, confidence, reasons };
       
@@ -1757,7 +2141,7 @@ export class MQAService {
         const isDataFile = dataFileExtensions.includes(extension);
         
         if (isDataFile) {
-          console.debug(`🏛️ Government domain verified: ${url} (${extension.toUpperCase()} file)`);
+          //console.debug(`🏛️ Government domain verified: ${url} (${extension.toUpperCase()} file)`);
           return true;
         }
         
@@ -1773,7 +2157,7 @@ export class MQAService {
         
         const hasDataPath = dataPathPatterns.some(pattern => pattern.test(parsedUrl.pathname));
         if (hasDataPath) {
-          console.debug(`🏛️ Government domain verified: ${url} (data path pattern)`);
+          //console.debug(`🏛️ Government domain verified: ${url} (data path pattern)`);
           return true;
         }
       }
@@ -1793,7 +2177,7 @@ export class MQAService {
       
       const isReliableDomain = reliableDomains.some(reliable => domain.includes(reliable));
       if (isReliableDomain) {
-        console.debug(`✅ Reliable domain verified: ${url}`);
+        //console.debug(`✅ Reliable domain verified: ${url}`);
         return true;
       }
       
@@ -1810,23 +2194,25 @@ export class MQAService {
         
         const isSuspicious = suspiciousPatterns.some(pattern => pattern.test(domain));
         if (!isSuspicious) {
-          console.debug(`📄 HTTPS data file verified: ${url} (${extension.toUpperCase()})`);
+          //console.debug(`📄 HTTPS data file verified: ${url} (${extension.toUpperCase()})`);
           return true;
         }
       }
       
       // Default: if we can't categorize it and got CORS error, assume not accessible
-      console.debug(`❓ Pattern verification failed: ${url} - marked as inaccessible`);
+      //console.debug(`❓ Pattern verification failed: ${url} - marked as inaccessible`);
       return false;
       
     } catch (parseError) {
-      console.debug(`❌ URL ${url}: Invalid URL format - not accessible`);
+      //console.debug(`❌ URL ${url}: Invalid URL format - not accessible`);
       return false;
     }
   }
 
   /**
    * Batch URL accessibility check with intelligent sampling
+   * @param urls Array of URLs to check
+   * @param options Configuration options (maxSample auto-calculated if not provided)
    */
   public async batchCheckURLAccessibility(
     urls: string[], 
@@ -1845,19 +2231,23 @@ export class MQAService {
     details: Array<{ 
       url: string; 
       accessible: boolean; 
-      method: 'direct' | 'pattern' | 'failed' | 'proxy' | 'heuristic';
+      method: 'direct' | 'pattern' | 'failed' | 'proxy' | 'heuristic' | 'backend';
       confidence?: number;
       reasons?: string[];
     }>;
     summary: {
+      backendSuccess: number;
       proxySuccess: number;
       heuristicSuccess: number;
       failed: number;
       avgConfidence: number;
     };
   }> {
+    // Calculate dynamic sample size if not provided
+    const effectiveSampleSize = options.maxSample ?? this.calculateDynamicSampleSize(urls.length);
+    
     const {
-      maxSample = 20,
+      maxSample = effectiveSampleSize,
       confidenceThreshold = 60,
       useProxyFirst = true,
       timeout = 8000
@@ -1871,7 +2261,7 @@ export class MQAService {
         successRate: 0,
         score: 0,
         details: [],
-        summary: { proxySuccess: 0, heuristicSuccess: 0, failed: 0, avgConfidence: 0 }
+        summary: { backendSuccess: 0, proxySuccess: 0, heuristicSuccess: 0, failed: 0, avgConfidence: 0 }
       };
     }
 
@@ -1893,7 +2283,7 @@ export class MQAService {
         successRate: 0,
         score: 0,
         details: [],
-        summary: { proxySuccess: 0, heuristicSuccess: 0, failed: 0, avgConfidence: 0 }
+        summary: { backendSuccess: 0, proxySuccess: 0, heuristicSuccess: 0, failed: 0, avgConfidence: 0 }
       };
     }
 
@@ -1913,44 +2303,77 @@ export class MQAService {
     const details: Array<{ 
       url: string; 
       accessible: boolean; 
-      method: 'direct' | 'pattern' | 'failed' | 'proxy' | 'heuristic';
+      method: 'direct' | 'pattern' | 'failed' | 'proxy' | 'heuristic' | 'backend';
       confidence?: number;
       reasons?: string[];
     }> = [];
 
+    // Check if backend is available
+    const isBackendAvailable = await backendService.isBackendAvailable();
+    let backendSuccess = 0;
+
     for (const url of urlsToCheck) {
       let accessible = false;
-      let method: 'direct' | 'pattern' | 'failed' | 'proxy' | 'heuristic' = 'failed';
+      let method: 'direct' | 'pattern' | 'failed' | 'proxy' | 'heuristic' | 'backend' = 'failed';
       let confidence = 0;
       let reasons: string[] = [];
 
-      if (useProxyFirst) {
-        // Try proxy first for better accuracy
-        const proxyResult = await this.checkUrlViaProxy(url);
-        if (proxyResult.accessible) {
-          accessible = true;
-          method = 'proxy';
-          confidence = 95; // High confidence for successful proxy checks
-          proxySuccess++;
+      // Strategy 1: Use backend server for accurate validation (preferred when available)
+      if (isBackendAvailable) {
+        try {
+          const backendResult = await backendService.validateURLAccessibility(url);
+          if (backendResult.accessible) {
+            accessible = true;
+            method = 'backend';
+            confidence = 95; // High confidence for backend validation
+            reasons = ['Validated via backend server'];
+            backendSuccess++;
+          } else if (backendResult.error) {
+            reasons = [`Backend validation failed: ${backendResult.error}`];
+          }
+        } catch (error) {
+          reasons = [`Backend error: ${error}`];
+          console.warn(`Backend validation error for ${url}:`, error);
         }
       }
 
+      // Fallback strategies if backend not available or failed
       if (!accessible) {
-        // Fall back to enhanced heuristics
-        const heuristicResult = this.enhancedUrlHeuristics(url);
-        accessible = heuristicResult.confidence >= confidenceThreshold;
-        confidence = heuristicResult.confidence;
-        reasons = heuristicResult.reasons;
+        // Strategy 2: Try corsproxy.io first (prioritized from mqa-config)
+        if (useProxyFirst) {
+          const proxyResult = await this.checkUrlViaProxy(url);
+          if (proxyResult.accessible) {
+            accessible = true;
+            method = 'proxy';
+            confidence = 85; // High confidence for successful proxy validation
+            reasons = ['Verified via CORS proxy'];
+            proxySuccess++;
+          }
+        }
         
-        if (accessible) {
-          method = 'heuristic';
-          heuristicSuccess++;
-        } else {
-          failed++;
+        // Strategy 3: Enhanced heuristic analysis (fallback if proxy fails)
+        if (!accessible) {
+          const heuristicResult = this.enhancedUrlHeuristics(url);
+          if (heuristicResult.accessible && heuristicResult.confidence >= confidenceThreshold) {
+            accessible = true;
+            method = 'heuristic';
+            confidence = heuristicResult.confidence || 0;
+            reasons = heuristicResult.reasons || [];
+            heuristicSuccess++;
+          }
         }
       }
 
-      if (accessible) accessibleCount++;
+      // Update success counters
+      if (accessible) {
+        accessibleCount++;
+      } else {
+        failed++;
+        if (reasons.length === 0) {
+          reasons = ['URL not accessible via any method'];
+        }
+      }
+
       totalConfidence += confidence;
       
       details.push({ url, accessible, method, confidence, reasons });
@@ -1960,7 +2383,7 @@ export class MQAService {
     const avgConfidence = urlsToCheck.length > 0 ? (totalConfidence / urlsToCheck.length) : 0;
 
     console.info(`Enhanced URL Accessibility Summary: ${accessibleCount}/${urlsToCheck.length} accessible (${(successRate * 100).toFixed(1)}%)`);
-    console.info(`   Methods: ${proxySuccess} proxy, ${heuristicSuccess} heuristic, ${failed} failed`);
+    console.info(`   Methods: ${backendSuccess} backend, ${proxySuccess} proxy, ${heuristicSuccess} heuristic, ${failed} failed`);
     console.info(`   Average confidence: ${avgConfidence.toFixed(1)}%`);
 
     return {
@@ -1971,6 +2394,7 @@ export class MQAService {
       score: successRate,
       details,
       summary: {
+        backendSuccess,
         proxySuccess,
         heuristicSuccess,
         failed,

@@ -62,7 +62,7 @@ const DimensionChart: React.FC<DimensionChartProps> = ({
   const dimensionMaxScore = dimensionMetrics.reduce((sum, metric) => sum + metric.maxScore, 0);
   const dimensionPercentage = dimensionMaxScore > 0 ? (dimensionScore / dimensionMaxScore) * 100 : 0;
 
-  // Prepare chart data
+  // Prepare chart data with stacked bars
   const chartData = {
     labels: dimensionMetrics.map(metric => t(`metrics.specific.${metric.id}`) || metric.id),
     datasets: [
@@ -72,13 +72,26 @@ const DimensionChart: React.FC<DimensionChartProps> = ({
         backgroundColor: 'rgba(13, 110, 253, 0.2)',
         borderColor: 'rgba(13, 110, 253, 1)',
         borderWidth: 2,
+        datalabels: {
+          anchor: 'center' as const,
+          align: 'center' as const,
+          color: '#ffffff',
+          font: {
+            weight: 'bold' as const,
+            size: 11
+          },
+          formatter: (value: number) => value.toFixed(1)
+        }
       },
       {
         label: t('dashboard.table.max_score'),
-        data: dimensionMetrics.map(metric => metric.maxScore),
-        backgroundColor: 'rgba(108, 117, 125, 0.3)',
-        borderColor: 'rgba(108, 117, 125, 1)',
+        data: dimensionMetrics.map(metric => metric.maxScore - metric.score),
+        backgroundColor: 'rgba(108, 117, 125, 0.15)',
+        borderColor: 'rgba(108, 117, 125, 0.8)',
         borderWidth: 1,
+        datalabels: {
+          display: false
+        }
       },
     ],
   };
@@ -90,11 +103,12 @@ const DimensionChart: React.FC<DimensionChartProps> = ({
   const chartOptions = {
     responsive: true,
     maintainAspectRatio: false,
+    indexAxis: 'x' as const,
     plugins: {
       legend: {
         position: 'bottom' as const,
         labels: {
-          color: textColor,
+          color: textColor
         }
       },
       title: {
@@ -108,16 +122,30 @@ const DimensionChart: React.FC<DimensionChartProps> = ({
       },
       tooltip: {
         callbacks: {
-          afterLabel: (context: any) => {
+          label: (context: any) => {
             const metric = dimensionMetrics[context.dataIndex];
-            const percentage = (metric.score / metric.maxScore * 100).toFixed(1);
-            return `${t('dashboard.table.percentage')}: ${percentage}%`;
+            if (context.datasetIndex === 0) {
+              const percentage = (metric.score / metric.maxScore * 100).toFixed(1);
+              return `${context.dataset.label}: ${metric.score.toFixed(1)} / ${metric.maxScore} (${percentage}%)`;
+            }
+            return '';
+          },
+          afterLabel: (context: any) => {
+            if (context.datasetIndex === 0) {
+              const metric = dimensionMetrics[context.dataIndex];
+              return `${t('dashboard.table.max_score')}: ${metric.maxScore}`;
+            }
+            return '';
           },
         },
       },
+      datalabels: {
+        display: true
+      }
     },
     scales: {
       x: {
+        stacked: true,
         ticks: {
           color: textColor,
           maxRotation: 45,
@@ -128,9 +156,11 @@ const DimensionChart: React.FC<DimensionChartProps> = ({
         },
       },
       y: {
+        stacked: true,
         beginAtZero: true,
         ticks: {
           color: textColor,
+          callback: (value: any) => value
         },
         grid: {
           color: gridColor,

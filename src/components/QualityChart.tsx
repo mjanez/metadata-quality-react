@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, forwardRef, useImperativeHandle } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Chart as ChartJS,
@@ -10,6 +10,7 @@ import {
   Legend,
 } from 'chart.js';
 import { Radar } from 'react-chartjs-2';
+import { downloadChartAsImage, CHART_DIMENSIONS } from '../utils/chartExport';
 
 ChartJS.register(
   RadialLinearScale,
@@ -31,9 +32,12 @@ interface QualityChartProps {
   showDownload?: boolean;
 }
 
-const QualityChart: React.FC<QualityChartProps> = ({ data, showDownload = false }) => {
+const QualityChart = forwardRef<any, QualityChartProps>(({ data, showDownload = false }, ref) => {
   const { t } = useTranslation();
   const chartRef = useRef<any>(null);
+  
+  // Expose the internal chartRef to parent components
+  useImperativeHandle(ref, () => chartRef.current);
   const [theme, setTheme] = useState(document.documentElement.getAttribute('data-bs-theme') || 'light');
   
   useEffect(() => {
@@ -51,14 +55,7 @@ const QualityChart: React.FC<QualityChartProps> = ({ data, showDownload = false 
   
   // Download chart function
   const downloadChart = () => {
-    if (chartRef.current) {
-      const canvas = chartRef.current.canvas;
-      const url = canvas.toDataURL('image/png');
-      const link = document.createElement('a');
-      link.download = 'fairc-radar-chart.png';
-      link.href = url;
-      link.click();
-    }
+    downloadChartAsImage(chartRef, 'fairc-radar-chart.png', CHART_DIMENSIONS.radar);
   };
   
   // Read primary RGB from CSS variable --bs-primary-rgb (e.g. "13, 110, 253")
@@ -110,7 +107,7 @@ const QualityChart: React.FC<QualityChartProps> = ({ data, showDownload = false 
         labels: {
           color: textColor,
           font: {
-            size: 11,
+            size: 12,
           },
         }
       },
@@ -131,20 +128,27 @@ const QualityChart: React.FC<QualityChartProps> = ({ data, showDownload = false 
         ticks: {
           stepSize: 20,
           color: textColor,
-          backdropColor: 'transparent', // Remove background
+          backdropColor: 'transparent',
           callback: function(value: any) {
             return value + '%';
           },
           font: {
-            size: 11,
+            size: 12,
           },
+        },
+        pointLabels: {
+          color: textColor,
+          font: {
+            size: 12,
+          },
+          padding: 5,
         },
         grid: {
           color: gridColor,
-          font: {
-            size: 13,
-          },
-        }
+        },
+        angleLines: {
+          lineWidth: 2,
+        },
       },
     },
   };
@@ -168,6 +172,8 @@ const QualityChart: React.FC<QualityChartProps> = ({ data, showDownload = false 
       </div>
     </div>
   );
-};
+});
+
+QualityChart.displayName = 'QualityChart';
 
 export default QualityChart;

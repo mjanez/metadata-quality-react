@@ -7,7 +7,7 @@
           "maxScore": 405,
           "icon": "img/icons/eur.svg",
           "url": "https://semiceu.github.io/DCAT-AP/",
-          "sample_url": "https://raw.githubusercontent.com/datosgobes/DCAT-AP-ES/refs/heads/develop/examples/ttl/1.0.0/E_DCAT-AP-ES_Catalog.ttl",
+          "sampleUrl": "https://raw.githubusercontent.com/datosgobes/DCAT-AP-ES/refs/heads/main/examples/ttl/1.0.0/E_DCAT-AP-ES_Catalog.ttl",
             "shaclFiles": [
             "https://raw.githubusercontent.com/SEMICeu/DCAT-AP/refs/heads/master/releases/2.1.1/dcat-ap_2.1.1_shacl_imports.ttl",
             "https://raw.githubusercontent.com/SEMICeu/DCAT-AP/refs/heads/master/releases/2.1.1/dcat-ap_2.1.1_shacl_mdr_imports.ttl",
@@ -30,7 +30,7 @@
           "maxScore": 405,
           "icon": "img/icons/eur.svg",
           "url": "https://semiceu.github.io/DCAT-AP/",
-          "sample_url": "https://raw.githubusercontent.com/datosgobes/DCAT-AP-ES/refs/heads/develop/examples/ttl/1.0.0/E_DCAT-AP-ES_Catalog.ttl",
+          "sampleUrl": "https://raw.githubusercontent.com/datosgobes/DCAT-AP-ES/refs/heads/main/examples/ttl/1.0.0/E_DCAT-AP-ES_Catalog.ttl",
           "shaclFiles": [
             "https://raw.githubusercontent.com/SEMICeu/DCAT-AP/refs/heads/master/releases/3.0.0/shacl/dcat-ap-SHACL.ttl"
           ],
@@ -74,14 +74,47 @@
       },
       "defaultVersion": "1.0.0"
     },
+    "dcat_ap_es_hvd": {
+      "versions": {
+        "1.0.0": {
+          "name": "DCAT-AP-ES HVD 1.0.0", 
+          "maxScore": 405,
+          "icon": "img/icons/esp.svg",
+          "url": "https://datosgobes.github.io/DCAT-AP-ES/",
+          "sampleUrl": "https://raw.githubusercontent.com/datosgobes/DCAT-AP-ES/refs/heads/develop/examples/ttl/1.0.0/E_DCAT-AP-ES_Catalog.ttl",
+          "shaclFiles": [
+            "https://raw.githubusercontent.com/datosgobes/DCAT-AP-ES/refs/heads/develop/shacl/1.0.0/shacl_imports.ttl",
+            "https://raw.githubusercontent.com/datosgobes/DCAT-AP-ES/refs/heads/develop/shacl/1.0.0/shacl_mdr_imports.ttl",
+            "https://raw.githubusercontent.com/datosgobes/DCAT-AP-ES/refs/heads/develop/shacl/1.0.0/shacl_mdr-vocabularies.shape.ttl",
+            "https://raw.githubusercontent.com/datosgobes/DCAT-AP-ES/refs/heads/develop/shacl/1.0.0/shacl_common_shapes.ttl",
+            "https://raw.githubusercontent.com/datosgobes/DCAT-AP-ES/refs/heads/develop/shacl/1.0.0/shacl_catalog_shape.ttl",
+            "https://raw.githubusercontent.com/datosgobes/DCAT-AP-ES/refs/heads/develop/shacl/1.0.0/shacl_dataservice_shape.ttl",
+            "https://raw.githubusercontent.com/datosgobes/DCAT-AP-ES/refs/heads/develop/shacl/1.0.0/shacl_dataset_shape.ttl",
+            "https://raw.githubusercontent.com/datosgobes/DCAT-AP-ES/refs/heads/develop/shacl/1.0.0/shacl_distribution_shape.ttl",
+            "https://raw.githubusercontent.com/datosgobes/DCAT-AP-ES/refs/heads/develop/shacl/1.0.0/hvd/shacl_common_hvd_shapes.ttl",
+            "https://raw.githubusercontent.com/datosgobes/DCAT-AP-ES/refs/heads/develop/shacl/1.0.0/hvd/shacl_dataservice_hvd_shape.ttl",
+            "https://raw.githubusercontent.com/datosgobes/DCAT-AP-ES/refs/heads/develop/shacl/1.0.0/hvd/shacl_dataset_hvd_shape.ttl",
+            "https://raw.githubusercontent.com/datosgobes/DCAT-AP-ES/refs/heads/develop/shacl/1.0.0/hvd/shacl_distribution_hvd_shape.ttl"
+          ],
+          "dimensions": {
+            "findability": { "maxScore": 100 },
+            "accessibility": { "maxScore": 100 },
+            "interoperability": { "maxScore": 110 },
+            "reusability": { "maxScore": 75 },
+            "contextuality": { "maxScore": 20 }
+          }
+        }
+      },
+      "defaultVersion": "1.0.0"
+    },
     "nti_risp": {
       "versions": {
         "2013": {
-          "name": "NTI-RISP 2013",
+          "name": "NTI-RISP (2013)",
           "maxScore": 305,
           "icon": "img/icons/esp.svg",
           "url": "https://datosgobes.github.io/NTI-RISP/",
-          "sample_url": "https://raw.githubusercontent.com/datosgobes/NTI-RISP/refs/heads/main/examples/rdf/E_NTI-RISP_Catalog.rdf",
+          "sampleUrl": "https://raw.githubusercontent.com/datosgobes/NTI-RISP/refs/heads/main/examples/ttl/E_NTI-RISP_Catalog.ttl",
           "shaclFiles": [
             "https://raw.githubusercontent.com/datosgobes/NTI-RISP/refs/heads/main/shacl/1.0.0/nti-risp_catalog_shape.ttl",
             "https://raw.githubusercontent.com/datosgobes/NTI-RISP/refs/heads/main/shacl/1.0.0/nti-risp_common_shapes.ttl",
@@ -103,7 +136,7 @@
       "defaultVersion": "2013"
     }
   },
-  "metricsByProfile": {
+  "profile_metrics": {
     "dcat_ap": {
       "findability": [
         { "id": "dcat_keyword", "weight": 30, "property": "dcat:keyword" },
@@ -167,7 +200,43 @@
         { "id": "dct_access_rights", "weight": 10, "property": "dct:accessRights" },
         { "id": "dct_access_rights_vocabulary", "weight": 5, "property": "dct:accessRights" },
         { "id": "dcat_contact_point", "weight": 20, "property": "dcat:contactPoint" },
-        { "id": "dct_publisher", "weight": 10, "property": "dct:publisher" }
+        { "id": "dct_publisher_nti_risp", "weight": 10, "property": "dct:publisher" }
+      ],
+      "contextuality": [
+        { "id": "dcat_byte_size", "weight": 5, "property": "dcat:byteSize" },
+        { "id": "dct_issued", "weight": 5, "property": "dct:issued" },
+        { "id": "dct_modified", "weight": 5, "property": "dct:modified" },
+        { "id": "dct_rights", "weight": 5, "property": "dct:rights" }
+      ]
+    },
+    "dcat_ap_es_hvd": {
+      "findability": [
+        { "id": "dcat_keyword", "weight": 30, "property": "dcat:keyword" },
+        { "id": "dcat_theme", "weight": 30, "property": "dcat:theme" },
+        { "id": "dct_spatial", "weight": 20, "property": "dct:spatial" },
+        { "id": "dct_temporal", "weight": 20, "property": "dct:temporal" }
+      ],
+      "accessibility": [
+        { "id": "dcat_access_url_status", "weight": 50, "property": "dcat:accessURL" },
+        { "id": "dcat_download_url", "weight": 20, "property": "dcat:downloadURL" },
+        { "id": "dcat_download_url_status", "weight": 30, "property": "dcat:downloadURL" }
+      ],
+      "interoperability": [
+        { "id": "dct_format", "weight": 20, "property": "dct:format" },
+        { "id": "dcat_media_type", "weight": 10, "property": "dcat:mediaType" },
+        { "id": "dct_format_vocabulary", "weight": 5, "property": "dct:format" },
+        { "id": "dcat_media_type_vocabulary", "weight": 5, "property": "dcat:mediaType" },
+        { "id": "dct_format_nonproprietary", "weight": 20, "property": "dct:format" },
+        { "id": "dct_format_machine_readable", "weight": 20, "property": "dct:format" },
+        { "id": "dcat_ap_es_compliance", "weight": 30, "property": "rdf:type" }
+      ],
+      "reusability": [
+        { "id": "dct_license", "weight": 20, "property": "dct:license" },
+        { "id": "dct_license_vocabulary", "weight": 10, "property": "dct:license" },
+        { "id": "dct_access_rights", "weight": 10, "property": "dct:accessRights" },
+        { "id": "dct_access_rights_vocabulary", "weight": 5, "property": "dct:accessRights" },
+        { "id": "dcat_contact_point", "weight": 20, "property": "dcat:contactPoint" },
+        { "id": "dct_publisher_nti_risp", "weight": 10, "property": "dct:publisher" }
       ],
       "contextuality": [
         { "id": "dcat_byte_size", "weight": 5, "property": "dcat:byteSize" },
@@ -189,25 +258,25 @@
       "interoperability": [
         { "id": "dct_format", "weight": 20, "property": "dct:format" },
         { "id": "dct_format_vocabulary_nti_risp", "weight": 5, "property": "dct:format" },
-        { "id": "dcat_media_type_vocabulary_nti_risp", "weight": 5, "property": "dct:format" },
-        { "id": "dct_format_nonproprietary", "weight": 20, "property": "dct:format" },
-        { "id": "dct_format_machine_readable", "weight": 20, "property": "dct:format" },
+        { "id": "dcat_media_type", "weight": 5, "property": "dcat:mediaType" },
+        { "id": "dct_format_nonproprietary_nti_risp", "weight": 20, "property": "dct:format" },
+        { "id": "dct_format_machine_readable_nti_risp", "weight": 20, "property": "dct:format" },
         { "id": "nti_risp_compliance", "weight": 30, "property": "rdf:type" }
       ],
       "reusability": [
         { "id": "dct_license_nti_risp", "weight": 20, "property": "dct:license" },
-        { "id": "dct_license_vocabulary", "weight": 10, "property": "dct:license" },
-        { "id": "dct_publisher", "weight": 10, "property": "dct:publisher" }
+        { "id": "dct_license_vocabulary_nti_risp", "weight": 10, "property": "dct:license" },
+        { "id": "dct_publisher_nti_risp", "weight": 10, "property": "dct:publisher" }
       ],
       "contextuality": [
         { "id": "dcat_byte_size", "weight": 5, "property": "dcat:byteSize" },
-        { "id": "dct_issued", "weight": 5, "property": "dct:issued" },
-        { "id": "dct_modified", "weight": 5, "property": "dct:modified" }
+        { "id": "dct_issued_nti_risp", "weight": 5, "property": "dct:issued" },
+        { "id": "dct_modified_nti_risp", "weight": 5, "property": "dct:modified" }
       ]
     }
   },
-  "sparqlConfig": {
-    "defaultEndpoint": "https://datos.gob.es/virtuoso/sparql",
+  "sparql_config": {
+    "default_endpoint": "https://datos.gob.es/virtuoso/sparql",
     "queries": {
       "nti_risp": [
         {
@@ -303,12 +372,62 @@
     "minimumEntityThreshold": 1,
     "description": "Proportional evaluation calculates metric scores based on the percentage of entities that comply with each metric, rather than binary all-or-nothing scoring"
   },
+  "backend_server": {
+    "enabled": false,
+    "url": "",
+    "_comment": "Empty url means it will use REACT_APP_BACKEND_URL from env or default to /api (relative path for Docker/Nginx)",
+    "_deployment_config": {
+      "github_pages": "Set enabled: false - GitHub Pages has no backend support",
+      "docker": "Set enabled: true - Docker includes Express backend server", 
+      "local_dev": "Set enabled: true - Backend runs on localhost:3001",
+      "static_hosting": "Set enabled: false - Static hosting has no backend support"
+    },
+    "endpoints": {
+      "validate_url": "/api/validate-url",
+      "download_data": "/api/download-data",
+      "health": "/api/health"
+    },
+    "cors_proxy": {
+      "fallback_proxies": [
+        "https://corsproxy.io/?url="
+      ],
+      "enable_heuristics": true
+    }
+  },
+  "data_quality": {
+    "enabled": false,
+    "require_backend": true,
+    "_deployment_config": {
+      "github_pages": "Set enabled: false - No backend available for data quality analysis",
+      "docker": "Set enabled: true - Full data quality analysis with backend support",
+      "local_dev": "Set enabled: true - Full data quality analysis with local backend",
+      "static_hosting": "Set enabled: false - No backend available for data quality analysis",
+      "_note": "Data quality requires backend_server.enabled: true for ISO/IEC 25012 metrics"
+    },
+    "iso_25012_metrics": {
+      "accuracy": { "weight": 0.15, "enabled": true },
+      "completeness": { "weight": 0.12, "enabled": true },
+      "consistency": { "weight": 0.10, "enabled": true },
+      "credibility": { "weight": 0.08, "enabled": true },
+      "currentness": { "weight": 0.08, "enabled": true },
+      "accessibility": { "weight": 0.07, "enabled": true },
+      "compliance": { "weight": 0.07, "enabled": true },
+      "confidentiality": { "weight": 0.06, "enabled": true },
+      "efficiency": { "weight": 0.06, "enabled": true },
+      "precision": { "weight": 0.05, "enabled": true },
+      "traceability": { "weight": 0.05, "enabled": true },
+      "understandability": { "weight": 0.04, "enabled": true },
+      "availability": { "weight": 0.03, "enabled": true },
+      "portability": { "weight": 0.02, "enabled": true },
+      "recoverability": { "weight": 0.02, "enabled": true }
+    }
+  },
   "app_info": {
     "name": "Metadata Quality APP",
-    "version": "1.1.0",
+    "version": "1.2.0",
     "repository": "https://github.com/mjanez/metadata-quality-react",
     "url": "https://mjanez.github.io/metadata-quality-react/",
     "see_also": "https://github.com/mjanez/metadata-quality-react?tab=readme-ov-file#metadata-quality-react",
-    "description": "Metadata Quality Stack is a comprehensive toolkit for analysing metadata quality. It implements the European Data Portal's MQA methodology, uses shacl-engine for SHACL validation and rdfxml-streaming-parser for efficient streaming RDF parsing and metric processing, and is built with React."
+    "description": "Metadata Quality React is a comprehensive toolkit for analysing metadata quality. It implements the European Data Portal's MQA methodology, uses shacl-engine for SHACL validation and rdfxml-streaming-parser for efficient streaming RDF parsing and metric processing, and is built with React."
   }
 }

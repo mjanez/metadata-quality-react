@@ -2,6 +2,7 @@ import { Parser as N3Parser, Writer as N3Writer, Store as N3Store } from 'n3';
 import { RdfXmlParser } from 'rdfxml-streaming-parser';
 import { RDFFormat, ValidationProfile, SHACLReport, ProfileSelection } from '../types';
 import { SHACLValidationService } from './SHACLValidationService';
+import { backendService } from './BackendService';
 
 export class RDFService {
   /**
@@ -44,17 +45,13 @@ export class RDFService {
    */
   public static async convertRdfXmlToTurtle(rdfXmlContent: string, baseIRI: string = 'http://example.org/'): Promise<string> {
     try {
-      console.debug('🔄 Converting RDF/XML to Turtle...');
       
       // Pre-process RDF/XML to fix invalid IRIs with spaces
       const { processedContent, warnings } = this.preprocessRdfForInvalidIRIs(rdfXmlContent);
       
-      // Display warnings if any IRI issues were found and fixed
+      // Only show summary if warnings exist
       if (warnings.length > 0) {
-        console.warn(`⚠️ RDF Syntax Issues Detected: Applied ${warnings.length} automatic correction(s):`);
-        warnings.forEach(warning => console.warn(`   • ${warning}`));
-        console.warn('⚠️ Important: Original RDF contains syntax violations. While automatically corrected for processing,');
-        console.warn('   consider fixing these issues in the source data to ensure full W3C RDF compliance.');
+        console.warn(`⚠️ RDF Syntax: Fixed ${warnings.length} invalid IRI(s) with spaces/whitespace. Consider fixing source data for W3C compliance.`);
       }
       
       const parser = new RdfXmlParser({ baseIRI });
@@ -88,11 +85,9 @@ export class RDFService {
             });
 
             const quads = store.getQuads();
-            console.log(`✅ Parsed ${quads.length} quads from RDF/XML`);
             
             // Include warnings in the final success message if any were generated
             if (warnings.length > 0) {
-              console.log(`⚠️ Conversion completed with ${warnings.length} syntax correction(s) - original RDF had compliance issues`);
             }
             
             writer.addQuads(quads);
@@ -100,7 +95,6 @@ export class RDFService {
               if (error) {
                 reject(error);
               } else {
-                console.debug('✅ RDF/XML successfully converted to Turtle');
                 resolve(result);
               }
             });
@@ -162,7 +156,6 @@ export class RDFService {
             const fixedIRI = this.encodeInvalidIRI(iri);
             const warningMessage = `Invalid IRI with spaces/whitespace in XML attribute: '${iri}' → automatically encoded to '${fixedIRI}'`;
             warnings.push(warningMessage);
-            console.warn(`⚠️ RDF Syntax Warning: ${warningMessage}`);
             return `${prefix}${fixedIRI}${suffix}`;
           }
           return match;
@@ -179,7 +172,6 @@ export class RDFService {
             const fixedIRI = this.encodeInvalidIRI(iri);
             const warningMessage = `Invalid IRI with spaces/whitespace in Turtle: '${iri}' → automatically encoded to '${fixedIRI}'`;
             warnings.push(warningMessage);
-            console.warn(`⚠️ RDF Syntax Warning: ${warningMessage}`);
             return `${prefix}${fixedIRI}${suffix}`;
           }
           return match;
@@ -216,14 +208,25 @@ export class RDFService {
   }
 
   /**
-   * Fetch content from URL (simplified - no CORS proxy)
+   * Fetch RDF content from URL with backend support and CORS fallback
    */
   public static async fetchFromUrl(url: string): Promise<string> {
+    
+    // First try: Use backend service if available
     try {
-      console.debug(`🌐 Fetching content from URL: ${url}`);
-      
+      const isBackendAvailable = await backendService.isBackendAvailable();
+      if (isBackendAvailable) {
+        const content = await backendService.downloadData(url);
+        return content;
+      }
+    } catch (backendError) {
+      console.warn('⚠️ Backend fetch failed, falling back to direct methods:', backendError);
+    }
+
+    // Second try: Direct fetch (might fail due to CORS)
+    try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
       
       const response = await fetch(url, {
         signal: controller.signal,
@@ -241,20 +244,19 @@ export class RDFService {
       }
       
       const content = await response.text();
-      console.debug(`✅ Content successfully fetched from URL (${content.length} chars)`);
       return content;
       
-    } catch (error) {
-      console.warn('⚠️ Failed to fetch from URL:', error);
+    } catch (directError) {
+      console.warn('⚠️ Direct fetch failed:', directError);
       
       // Create user-friendly error for CORS issues
-      if (error instanceof Error) {
-        if (error.name === 'AbortError') {
+      if (directError instanceof Error) {
+        if (directError.name === 'AbortError') {
           throw new Error('TIMEOUT: Request timeout (>15s). The server may be slow or unreachable.');
-        } else if (error.message.includes('CORS') || error.message.includes('ERR_FAILED') || error.message.includes('Failed to fetch')) {
+        } else if (directError.message.includes('CORS') || directError.message.includes('ERR_FAILED') || directError.message.includes('Failed to fetch')) {
           throw new Error('CORS_ERROR: Cross-origin restrictions prevent automatic download.');
         } else {
-          throw new Error(`NETWORK_ERROR: ${error.message}`);
+          throw new Error(`NETWORK_ERROR: ${directError.message}`);
         }
       } else {
         throw new Error('UNKNOWN_ERROR: An unknown network error occurred.');
@@ -267,7 +269,6 @@ export class RDFService {
    */
   public static async convertNTriplesToTurtle(ntriplesContent: string): Promise<string> {
     try {
-      console.debug('🔄 Converting N-Triples to Turtle...');
       
       const parser = new N3Parser({ format: 'application/n-triples' });
       const store = new N3Store();
@@ -298,14 +299,12 @@ export class RDFService {
               });
 
               const quads = store.getQuads();
-              console.log(`✅ Parsed ${quads.length} quads from N-Triples`);
               
               writer.addQuads(quads);
               writer.end((error, result) => {
                 if (error) {
                   reject(error);
                 } else {
-                  console.debug('✅ N-Triples successfully converted to Turtle');
                   resolve(result);
                 }
               });
@@ -327,7 +326,6 @@ export class RDFService {
    */
   public static async convertJsonLdToTurtle(jsonldContent: string): Promise<string> {
     try {
-      console.debug('🔄 Converting JSON-LD to Turtle...');
       
       // First validate that it's valid JSON
       const parsed = JSON.parse(jsonldContent);
@@ -428,7 +426,6 @@ export class RDFService {
       format = this.detectFormat(content);
     }
     
-    console.debug(`🔄 Normalizing ${format} to Turtle...`);
     
     if (format === 'rdfxml') {
       return await this.convertRdfXmlToTurtle(content);
@@ -436,9 +433,7 @@ export class RDFService {
       // Apply preprocessing to Turtle content as well
       const { processedContent, warnings } = this.preprocessRdfForInvalidIRIs(content);
       if (warnings.length > 0) {
-        console.warn(`⚠️ Turtle preprocessing applied ${warnings.length} automatic correction(s):`);
-        warnings.forEach(warning => console.warn(`   • ${warning}`));
-        console.warn('⚠️ Original Turtle content had syntax violations that were automatically corrected.');
+        console.warn(`⚠️ Turtle: Fixed ${warnings.length} invalid IRI(s). Original content had syntax violations.`);
       }
       return processedContent;
     } else if (format === 'ntriples') {
@@ -456,7 +451,8 @@ export class RDFService {
   public static async validateWithSHACL(
     content: string, 
     profileSelection: ProfileSelection | ValidationProfile,
-    format: RDFFormat = 'turtle'
+    format: RDFFormat = 'turtle',
+    language: string = 'es'
   ): Promise<SHACLReport> {
     try {
       // Extract profile string from ProfileSelection or use as-is if it's a string
@@ -471,7 +467,7 @@ export class RDFService {
       }
 
       // Perform SHACL validation
-      return await SHACLValidationService.validateRDF(normalizedContent, profile, 'turtle');
+      return await SHACLValidationService.validateRDF(normalizedContent, profile, 'turtle', language);
     } catch (error) {
       console.error('SHACL validation error in RDFService:', error);
       throw error;

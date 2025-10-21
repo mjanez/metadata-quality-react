@@ -82,21 +82,19 @@ export class SPARQLService {
     if (this.queriesLoaded) return;
 
     try {
-      console.debug('📥 Loading SPARQL queries from mqa-config...');
       
       // Get queries from mqa-config
-      const sparqlConfig = (mqaConfigData as any).sparqlConfig;
+      const sparqlConfig = (mqaConfigData as any).sparql_config;
       if (!sparqlConfig || !sparqlConfig.queries) {
         throw new Error('No sparqlConfig found in mqa-config.json');
       }
 
-      const defaultEndpoint = sparqlConfig.defaultEndpoint || 'https://datos.gob.es/virtuoso/sparql';
+      const defaultEndpoint = sparqlConfig.default_endpoint || 'https://datos.gob.es/virtuoso/sparql';
       
       // Load queries for each profile
       for (const [profile, queries] of Object.entries(sparqlConfig.queries)) {
         for (const queryConfig of queries as any[]) {
           try {
-            console.debug(`📥 Loading query: ${queryConfig.name}`);
 
             this.predefinedQueries.push({
               id: queryConfig.id,
@@ -108,7 +106,6 @@ export class SPARQLService {
               endpoint: defaultEndpoint
             });
 
-                        console.log(`✅ Loaded query: ${queryConfig.name}`);
           } catch (error) {
             console.error(`❌ Error loading query ${queryConfig.id}:`, error);
           }
@@ -116,7 +113,6 @@ export class SPARQLService {
       }
       
       this.queriesLoaded = true;
-      console.log(`✅ Loaded ${this.predefinedQueries.length} SPARQL queries from mqa-config`);
       
     } catch (error) {
       console.error('❌ Error loading SPARQL queries from mqa-config:', error);
@@ -173,11 +169,9 @@ export class SPARQLService {
     const startTime = Date.now();
     
     try {
-      console.log('Executing SPARQL query against endpoint:', endpoint);
       
       // Replace parameters if provided
       const processedQuery = parameters ? this.replaceQueryParameters(query, parameters) : query;
-      console.log('Processed SPARQL query:\n', processedQuery);
       
       // Create AbortController for timeout
       const controller = new AbortController();
@@ -232,7 +226,6 @@ export class SPARQLService {
       const resultsCount = this.estimateResultsCount(data);
       const executionTime = Date.now() - startTime;
       
-      console.log(`✅ SPARQL query executed successfully in ${executionTime}ms, ~${resultsCount} results`);
       
       return {
         success: true,

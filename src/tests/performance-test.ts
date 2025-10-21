@@ -26,7 +26,7 @@ const TEST_RDF_CONTENT = `
 `;
 
 async function performanceTest() {
-    console.log('🧪 Performance Test: MQAService Debug Logging Optimization');
+    console.log('Performance Test: MQAService Debug Logging Optimization');
     console.log('=' + '='.repeat(60));
     
     const mqaService = MQAService.getInstance();
@@ -42,10 +42,10 @@ async function performanceTest() {
             'turtle'
         );
         console.timeEnd('Production Mode');
-        console.log(`✅ Quality Score: ${result1.percentage.toFixed(1)}% (${result1.totalScore}/${result1.metrics.reduce((sum: number, m: any) => sum + m.maxScore, 0)} points)`);
+        console.log(`Quality Score: ${result1.percentage.toFixed(1)}% (${result1.totalScore}/${result1.metrics.reduce((sum: number, m: any) => sum + m.maxScore, 0)} points)`);
     } catch (error) {
         console.timeEnd('Production Mode');
-        console.error('❌ Production test failed:', error);
+        console.error('Production test failed:', error);
     }
     
     // Test 2: Progressive validation
@@ -61,14 +61,14 @@ async function performanceTest() {
             false // Don't skip syntax validation
         );
         console.timeEnd('Progressive Validation');
-        console.log(`✅ Final Quality Score: ${result2.quality.percentage.toFixed(1)}%`);
-        console.log(`✅ SHACL Conforms: ${result2.shaclReport.conforms}`);
+        console.log(`Final Quality Score: ${result2.quality.percentage.toFixed(1)}%`);
+        console.log(`SHACL Conforms: ${result2.shaclReport.conforms}`);
     } catch (error) {
         console.timeEnd('Progressive Validation');
-        console.error('❌ Progressive validation test failed:', error);
+        console.error('Progressive validation test failed:', error);
     }
     
-    console.log('\n🎯 Performance Summary:');
+    console.log('\nPerformance Summary:');
     console.log('- Debug logging is controlled by DEBUG_ENABLED flag (development only)');
     console.log('- Verbose logging is disabled by default (VERBOSE_LOGGING=false)');
     console.log('- Progressive validation provides better UX for large datasets');

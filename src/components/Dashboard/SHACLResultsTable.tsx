@@ -497,7 +497,7 @@ const SHACLResultsTable: React.FC<SHACLResultsTableProps> = ({ shaclData, showPr
                   className="form-control"
                   placeholder={t('dashboard.table.search_results')}
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
                 />
               </div>
             </div>
@@ -505,7 +505,7 @@ const SHACLResultsTable: React.FC<SHACLResultsTableProps> = ({ shaclData, showPr
               <select
                 className="form-select"
                 value={selectedSeverity}
-                onChange={(e) => setSelectedSeverity(e.target.value as any)}
+                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSelectedSeverity(e.target.value as any)}
               >
                 <option value="all">{t('dashboard.table.all_severities')} ({stats.total})</option>
                 <option value="Violation">{t('dashboard.overview.violations')} ({stats.violations})</option>

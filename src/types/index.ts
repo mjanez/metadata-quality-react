@@ -1,8 +1,8 @@
 // RDF Format types
 export type RDFFormat = 'turtle' | 'rdfxml' | 'jsonld' | 'ntriples' | 'auto';
 
-// Validation profile types  
-export type ValidationProfile = 'dcat_ap' | 'dcat_ap_es' | 'nti_risp';
+// Validation profile types
+export type ValidationProfile = 'dcat_ap' | 'dcat_ap_es' | 'dcat_ap_es_hvd' | 'nti_risp';
 
 // Tab system types
 // Extended Validation Result with SHACL
@@ -53,7 +53,7 @@ export interface MQAConfig {
       defaultVersion: string;
     };
   };
-  metricsByProfile: {
+  profile_metrics: {
     [key in ValidationProfile]: {
       [dimension: string]: MQAMetricConfig[];
     };
@@ -63,8 +63,8 @@ export interface MQAConfig {
     minimumEntityThreshold: number;
     description?: string;
   };
-  sparqlConfig?: {
-    defaultEndpoint: string;
+  sparql_config?: {
+    default_endpoint: string;
     queries: {
       [profile: string]: {
         id: string;
@@ -113,7 +113,7 @@ export interface QualityMetric {
   description: string;
   category: 'findability' | 'accessibility' | 'interoperability' | 'reusability' | 'contextuality';
   property?: string;
-  found?: boolean;
+  found?: boolean; // Indicates if the metric is evaluable (i.e., there are entities to evaluate), NOT if there's compliance
   value?: string;
   // Proportional evaluation fields
   entityType?: 'Dataset' | 'Distribution' | 'Catalog' | 'Multi';
@@ -228,6 +228,9 @@ export interface SHACLViolation {
   resultSeverity?: string;
   foafPage?: string; // URL with additional information about the rule
   entityContext?: string; // Entity type (e.g., dcat:Dataset, dcat:Distribution) that the constraint applies to
+  // Translation metadata for dynamic message generation
+  translationKey?: string; // i18n key for the message template
+  translationParams?: Record<string, any>; // Parameters for the translation
 }
 
 export type SHACLSeverity = 'Violation' | 'Warning' | 'Info';
@@ -247,3 +250,6 @@ export interface SHACLReport {
 export interface ExtendedValidationResult extends ValidationResult {
   shaclReport?: SHACLReport;
 }
+
+// Re-export data quality types
+export * from './dataQuality';

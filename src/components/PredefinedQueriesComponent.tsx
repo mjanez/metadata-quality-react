@@ -122,7 +122,7 @@ const PredefinedQueriesComponent: React.FC<PredefinedQueriesComponentProps> = ({
           id="querySelect"
           className="form-select"
           value={selectedQueryId}
-          onChange={(e) => handleQuerySelection(e.target.value)}
+          onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handleQuerySelection(e.target.value)}
           disabled={loading}
         >
           <option value="">{t('sparql.predefined.select_query_help')}</option>
@@ -159,7 +159,7 @@ const PredefinedQueriesComponent: React.FC<PredefinedQueriesComponentProps> = ({
                 className="form-control"
                 placeholder={param.placeholder}
                 value={parameters[param.name] || ''}
-                onChange={(e) => handleParameterChange(param.name, e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleParameterChange(param.name, e.target.value)}
                 required={param.required}
               />
             </div>

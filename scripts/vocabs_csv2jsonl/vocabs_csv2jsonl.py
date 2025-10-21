@@ -12,15 +12,16 @@ from datetime import datetime
 from urllib import request, error
 
 ROOT = Path(__file__).resolve().parents[1]
+print(f"ROOT: {ROOT}", file=sys.stderr)
 SRC = ROOT / "docs" / "vocabularies"
-DST = ROOT / "react-app" / "public" / "data"
+DST = ROOT / "public" / "data"
 
 VOCABS = {
     "access_rights": {"type": "uri_label"},
     "file_types": {"type": "uri_label"},
     "licenses": {"type": "licenses"},
     "machine_readable": {"type": "uri_label"},
-    "media_types": {"type": "uri_only"},
+    "media_types": {"type": "uri_label"},
     "non_proprietary": {"type": "uri_label"},
 }
 
@@ -76,15 +77,7 @@ def _parse_csv_lines(lines):
         return result
 
 def normalize_vocab_entry(vocab_name: str, row: dict) -> dict:
-    if vocab_name == "media_types":
-        uri = None
-        for v in row.values():
-            if v and v.strip():
-                uri = v.strip()
-                break
-        return {"uri": uri} if uri else None
-
-    elif vocab_name == "licenses":
+    if vocab_name == "licenses":
         keys = {k.lower().strip(): (v.strip() if v else "") for k, v in row.items()}
         authority = keys.get("authority_uri") or keys.get("authority") or keys.get("col0", "")
         code = keys.get("code") or keys.get("id") or keys.get("col1", "")
@@ -167,7 +160,7 @@ def main():
     p = argparse.ArgumentParser(description="Convert vocabulary CSVs to JSONL or JSON")
     p.add_argument("--remote-base",
                    help="Base raw URL where CSVs live, e.g. https://raw.githubusercontent.com/.../main/docs/vocabularies (default: GitHub raw URL)",
-                   default="https://raw.githubusercontent.com/mjanez/metadata-quality-stack/refs/heads/main/docs/vocabularies")
+                   default="https://raw.githubusercontent.com/mjanez/metadata-quality-react/refs/heads/main/docs/vocabularies")
     p.add_argument("--local", action="store_true",
                    help="Use local CSV files from docs/vocabularies instead of fetching remote (overrides --remote-base)")
     p.add_argument("--format", choices=("jsonl", "json"), default="jsonl",

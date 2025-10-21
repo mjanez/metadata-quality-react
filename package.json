@@ -1,6 +1,6 @@
 {
   "name": "metadata-quality-react",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "React application for evaluating RDF metadata quality based on FAIR+C principles",
   "homepage": "https://mjanez.github.io/metadata-quality-react/",
   "private": true,
@@ -33,6 +33,7 @@
     "@types/react": "^19.1.10",
     "@types/react-dom": "^19.1.7",
     "@types/react-router-dom": "^5.3.3",
+    "binary-extensions": "^3.1.0",
     "bootstrap": "^5.3.7",
     "chart.js": "^4.5.0",
     "d3": "^7.9.0",
@@ -58,6 +59,7 @@
     "start": "react-scripts start",
     "start-local": "set BROWSER=none && set PORT=3000 && react-scripts start",
     "build": "cross-env PUBLIC_URL=/metadata-quality-react react-scripts build",
+    "build:docker": "react-scripts build",
     "build-local": "npm run build && npx serve -s build -l 8000",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
@@ -85,6 +87,7 @@
     "@types/d3-dispatch": "^3.0.5",
     "@types/n3": "^1.26.0",
     "cross-env": "^10.0.0",
-    "gh-pages": "^6.3.0"
+    "gh-pages": "^6.3.0",
+    "source-map-explorer": "^2.5.3"
   }
 }
