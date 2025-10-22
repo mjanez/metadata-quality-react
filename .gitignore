@@ -1,5 +1,7 @@
 docs/info.md
 .env
+src/config/mqa-config.*.json
+public/data/shacl
 
 # Dependencies
 node_modules/
