@@ -1,6 +1,7 @@
 services:
   # MQA React Application (Frontend + Backend)
   mqa-app:
+    image: ghcr.io/mjanez/metadata-quality-react:${IMAGE_TAG:-latest}
     build:
       context: .
       dockerfile: Dockerfile

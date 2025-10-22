@@ -58,18 +58,32 @@ A modern web application for evaluating RDF metadata quality based on FAIR+C pri
 
 ## Quick Start
 
-### Prerequisites
-```bash
-Node.js >= 16.x
-npm >= 8.x
-```
+### Quick deployment (Docker Compose)
 
-### Installation
+**Prerequisites**: [Docker and Docker Compose](https://docs.docker.com/get-started/get-docker/) installed
+
 ```bash
 # Clone repository
 git clone https://github.com/mjanez/metadata-quality-react.git
 cd metadata-quality-react
 
+# Start with pre-built image from GHCR
+docker compose up -d
+
+# Or build locally
+IMAGE_TAG=local docker compose up -d --build
+```
+
+> [!TIP]
+> Application will be available at: **https://localhost:443** (HTTP auto-redirects to HTTPS)
+> - Frontend: https://localhost:443
+> - Backend API: https://localhost:443/api/health
+
+### Development Setup
+
+**Prerequisites**: Node.js >= 16.x, npm >= 8.x
+
+```bash
 # Quick start (both frontend and backend)
 ./dev-start.sh
 
@@ -86,7 +100,9 @@ npm i && npm start
 ```
 
 > [!TIP]
-> Application will be available at: **http://localhost:3000** and API at **http://localhost:3001/api/health**.
+> Development servers:
+> - Frontend: **http://localhost:3000**
+> - Backend API: **http://localhost:3001/api/health**
 
 ## Configuration
 
@@ -416,19 +432,26 @@ git clone https://github.com/mjanez/metadata-quality-react.git
 cd metadata-quality-react
 cp .env.example .env
 
-# 2. Build and start services
+# 2. Start with pre-built image (recommended)
 docker compose up -d
+
+# Or build locally
+IMAGE_TAG=local docker compose up -d --build
 
 # 3. Access application
 # Frontend: https://localhost:443
 # Backend API: https://localhost:443/api/health
 ```
 
+> [!NOTE]
+> By default, uses the latest stable image from GHCR. Set `IMAGE_TAG=develop` for development version or `IMAGE_TAG=local` to build locally.
+
 #### Deployment Modes
 
 | Mode | Command | Use Case | Features |
 |------|---------|----------|----------|
-| **Development** | `docker compose up` | Self-hosted  | Background, reverse proxy, SSL, caching, auto-restart |
+| **Production (GHCR)** | `docker compose up -d` | Self-hosted with pre-built image | Fast deployment, auto-updates, SSL, caching |
+| **Development (Local)** | `IMAGE_TAG=local docker compose up -d --build` | Local build and testing | Custom changes, SSL, caching, auto-restart |
 
 #### Container Services
 
