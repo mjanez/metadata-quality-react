@@ -41,7 +41,7 @@ FROM node:20-alpine AS production
 WORKDIR /app
 
 # Install runtime dependencies
-RUN apk add --no-cache curl tini
+RUN apk add --no-cache curl tini jq
 
 # Copy built React app
 COPY --from=builder /app/build ./build
@@ -54,8 +54,12 @@ COPY --from=builder /app/backend/node_modules ./backend/node_modules
 RUN npm install -g serve@14
 
 # Copy startup script
-COPY docker-start.sh ./
-RUN chmod +x docker-start.sh
+COPY docker/mqa-docker-start.sh ./
+RUN chmod +x mqa-docker-start.sh
+
+# Copy entrypoint script for auto-configuration
+COPY docker/mqa-entrypoint.sh ./
+RUN chmod +x mqa-entrypoint.sh
 
 # Create non-root user
 RUN addgroup -g 1001 -S nodejs && \
@@ -70,7 +74,7 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
   CMD curl -f http://localhost:3000/ && curl -f http://localhost:3001/api/health || exit 1
 
 # Use tini to handle signals properly
-ENTRYPOINT ["/sbin/tini", "--"]
+ENTRYPOINT ["/sbin/tini", "--", "./mqa-entrypoint.sh"]
 
 # Start both frontend and backend
-CMD ["./docker-start.sh"]
+CMD ["./mqa-docker-start.sh"]
