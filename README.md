@@ -381,20 +381,31 @@ react-app/
 
 ## Deployment
 This application can be deployed on multiple platforms with different configurations.
-> [!WARNING]
-> **Before deploying, verify your configuration!**
-> **Quick Configuration Check:**
+
+> [!IMPORTANT]
+> **Automatic Configuration for Docker Deployments**
+> 
+> When using Docker Compose, the container **automatically enables backend features** on startup:
+> - Detects if `backend_server.enabled` or `data_quality.enabled` are `false`
+> - Automatically updates configuration to `true` for Docker deployment
+> - Creates backup of original config as `mqa-config.json.bak`
+> - No manual configuration needed! 🎉
+> 
+> **Manual Configuration** (only if deploying to platforms without backend):
+> 
+> | Platform | `backend_server.enabled` | `data_quality.enabled` | Auto-configured? |
+> |----------|-------------------------|------------------------|------------------|
+> | **Docker Compose** | `true` | `true` | ✅ **Yes** (automatic) |
+> | **GitHub Pages** | `false` | `false` | ❌ No (manual) |
+> | **Local Development** | `true` | `true` | ✅ Yes (via dev-start.sh) |
+> 
+> For GitHub Pages deployment:
 > ```bash
-> # Check current settings
-> grep -A 1 '\"enabled\"' src/config/mqa-config.json
-> # Expected for GitHub Pages:
-> # backend_server: \"enabled\": false
-> # data_quality: \"enabled\": false
-> # Expected for Docker:
-> # backend_server: "enabled": true
-> # data_quality: \"enabled\": true
+> # Disable backend features
+> sed -i 's/"enabled": true/"enabled": false/g' src/config/mqa-config.json
+> npm run deploy
 > ```
-> 📖 **See full guide:** [docs/DEPLOYMENT_CONFIG.md](docs/DEPLOYMENT_CONFIG.md)
+
 
 ### Supported Platforms
 
