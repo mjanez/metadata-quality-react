@@ -2,7 +2,7 @@
   "name": "metadata-quality-react",
   "version": "1.2.0",
   "description": "React application for evaluating RDF metadata quality based on FAIR+C principles",
-  "homepage": "https://mjanez.github.io/metadata-quality-react/",
+  "homepage": "https://metadata-quality.mjanez.dev/",
   "private": true,
   "repository": {
     "type": "git",

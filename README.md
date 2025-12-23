@@ -1,7 +1,7 @@
 # Metadata Quality Assessment Tool - WebApp
 
 > [!TIP]
-> **Live Demo**: [https://mjanez.github.io/metadata-quality-react/](https://mjanez.github.io/metadata-quality-react/)
+> **Live Demo**: [https://metadata-quality.mjanez.dev/](https://metadata-quality.mjanez.dev/)
 
 A modern web application for evaluating RDF metadata quality based on FAIR+C principles, built with [React](https://es.react.dev/) + [TypeScript](https://www.typescriptlang.org/docs/).
 
