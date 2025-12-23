@@ -1060,7 +1060,7 @@ export class SHACLValidationService {
     const appName = appInfo?.name || 'Metadata Quality Assessment Tool';
     const appVersion = appInfo?.version || '1.0.0';
     const appRepository = appInfo?.repository || 'https://github.com/mjanez/metadata-quality-react';
-    const appUrl = appInfo?.url || 'https://mjanez.github.io/metadata-quality-react/';
+    const appUrl = appInfo?.url || 'https://metadata-quality.mjanez.dev/';
     const seeAlsoUrl = appInfo?.see_also || 'https://github.com/mjanez/metadata-quality-react?tab=readme-ov-file#metadata-quality-react';
     const appDescription = appInfo?.description || 'A tool for assessing metadata quality using SHACL validation.';
         
