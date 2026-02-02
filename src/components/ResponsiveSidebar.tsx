@@ -43,11 +43,14 @@ const ResponsiveSidebar: React.FC<ResponsiveSidebarProps> = ({
     const isValidVersionInfo = versionInfo && typeof versionInfo === 'object' && 'name' in versionInfo;
     
     if (!isValidVersionInfo) {
+      const profileName = typeof profile === 'string' 
+        ? profile.replace(/_/g, '-').toUpperCase()
+        : profile;
       return {
-        name: profile.replace(/_/g, '-').toUpperCase(),
+        name: profileName,
         style: 'text-primary',
         icon: 'img/icons/esp.svg',
-        description: t(`validation.profiles.${profile}_description`),
+        description: t(`validation.profiles.${typeof profile === 'string' ? profile : 'unknown'}_description`),
         maxPoints: 405,
         url: '#'
       };

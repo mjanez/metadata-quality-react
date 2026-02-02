@@ -228,6 +228,7 @@ Quick RDF syntax validation without quality assessment.
 | `dcat_ap_es` | Spanish extension of DCAT-AP |
 | `dcat_ap_es_hvd` | DCAT-AP-ES for High Value Datasets |
 | `nti_risp` | Spanish NTI-RISP profile |
+| `dcat_ap_es_legacy` | Legacy version of DCAT-AP-ES profile with older formats (`dct:IMT`) |
 
 ## RDF Formats
 

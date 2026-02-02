@@ -9,6 +9,7 @@ const VALIDATION_PROFILES = {
   DCAT_AP: 'dcat_ap',
   DCAT_AP_ES: 'dcat_ap_es',
   DCAT_AP_ES_HVD: 'dcat_ap_es_hvd',
+  DCAT_AP_ES_LEGACY: 'dcat_ap_es_legacy',
   NTI_RISP: 'nti_risp'
 };
 

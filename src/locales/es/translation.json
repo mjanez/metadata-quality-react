@@ -130,6 +130,8 @@
       "dcat_ap_description": "Perfil de aplicación DCAT para portales de datos en Europa",
       "dcat_ap_es": "DCAT-AP-ES", 
       "dcat_ap_es_description": "Perfil de aplicación DCAT-AP en España",
+      "dcat_ap_es_legacy": "DCAT-AP-ES Legacy",
+      "dcat_ap_es_legacy_description": "Perfil de aplicación DCAT-AP en España con formatos heredados",
       "dcat_ap_es_hvd": "DCAT-AP-ES-HVD",
       "dcat_ap_es_hvd_description": "Perfil de aplicación DCAT-AP en España con la extensión HVD incluida",
       "nti_risp": "NTI-RISP",

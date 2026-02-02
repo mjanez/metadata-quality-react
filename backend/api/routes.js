@@ -62,7 +62,7 @@ router.get('/profiles', async (req, res) => {
  * 
  * @body {string} content - RDF content as text (required if url not provided)
  * @body {string} url - URL to fetch RDF content from (required if content not provided)
- * @body {string} profile - Validation profile (dcat_ap, dcat_ap_es, nti_risp, dcat_ap_es_hvd)
+ * @body {string} profile - Validation profile (dcat_ap, dcat_ap_es, nti_risp, dcat_ap_es_hvd, dcat_ap_es_legacy)
  * @body {string} version - Profile version (optional, uses default if not specified)
  * @body {string} format - RDF format (turtle, rdfxml, jsonld, ntriples, auto)
  * @body {string} outputFormat - Output format (json, jsonld, dqv)
@@ -142,8 +142,7 @@ router.post('/quality', async (req, res) => {
     // Default JSON response
     res.json({
       success: true,
-      profile,
-      version: quality.version,
+      profile: quality.profile,
       quality: {
         totalScore: quality.totalScore,
         maxScore: quality.maxScore,
@@ -171,7 +170,7 @@ router.post('/quality', async (req, res) => {
  * 
  * @body {string} content - RDF content as text (required if url not provided)
  * @body {string} url - URL to fetch RDF content from (required if content not provided)
- * @body {string} profile - Validation profile (dcat_ap, dcat_ap_es, nti_risp, dcat_ap_es_hvd)
+ * @body {string} profile - Validation profile (dcat_ap, dcat_ap_es, nti_risp, dcat_ap_es_hvd, dcat_ap_es_legacy)
  * @body {string} version - Profile version (optional)
  * @body {string} format - RDF format (turtle, rdfxml, jsonld, ntriples, auto)
  * @body {string} outputFormat - Output format (json, turtle, csv)
@@ -349,8 +348,7 @@ router.post('/validate', async (req, res) => {
     
     res.json({
       success: true,
-      profile,
-      version: quality.version,
+      profile: quality.profile,
       quality: {
         totalScore: quality.totalScore,
         maxScore: quality.maxScore,

@@ -8,12 +8,22 @@
 import { DashboardMetricsData, DashboardSHACLData, Profile } from '../components/Dashboard/DashboardTypes';
 
 /**
+ * Profile object from API (new format)
+ */
+export interface APIProfileObject {
+  id: string;
+  name: string;
+  version: string;
+  url: string;
+}
+
+/**
  * API Response format from backend /api/quality endpoint
  */
 export interface APIQualityResponse {
   success: boolean;
-  profile: string;
-  version: string;
+  profile: string | APIProfileObject;
+  version?: string;
   quality: {
     totalScore: number;
     maxScore: number;
@@ -84,6 +94,8 @@ const PROFILE_NAMES: Record<string, string> = {
   'dcat-ap': 'DCAT-AP',
   'dcat_ap_es': 'DCAT-AP-ES',
   'dcat-ap-es': 'DCAT-AP-ES',
+  'dcat_ap_es_legacy': 'DCAT-AP-ES Legacy',
+  'dcat-ap-es-legacy': 'DCAT-AP-ES Legacy',
   'dcat_ap_es_hvd': 'DCAT-AP-ES HVD',
   'dcat-ap-es-hvd': 'DCAT-AP-ES HVD',
   'nti_risp': 'NTI-RISP',
@@ -98,6 +110,8 @@ const PROFILE_URLS: Record<string, string> = {
   'dcat-ap': 'https://semiceu.github.io/DCAT-AP/',
   'dcat_ap_es': 'https://datos.gob.es/es/documentacion/dcat-ap-es',
   'dcat-ap-es': 'https://datos.gob.es/es/documentacion/dcat-ap-es',
+  'dcat_ap_es_legacy': 'https://datos.gob.es/es/documentacion/dcat-ap-es',
+  'dcat-ap-es-legacy': 'https://datos.gob.es/es/documentacion/dcat-ap-es',
   'dcat_ap_es_hvd': 'https://datos.gob.es/es/documentacion/dcat-ap-es',
   'dcat-ap-es-hvd': 'https://datos.gob.es/es/documentacion/dcat-ap-es',
   'nti_risp': 'https://datos.gob.es/es/documentacion/nti-risp',
@@ -161,14 +175,26 @@ export function isDashboardMetricsFormat(data: any): data is DashboardMetricsDat
 export function convertAPIToDashboardMetrics(apiResponse: APIQualityResponse): DashboardMetricsData {
   const { quality, profile, version, timestamp, stats } = apiResponse;
   
-  // Build profile object
-  const normalizedProfileId = profile.replace(/_/g, '-').toLowerCase();
-  const profileObj: Profile = {
-    id: normalizedProfileId,
-    name: PROFILE_NAMES[profile] || PROFILE_NAMES[normalizedProfileId] || profile.toUpperCase(),
-    version: version || '1.0.0',
-    url: PROFILE_URLS[profile] || PROFILE_URLS[normalizedProfileId] || ''
-  };
+  // Build profile object - handle both string and object formats
+  let profileObj: Profile;
+  if (typeof profile === 'string') {
+    // Legacy format: profile is a string
+    const normalizedProfileId = profile.replace(/_/g, '-').toLowerCase();
+    profileObj = {
+      id: normalizedProfileId,
+      name: PROFILE_NAMES[profile] || PROFILE_NAMES[normalizedProfileId] || profile.toUpperCase(),
+      version: version || '1.0.0',
+      url: PROFILE_URLS[profile] || PROFILE_URLS[normalizedProfileId] || ''
+    };
+  } else {
+    // New format: profile is an object
+    profileObj = {
+      id: profile.id,
+      name: profile.name,
+      version: profile.version,
+      url: profile.url
+    };
+  }
 
   // Calculate dimension scores (percentages)
   const dimensions: DashboardMetricsData['dimensions'] = {
@@ -232,14 +258,26 @@ export function convertAPIToSHACLData(apiResponse: APIQualityResponse): Dashboar
     return null;
   }
 
-  // Build profile object
-  const normalizedProfileId = profile.replace(/_/g, '-').toLowerCase();
-  const profileObj: Profile = {
-    id: normalizedProfileId,
-    name: PROFILE_NAMES[profile] || PROFILE_NAMES[normalizedProfileId] || profile.toUpperCase(),
-    version: version || '1.0.0',
-    url: PROFILE_URLS[profile] || PROFILE_URLS[normalizedProfileId] || ''
-  };
+  // Build profile object - handle both string and object formats
+  let profileObj: Profile;
+  if (typeof profile === 'string') {
+    // Legacy format: profile is a string
+    const normalizedProfileId = profile.replace(/_/g, '-').toLowerCase();
+    profileObj = {
+      id: normalizedProfileId,
+      name: PROFILE_NAMES[profile] || PROFILE_NAMES[normalizedProfileId] || profile.toUpperCase(),
+      version: version || '1.0.0',
+      url: PROFILE_URLS[profile] || PROFILE_URLS[normalizedProfileId] || ''
+    };
+  } else {
+    // New format: profile is an object
+    profileObj = {
+      id: profile.id,
+      name: profile.name,
+      version: profile.version,
+      url: profile.url
+    };
+  }
 
   // Generate synthetic TTL content from SHACL results
   const ttlContent = generateSHACLTTL(apiResponse);

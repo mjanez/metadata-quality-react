@@ -330,7 +330,7 @@ Special debug queries help test endpoint connectivity:
 
 ### Configuration Best Practices
 
-1. **Profile Naming**: Use consistent IDs (`dcat_ap`, `dcat_ap_es`, `dcat_ap_es_hvd` `nti_risp`)
+1. **Profile Naming**: Use consistent IDs (`dcat_ap`, `dcat_ap_es`, `dcat_ap_es_hvd` `nti_risp`, `dcat_ap_es_legacy`)
 2. **Version Management**: Support multiple versions per profile
 3. **Metric Weights**: Ensure weights sum to reasonable totals per dimension
 4. **SPARQL Queries**: Use CONSTRUCT queries for better RDF generation

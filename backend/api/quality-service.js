@@ -42,6 +42,13 @@ const ENTITY_TYPES = {
 // RDF type predicate
 const RDF_TYPE = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type';
 
+// RDF URI constants for NTI-RISP property extraction
+const RDF_URIS = {
+  RDFS_LABEL: 'http://www.w3.org/2000/01/rdf-schema#label',
+  RDF_VALUE: 'http://www.w3.org/1999/02/22-rdf-syntax-ns#value',
+  DCT_IMT: 'http://purl.org/dc/terms/IMT'
+};
+
 /**
  * Vocabulary cache
  */
@@ -156,9 +163,44 @@ async function checkVocabularyMatch(values, vocabularyName) {
 }
 
 /**
- * Count vocabulary-compliant entities
+ * Extract values from NTI-RISP dct:IMT structure
+ * @param {Object} quad - The quad containing the property
+ * @param {Object} store - The RDF store
+ * @param {string} propertyToExtract - Either 'rdfs:label' or 'rdf:value'
+ * @returns {Array<string>} Array of extracted values
  */
-async function countVocabularyCompliantEntities(store, property, vocabularyName, entityType) {
+function extractNTIRISPValues(quad, store, propertyToExtract) {
+  const values = [];
+  
+  if (quad.object.termType === 'BlankNode') {
+    // Extract the specified property from the BlankNode (dct:IMT structure)
+    const targetProperty = expandProperty(propertyToExtract);
+    const nestedQuads = store.getQuads(quad.object, targetProperty, null, null);
+    
+    for (const nestedQuad of nestedQuads) {
+      if (nestedQuad.object.value) {
+        values.push(nestedQuad.object.value);
+      }
+    }
+  } else if (quad.object.termType === 'Literal' || quad.object.termType === 'NamedNode') {
+    // Direct value
+    if (quad.object.value) {
+      values.push(quad.object.value);
+    }
+  }
+  
+  return values;
+}
+
+/**
+ * Count vocabulary-compliant entities (with NTI-RISP support)
+ * @param {Object} store - RDF store
+ * @param {string} property - Property to check (e.g., 'dct:format')
+ * @param {string} vocabularyName - Vocabulary name to validate against
+ * @param {string} entityType - Entity type (Dataset, Distribution, Catalog)
+ * @param {string} [ntiRispProperty] - Optional nested property for NTI-RISP (e.g., 'rdfs:label', 'rdf:value')
+ */
+async function countVocabularyCompliantEntities(store, property, vocabularyName, entityType, ntiRispProperty = null) {
   const typeURI = ENTITY_TYPES[entityType];
   const fullProperty = expandProperty(property);
   
@@ -170,11 +212,27 @@ async function countVocabularyCompliantEntities(store, property, vocabularyName,
     const propertyQuads = store.getQuads(entityURI, fullProperty, null, null);
     
     if (propertyQuads.length > 0) {
-      const values = propertyQuads.map(q => q.object.value).filter(v => v);
-      const isInVocabulary = await checkVocabularyMatch(values, vocabularyName);
+      let values = [];
       
-      if (isInVocabulary) {
-        compliantCount++;
+      // Extract values based on whether this is NTI-RISP nested property
+      if (ntiRispProperty) {
+        // NTI-RISP: Extract nested property from BlankNode (dct:IMT structure)
+        for (const quad of propertyQuads) {
+          const extractedValues = extractNTIRISPValues(quad, store, ntiRispProperty);
+          values.push(...extractedValues);
+        }
+      } else {
+        // Standard: Direct property values
+        values = propertyQuads.map(q => q.object.value).filter(v => v);
+      }
+      
+      // Check if any extracted value matches the vocabulary
+      if (values.length > 0) {
+        const isInVocabulary = await checkVocabularyMatch(values, vocabularyName);
+        
+        if (isInVocabulary) {
+          compliantCount++;
+        }
       }
     }
   }
@@ -223,18 +281,21 @@ async function countURLStatusCompliant(store, property, entityType) {
  * Get metric entity type
  */
 function getMetricEntityType(metricId) {
-  const multiEntityMetrics = ['dct_issued', 'dct_modified', 'dct_title', 'dct_description'];
+  const multiEntityMetrics = [
+    'dct_issued', 'dct_modified', 'dct_title', 'dct_description'
+  ];
   const datasetMetrics = [
     'dcat_keyword', 'dcat_theme', 'dct_spatial', 'dct_temporal',
-    'dct_creator', 'dct_language', 'dcat_contact_point',
-    'dct_access_rights', 'dct_publisher', 'dct_access_rights_vocabulary'
+    'dct_creator', 'dct_language', 'dcat_contact_point', 
+    'dct_access_rights', 'dct_publisher', 'dct_publisher_nti_risp', 'dct_access_rights_vocabulary', 'dct_license_nti_risp', 'dct_license_vocabulary_nti_risp', 'dct_issued_nti_risp', 'dct_modified_nti_risp'
   ];
   const distributionMetrics = [
     'dcat_access_url', 'dcat_download_url', 'dct_format', 'dcat_media_type',
-    'dcat_byte_size', 'dct_rights', 'dct_format_vocabulary',
+    'dcat_byte_size', 'dct_rights', 'dct_format_vocabulary', 'dct_format_machine_readable',
+    'dct_format_vocabulary_nti_risp', 'dcat_media_type_vocabulary_nti_risp', 'dct_format_nonproprietary_nti_risp', 'dct_format_machine_readable_nti_risp',
     'dcat_media_type_vocabulary', 'dct_format_nonproprietary',
-    'dct_format_machine_readable', 'dcat_access_url_status',
-    'dcat_download_url_status', 'dct_license', 'dct_license_vocabulary'
+    'dcat_access_url_status', 'dcat_download_url_status', 'dct_license',
+    'dct_license_vocabulary'
   ];
   
   if (multiEntityMetrics.includes(metricId)) return 'Multi';
@@ -250,10 +311,16 @@ function getVocabularyMetricInfo(metricId) {
   const vocabularyMetrics = {
     'dct_format_vocabulary': { property: 'dct:format', vocabulary: 'file_types' },
     'dcat_media_type_vocabulary': { property: 'dcat:mediaType', vocabulary: 'media_types' },
+    // NTI-RISP specific: evaluate different properties of dct:IMT
+    'dct_format_vocabulary_nti_risp': { property: 'dct:format', vocabulary: 'file_types', ntiRispProperty: 'rdfs:label' },
+    'dcat_media_type_vocabulary_nti_risp': { property: 'dct:format', vocabulary: 'media_types', ntiRispProperty: 'rdf:value' },
+    'dct_format_nonproprietary_nti_risp': { property: 'dct:format', vocabulary: 'non_proprietary', ntiRispProperty: 'rdfs:label' },
+    'dct_format_machine_readable_nti_risp': { property: 'dct:format', vocabulary: 'machine_readable', ntiRispProperty: 'rdfs:label' },
     'dct_format_nonproprietary': { property: 'dct:format', vocabulary: 'non_proprietary' },
     'dct_format_machine_readable': { property: 'dct:format', vocabulary: 'machine_readable' },
     'dct_license_vocabulary': { property: 'dct:license', vocabulary: 'licenses' },
-    'dct_access_rights_vocabulary': { property: 'dct:accessRights', vocabulary: 'access_rights' }
+    'dct_access_rights_vocabulary': { property: 'dct:accessRights', vocabulary: 'access_rights' },
+    'dct_license_vocabulary_nti_risp': { property: 'dct:license', vocabulary: 'licenses' },
   };
   
   return vocabularyMetrics[metricId] || null;
@@ -290,7 +357,11 @@ async function evaluateMetric(store, metricConfig, profile, category) {
     else if (getVocabularyMetricInfo(id)) {
       const vocabInfo = getVocabularyMetricInfo(id);
       compliantEntities = await countVocabularyCompliantEntities(
-        store, vocabInfo.property, vocabInfo.vocabulary, entityType
+        store, 
+        vocabInfo.property, 
+        vocabInfo.vocabulary, 
+        entityType,
+        vocabInfo.ntiRispProperty // Pass nested property for NTI-RISP metrics
       );
     } else if (id.includes('compliance')) {
       // Compliance metrics - will be updated by SHACL validation
@@ -332,6 +403,31 @@ async function loadMQAConfig() {
     console.error('Failed to load MQA config:', error);
     throw new Error('Configuration not available');
   }
+}
+
+/**
+ * Get profile information (id, name, version, url)
+ */
+function getProfileInfo(config, profileId, version) {
+  const profileConfig = config.profiles[profileId];
+  if (!profileConfig) {
+    return {
+      id: profileId,
+      name: profileId,
+      version: version || '1.0.0',
+      url: ''
+    };
+  }
+  
+  const profileVersion = version || profileConfig.defaultVersion;
+  const versionConfig = profileConfig.versions[profileVersion];
+  
+  return {
+    id: profileId,
+    name: versionConfig?.name || profileId,
+    version: profileVersion,
+    url: versionConfig?.url || ''
+  };
 }
 
 /**
@@ -390,9 +486,11 @@ async function calculateQuality(content, profile, format, version) {
   const maxScore = allMetrics.reduce((sum, m) => sum + m.maxScore, 0);
   const percentage = maxScore > 0 ? (totalScore / maxScore) * 100 : 0;
   
+  // Get profile information
+  const profileInfo = getProfileInfo(config, profile, version);
+  
   return {
-    profile,
-    version: version || profileConfig.defaultVersion,
+    profile: profileInfo,
     totalScore: Math.round(totalScore * 1000) / 1000,
     maxScore,
     percentage: Math.round(percentage * 10) / 10,
@@ -426,8 +524,8 @@ function convertToDQV(quality, baseUri = 'http://example.org/quality-assessment/
       '@type': 'xsd:dateTime',
       '@value': quality.timestamp
     },
-    'dct:title': `Metadata Quality Assessment - ${quality.profile}`,
-    'dct:description': `Quality assessment using ${quality.profile} profile version ${quality.version}`,
+    'dct:title': `Metadata Quality Assessment - ${quality.profile.name}`,
+    'dct:description': `Quality assessment using ${quality.profile.name} (${quality.profile.url})`,
     'dqv:computedOn': {
       '@type': 'dcat:Dataset',
       'dct:description': 'Evaluated RDF metadata'
@@ -494,5 +592,6 @@ module.exports = {
   calculateQuality,
   convertToDQV,
   loadVocabulary,
-  loadMQAConfig
+  loadMQAConfig,
+  getProfileInfo
 };
