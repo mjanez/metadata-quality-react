@@ -323,6 +323,12 @@
       "expected_formats": "Formatos de archivo esperados",
       "json_metrics": "Métricas JSON:",
       "json_format": "Contiene dimensiones (encontrabilidad, accesibilidad, etc.) y métricas individuales con puntuaciones",
+      "api_json": "JSON de API:",
+      "api_json_description": "Salida del endpoint /api/quality (auto-detectado y convertido)",
+      "api_format_detected": "¡Formato de API detectado!",
+      "api_format_converted": "El JSON del backend API fue convertido automáticamente. Se cargaron tanto las métricas como los datos SHACL.",
+      "dashboard_format_detected": "Formato de dashboard detectado.",
+      "dashboard_format_loaded": "Datos de métricas cargados correctamente.",
       "ttl_shacl": "TTL SHACL",
       "ttl_format": "Formato Turtle con resultados de validación SHACL incluyendo violaciones, advertencias y mensajes informativos"
     },
