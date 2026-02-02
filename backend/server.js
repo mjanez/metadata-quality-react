@@ -5,6 +5,16 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 const https = require('https');
 
+// API Routes for MQA
+let apiRoutes;
+try {
+  apiRoutes = require('./api/routes');
+  console.log('✅ MQA API routes loaded');
+} catch (error) {
+  console.warn('⚠️ MQA API routes not available:', error.message);
+  apiRoutes = null;
+}
+
 // SSL certificate validation configuration
 // Set NODE_TLS_REJECT_UNAUTHORIZED=0 in development if you need to disable SSL validation
 // WARNING: Never disable in production!
@@ -131,9 +141,16 @@ app.get('/api/health', (req, res) => {
     timestamp: new Date().toISOString(),
     service: 'MQA Backend',
     version: '1.0.0',
-    sslValidation: REJECT_UNAUTHORIZED ? 'enabled' : 'disabled'
+    sslValidation: REJECT_UNAUTHORIZED ? 'enabled' : 'disabled',
+    mqaApiEnabled: apiRoutes !== null
   });
 });
+
+// Mount MQA API routes
+if (apiRoutes) {
+  app.use('/api/v1', apiRoutes);
+  console.log('📊 MQA API v1 mounted at /api/v1');
+}
 
 // URL validation cache (in-memory)
 const urlValidationCache = new Map();
@@ -603,14 +620,25 @@ setInterval(() => {
 }, CACHE_TTL); // Run every 5 minutes
 
 // Start server
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 MQA Backend server running on port ${PORT}`);
   console.log(`🏥 Health check: http://localhost:${PORT}/api/health`);
-  console.log(`📊 Endpoints available:`);
+  console.log(`📊 Core Endpoints available:`);
   console.log(`   POST /api/validate-url`);
   console.log(`   POST /api/validate-urls-batch`);
   console.log(`   POST /api/download-data`);
   console.log(`   GET  /api/health`);
+  
+  if (apiRoutes) {
+    console.log(`📈 MQA API v1 Endpoints available:`);
+    console.log(`   GET  /api/v1/info             - API information`);
+    console.log(`   GET  /api/v1/profiles         - Available profiles`);
+    console.log(`   POST /api/v1/quality          - Quality assessment (JSON/JSON-LD/DQV)`);
+    console.log(`   POST /api/v1/shacl            - SHACL validation (JSON/Turtle/CSV)`);
+    console.log(`   POST /api/v1/validate         - Combined quality + SHACL`);
+    console.log(`   POST /api/v1/syntax           - RDF syntax validation`);
+  }
+  
   console.log(`🌍 CORS enabled for all origins (development mode)`);
   console.log(`💾 URL validation cache enabled (TTL: ${CACHE_TTL / 1000}s)`);
   console.log(`🔒 Security settings:`);

@@ -71,6 +71,10 @@ const MQAInfoSidebar: React.FC<MQAInfoSidebarProps> = ({
       'nti_risp': {
         icon: 'img/icons/esp.svg',
         url: 'https://www.boe.es/eli/es/res/2013/02/19/(4)'
+      },
+      'dcat_ap_es_legacy': {
+        icon: 'img/icons/esp.svg',
+        url: 'https://datosgobes.github.io/DCAT-AP-ES/'
       }
     };
 

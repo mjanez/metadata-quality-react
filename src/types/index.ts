@@ -2,7 +2,7 @@
 export type RDFFormat = 'turtle' | 'rdfxml' | 'jsonld' | 'ntriples' | 'auto';
 
 // Validation profile types
-export type ValidationProfile = 'dcat_ap' | 'dcat_ap_es' | 'dcat_ap_es_hvd' | 'nti_risp';
+export type ValidationProfile = 'dcat_ap' | 'dcat_ap_es' | 'dcat_ap_es_hvd' | 'dcat_ap_es_legacy' | 'nti_risp';
 
 // Tab system types
 // Extended Validation Result with SHACL

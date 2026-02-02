@@ -37,6 +37,7 @@ A modern web application for evaluating RDF metadata quality based on FAIR+C pri
 - [Deployment](#-deployment)
   - [Docker](#docker-full-stack---self-hosted)
   - [GitHub Pages](#github-pages-frontend-only)
+- [Backend API](#backend-api)
 - [Architecture](#-architecture)
 - [Internationalization](#-internationalization)
 - [Theming](#-theming)
@@ -329,7 +330,7 @@ Special debug queries help test endpoint connectivity:
 
 ### Configuration Best Practices
 
-1. **Profile Naming**: Use consistent IDs (`dcat_ap`, `dcat_ap_es`, `dcat_ap_es_hvd` `nti_risp`)
+1. **Profile Naming**: Use consistent IDs (`dcat_ap`, `dcat_ap_es`, `dcat_ap_es_hvd` `nti_risp`, `dcat_ap_es_legacy`)
 2. **Version Management**: Support multiple versions per profile
 3. **Metric Weights**: Ensure weights sum to reasonable totals per dimension
 4. **SPARQL Queries**: Use CONSTRUCT queries for better RDF generation
@@ -755,6 +756,49 @@ POST /api/download-data             # Download and proxy data
 |---------|--------------|---------------------|-------------------|
 | Frontend | 3000 | `PORT` | `.env.local` |
 | Backend | 3001 | `BACKEND_PORT` | `.env.local` |
+
+---
+
+## Backend API
+
+The backend provides a REST API for programmatic access to quality assessment and SHACL validation. Full documentation available in [backend/API.md](backend/API.md).
+
+### Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/v1/profiles` | List available validation profiles |
+| POST | `/api/v1/quality` | Quality assessment (JSON, JSON-LD, DQV) |
+| POST | `/api/v1/shacl` | SHACL validation (JSON, Turtle, CSV) |
+| POST | `/api/v1/validate` | Combined quality + SHACL validation |
+| POST | `/api/v1/syntax` | RDF syntax validation |
+
+### Quick Examples
+
+```bash
+# Quality assessment
+curl -X POST http://localhost:3001/api/v1/quality \
+  -H "Content-Type: application/json" \
+  -d '{"url": "https://example.org/catalog.ttl", "profile": "dcat_ap_es"}'
+
+# SHACL validation with Turtle output
+curl -X POST http://localhost:3001/api/v1/shacl \
+  -H "Content-Type: application/json" \
+  -d '{"url": "https://example.org/catalog.ttl", "outputFormat": "turtle"}'
+
+# DQV format (W3C Data Quality Vocabulary)
+curl -X POST http://localhost:3001/api/v1/quality \
+  -H "Content-Type: application/json" \
+  -d '{"url": "https://example.org/catalog.ttl", "outputFormat": "dqv"}'
+```
+
+### Dashboard Integration
+
+The JSON output from the API can be loaded directly into the Dashboard. The frontend auto-detects the API format and converts it:
+
+1. Call `/api/v1/validate` and save the response
+2. Go to Dashboard > Upload Data
+3. Upload the JSON file - both metrics and SHACL data load automatically
 
 ---
 

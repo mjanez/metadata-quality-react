@@ -1,6 +1,12 @@
 import React, { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { DashboardMetricsData, DashboardSHACLData } from './DashboardTypes';
+import { 
+  autoConvertToMetrics, 
+  extractSHACLFromAPI, 
+  validateDashboardJSON,
+  isAPIResponseFormat 
+} from '../../services/APIResponseConverter';
 
 interface FileUploadProps {
   onMetricsLoad: (data: DashboardMetricsData) => void;
@@ -13,6 +19,7 @@ const FileUpload: React.FC<FileUploadProps> = ({ onMetricsLoad, onShaclLoad, onE
   const metricsFileRef = useRef<HTMLInputElement>(null);
   const shaclFileRef = useRef<HTMLInputElement>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [detectedFormat, setDetectedFormat] = useState<'dashboard' | 'api' | null>(null);
 
   const handleMetricsFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -24,18 +31,35 @@ const FileUpload: React.FC<FileUploadProps> = ({ onMetricsLoad, onShaclLoad, onE
     }
 
     setIsLoading(true);
+    setDetectedFormat(null);
     try {
       const content = await file.text();
       const data = JSON.parse(content);
       
-      // Basic validation of the JSON structure
-      if (!data.dimensions || !data.metrics || typeof data.totalScore !== 'number') {
-        throw new Error('Invalid JSON structure. Expected metrics data with dimensions, metrics, and totalScore fields.');
+      // Validate JSON format
+      const validation = validateDashboardJSON(data);
+      if (!validation.valid) {
+        throw new Error(`Invalid JSON structure: ${validation.errors.join(', ')}`);
       }
 
-      onMetricsLoad(data);
+      // Detect format and convert if necessary
+      const isAPIFormat = isAPIResponseFormat(data);
+      setDetectedFormat(isAPIFormat ? 'api' : 'dashboard');
+
+      // Auto-convert to Dashboard format
+      const metricsData = autoConvertToMetrics(data);
+      onMetricsLoad(metricsData);
+
+      // If API format, also extract and load SHACL data if available
+      if (isAPIFormat) {
+        const shaclData = extractSHACLFromAPI(data);
+        if (shaclData) {
+          onShaclLoad(shaclData);
+        }
+      }
     } catch (error) {
       onError(`Error reading metrics file: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      setDetectedFormat(null);
     } finally {
       setIsLoading(false);
     }
@@ -148,6 +172,24 @@ const FileUpload: React.FC<FileUploadProps> = ({ onMetricsLoad, onShaclLoad, onE
           </div>
         )}
 
+        {/* Format Detection Success Message */}
+        {detectedFormat && !isLoading && (
+          <div className={`alert ${detectedFormat === 'api' ? 'alert-success' : 'alert-info'} mt-3`}>
+            <i className={`bi ${detectedFormat === 'api' ? 'bi-check-circle' : 'bi-info-circle'} me-2`}></i>
+            {detectedFormat === 'api' ? (
+              <>
+                <strong>{t('dashboard.formats.api_format_detected', 'API format detected!')}</strong>
+                {' '}{t('dashboard.formats.api_format_converted', 'JSON from backend API was automatically converted. Both metrics and SHACL data have been loaded.')}
+              </>
+            ) : (
+              <>
+                <strong>{t('dashboard.formats.dashboard_format_detected', 'Dashboard format detected.')}</strong>
+                {' '}{t('dashboard.formats.dashboard_format_loaded', 'Metrics data loaded successfully.')}
+              </>
+            )}
+          </div>
+        )}
+
         {/* Sample Data Info */}
         <div className="mt-4">
           <div className="alert alert-info">
@@ -156,8 +198,16 @@ const FileUpload: React.FC<FileUploadProps> = ({ onMetricsLoad, onShaclLoad, onE
               {t('dashboard.formats.expected_formats')}
             </h6>
             <ul className="mb-0">
-              <li><strong>{t('dashboard.formats.json_metrics')}:</strong> {t('dashboard.formats.json_format')}</li>
-              <li><strong>{t('dashboard.formats.ttl_shacl')}:</strong> {t('dashboard.formats.ttl_format')}</li>
+              <li>
+                <strong>{t('dashboard.formats.json_metrics')}:</strong> {t('dashboard.formats.json_format')}
+              </li>
+              <li>
+                <strong>{t('dashboard.formats.api_json', 'API JSON')}:</strong> 
+                {' '}{t('dashboard.formats.api_json_description', 'Output from /api/quality endpoint (auto-detected and converted)')}
+              </li>
+              <li>
+                <strong>{t('dashboard.formats.ttl_shacl')}:</strong> {t('dashboard.formats.ttl_format')}
+              </li>
             </ul>
           </div>
         </div>
