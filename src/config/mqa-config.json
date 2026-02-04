@@ -253,7 +253,7 @@
       "interoperability": [
         { "id": "dct_format", "weight": 20, "property": "dct:format" },
         { "id": "dcat_media_type", "weight": 10, "property": "dcat:mediaType" },
-        { "id": "dct_format_vocabulary", "weight": 5, "property": "dct:format" },
+        { "id": "dct_format_vocabulary_nti_risp", "weight": 5, "property": "dct:format" },
         { "id": "dcat_media_type_vocabulary", "weight": 5, "property": "dcat:mediaType" },
         { "id": "dct_format_nonproprietary_nti_risp", "weight": 20, "property": "dct:format" },
         { "id": "dct_format_machine_readable_nti_risp", "weight": 20, "property": "dct:format" },
