@@ -196,7 +196,7 @@ export function convertAPIToDashboardMetrics(apiResponse: APIQualityResponse): D
     };
   }
 
-  // Calculate dimension scores (percentages)
+  // Calculate dimension scores
   const dimensions: DashboardMetricsData['dimensions'] = {
     findability: 0,
     accessibility: 0,
@@ -205,11 +205,11 @@ export function convertAPIToDashboardMetrics(apiResponse: APIQualityResponse): D
     contextuality: 0
   };
 
-  // Fill dimension percentages from byCategory
+  // Fill dimension scores from byCategory
   for (const [category, categoryData] of Object.entries(quality.byCategory)) {
     const dimensionKey = DIMENSION_MAP[category.toLowerCase()];
     if (dimensionKey) {
-      dimensions[dimensionKey] = categoryData.percentage;
+      dimensions[dimensionKey] = categoryData.score;
     }
   }
 
