@@ -5,7 +5,9 @@
 
 # Variables
 DOCKER_COMPOSE := docker-compose
-SERVICE_NAME := mqa-app
+FRONTEND_SERVICE := mqa-frontend
+BACKEND_SERVICE := mqa-backend
+NGINX_SERVICE := nginx
 
 # Colors
 GREEN := \033[0;32m
@@ -34,17 +36,22 @@ up: ## Start services in detached mode
 	@echo "$(GREEN)Starting services...$(NC)"
 	$(DOCKER_COMPOSE) up -d
 	@echo "$(GREEN)Services started!$(NC)"
-	@echo "Frontend: http://localhost:3000"
-	@echo "Backend:  http://localhost:3001/api/health"
+	@echo "Access via Nginx:"
+	@echo "  HTTP:  http://localhost:80"
+	@echo "  HTTPS: https://localhost:443"
+	@echo ""
+	@echo "Direct access (for debugging):"
+	@echo "  Frontend: http://localhost:3000 (not exposed by default)"
+	@echo "  Backend:  http://localhost:3001 (not exposed by default)"
 
 up-dev: ## Start services in development mode (with logs)
 	@echo "$(GREEN)Starting services in development mode...$(NC)"
-	$(DOCKER_COMPOSE) up
+	$(DOCKER_COMPOSE) -f docker-compose.yml -f docker-compose.dev.yml up
 
-up-prod: ## Start services with production profile (including Nginx)
-	@echo "$(GREEN)Starting services with production profile...$(NC)"
-	$(DOCKER_COMPOSE) --profile production up -d
-	@echo "$(GREEN)Services started with Nginx!$(NC)"
+up-prod: ## Start services with production build
+	@echo "$(GREEN)Starting services in production mode...$(NC)"
+	$(DOCKER_COMPOSE) up -d --build
+	@echo "$(GREEN)Services started in production mode!$(NC)"
 	@echo "HTTP:  http://localhost:80"
 	@echo "HTTPS: https://localhost:443"
 
@@ -64,29 +71,42 @@ restart: ## Restart services
 logs: ## View logs from all services
 	$(DOCKER_COMPOSE) logs -f
 
-logs-app: ## View logs from MQA app only
-	$(DOCKER_COMPOSE) logs -f $(SERVICE_NAME)
+logs-frontend: ## View logs from frontend service
+	$(DOCKER_COMPOSE) logs -f $(FRONTEND_SERVICE)
 
-logs-nginx: ## View logs from Nginx (if running)
-	$(DOCKER_COMPOSE) logs -f nginx
+logs-backend: ## View logs from backend service
+	$(DOCKER_COMPOSE) logs -f $(BACKEND_SERVICE)
+
+logs-nginx: ## View logs from Nginx
+	$(DOCKER_COMPOSE) logs -f $(NGINX_SERVICE)
 
 ps: ## List running containers
 	$(DOCKER_COMPOSE) ps
 
 health: ## Check health status of services
-	@echo "$(BLUE)Checking service health...$(NC)"
-	@$(DOCKER_COMPOSE) ps
+	@echo "$(BLUE)Checking service  via Nginx...$(NC)"
+	@curl -f -k https://localhost/health > /dev/null 2>&1 && echo "$(GREEN)✓ Nginx is healthy$(NC)" || echo "$(YELLOW)⚠ Nginx health check failed$(NC)"
 	@echo ""
+	@echo "$(BLUE)Testing services directly (if ports exposed)...$(NC)"
+	@docker exec $(FRONTEND_SERVICE) wget -q -O- http://localhost:3000/ > /dev/null 2>&1 && echo "$(GREEN)✓ Frontend container is healthy$(NC)" || echo "$(YELLOW)⚠ Frontend container health check failed$(NC)"
+	@docker exec $(BACKEND_SERVICE) wget -q -O- http://localhost:3001/api/health > /dev/null 2>&1 && echo "$(GREEN)✓ Backend container is healthy$(NC)" || echo "$(YELLOW)⚠ Backend container health check failed
 	@echo "$(BLUE)Testing endpoints...$(NC)"
 	@curl -f http://localhost:3000/ > /dev/null 2>&1 && echo "$(GREEN)✓ Frontend is healthy$(NC)" || echo "$(RED)✗ Frontend is not responding$(NC)"
 	@curl -f http://localhost:3001/api/health > /dev/null 2>&1 && echo "$(GREEN)✓ Backend is healthy$(NC)" || echo "$(RED)✗ Backend is not responding$(NC)"
 
-shell: ## Open shell in MQA app container
-	$(DOCKER_COMPOSE) exec $(SERVICE_NAME) sh
+shell-frontend: ## Open shell in frontend container
+	$(DOCKER_COMPOSE) exec $(FRONTEND_SERVICE) sh
 
-shell-backend: ## Open shell in backend directory
-	$(DOCKER_COMPOSE) exec $(SERVICE_NAME) sh -c "cd /app/backend && sh"
+shell-backend: ## Open shell in backend container
+	$(DOCKER_COMPOSE) exec $(BACKEND_SERVICE) sh
 
+shell-nginx: frontend tests (if available)
+	@echo "$(BLUE)Running frontend tests...$(NC)"
+	$(DOCKER_COMPOSE) exec $(FRONTEND_SERVICE) npm test
+
+test-backend: ## Run backend tests (if available)
+	@echo "$(BLUE)Running backend tests...$(NC)"
+	$(DOCKER_COMPOSE) exec $(BACKEND_SERVIC
 test: ## Run tests (if available)
 	@echo "$(BLUE)Running tests...$(NC)"
 	$(DOCKER_COMPOSE) exec $(SERVICE_NAME) npm test

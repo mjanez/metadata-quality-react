@@ -242,6 +242,7 @@ const ValidationForm: React.FC<ValidationFormProps> = ({ onValidate, isLoading }
             <option value="dcat_ap_es">{t('validation.profiles.dcat_ap_es')}</option>
             <option value="dcat_ap_es_hvd">{t('validation.profiles.dcat_ap_es_hvd')}</option>
             <option value="nti_risp">{t('validation.profiles.nti_risp')}</option>
+            <option value="dcat_ap_es_legacy">{t('validation.profiles.dcat_ap_es_legacy')}</option>        
             <option value="dcat_ap">{t('validation.profiles.dcat_ap')}</option>
           </select>
         </div>

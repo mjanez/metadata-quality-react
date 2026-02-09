@@ -41,11 +41,11 @@ http {
     add_header Referrer-Policy "no-referrer-when-downgrade" always;
 
     upstream mqa_backend {
-        server mqa-react-app:${BACKEND_PORT};
+        server ${BACKEND_HOST}:${BACKEND_PORT};
     }
 
     upstream mqa_frontend {
-        server mqa-react-app:${FRONTEND_PORT};
+        server ${FRONTEND_HOST}:${FRONTEND_PORT};
     }
 
     # Redirect HTTP to HTTPS

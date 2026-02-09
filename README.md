@@ -37,6 +37,7 @@ A modern web application for evaluating RDF metadata quality based on FAIR+C pri
 - [Deployment](#-deployment)
   - [Docker](#docker-full-stack---self-hosted)
   - [GitHub Pages](#github-pages-frontend-only)
+- [Backend API](#backend-api)
 - [Architecture](#-architecture)
 - [Internationalization](#-internationalization)
 - [Theming](#-theming)
@@ -329,7 +330,7 @@ Special debug queries help test endpoint connectivity:
 
 ### Configuration Best Practices
 
-1. **Profile Naming**: Use consistent IDs (`dcat_ap`, `dcat_ap_es`, `dcat_ap_es_hvd` `nti_risp`)
+1. **Profile Naming**: Use consistent IDs (`dcat_ap`, `dcat_ap_es`, `dcat_ap_es_hvd` `nti_risp`, `dcat_ap_es_legacy`)
 2. **Version Management**: Support multiple versions per profile
 3. **Metric Weights**: Ensure weights sum to reasonable totals per dimension
 4. **SPARQL Queries**: Use CONSTRUCT queries for better RDF generation
@@ -468,46 +469,87 @@ IMAGE_TAG=local docker compose up -d --build
 
 ```yaml
 services:
-  mqa-app:           # React frontend + Express backend
+  mqa-backend:       # Express.js Backend API
     ports:
-      - "3000:3000"  # Frontend
-      - "3001:3001"  # Backend API
+      - "3001:3001"  # Backend API (not exposed by default)
+    
+  mqa-frontend:      # React Frontend Application
+    ports:
+      - "3000:3000"  # Frontend (not exposed by default)
   
-  nginx:             # Reverse proxy (production profile)
+  nginx:             # Nginx Reverse Proxy
     ports:
-      - "80:80"      # HTTP
-      - "443:443"    # HTTPS (requires SSL configuration)
+      - "80:80"      # HTTP (redirects to HTTPS)
+      - "443:443"    # HTTPS (main entry point)
 ```
+
+**Service Architecture:**
+- **mqa-backend**: Node.js API for data validation, quality assessment, and SHACL validation
+- **mqa-frontend**: Static React app served with `serve`
+- **nginx**: Reverse proxy that routes requests to frontend and `/api` to backend
+
+**Default Access:**
+- All traffic goes through Nginx (https://localhost)
+- Backend and frontend ports are internal to Docker network
+- For direct service access during debugging, expose ports in docker-compose.yml
 
 #### Configuration
 
 **Environment Variables** (`.env` file):
 ```env
+# Image Configuration
+IMAGE_TAG=latest
+
 # Port Configuration
 FRONTEND_PORT=3000
 BACKEND_PORT=3001
 
+# Service Hosts (Docker internal networking)
+BACKEND_HOST=mqa-backend
+FRONTEND_HOST=mqa-frontend
+
+# Nginx Configuration
+NGINX_HTTP_PORT=80
+NGINX_HTTPS_PORT=443
+
 # Application
 PUBLIC_URL=/
-REACT_APP_BACKEND_URL=http://localhost:3001/api
+REACT_APP_BACKEND_URL=/api
 NODE_ENV=production
+
+# Security Configuration
+NODE_TLS_REJECT_UNAUTHORIZED=1
+ALLOWED_DOMAINS=
 ```
 
 **Custom Configuration**:
 ```yaml
-volumes:
-  # Mount custom MQA config
-  - ./mqa-config.json:/app/build/config/mqa-config.json:ro
+services:
+  mqa-frontend:
+    volumes:
+      # Mount custom MQA config
+      - ./mqa-config.json:/app/build/config/mqa-config.json:ro
+      # Mount custom vocabularies
+      - ./public/data:/app/build/data:ro
   
-  # Mount custom vocabularies
-  - ./public/data:/app/build/data:ro
+  mqa-backend:
+    environment:
+      # Security: Whitelist allowed domains for SSRF protection
+      - ALLOWED_DOMAINS=datos.gob.es,semiceu.github.io
+      # Disable SSL verification (development only!)
+      - NODE_TLS_REJECT_UNAUTHORIZED=0
 ```
 
 #### Management Commands
 
 ```bash
-# View logs
-docker compose logs -f mqa-app
+# View logs for all services
+docker compose logs -f
+
+# View specific service logs
+docker compose logs -f mqa-backend
+docker compose logs -f mqa-frontend
+docker compose logs -f nginx
 
 # Restart services
 docker compose restart
@@ -518,44 +560,84 @@ docker compose down
 # Update and rebuild
 docker compose up -d --build
 
-# Health check
-curl http://localhost:3000/
-curl http://localhost:3001/api/health
+# Health check (via nginx)
+curl -k https://localhost/health
+curl -k https://localhost/api/health
+
+# Direct service health check (within containers)
+docker exec mqa-frontend curl http://localhost:3000/
+docker exec mqa-backend curl http://localhost:3001/api/health
+
+# Using Makefile (recommended)
+make logs-backend    # View backend logs
+make logs-frontend   # View frontend logs
+make logs-nginx      # View nginx logs
+make health          # Check all services health
+make shell-backend   # Open shell in backend container
 ```
 
 #### GitHub Container Registry (GHCR)
 
 Pre-built Docker images are automatically published to GitHub Container Registry on every push and pull request.
 
-**Quick Deploy**:
+**Available Images:**
+- **Backend**: `ghcr.io/mjanez/metadata-quality-react-backend`
+- **Frontend**: `ghcr.io/mjanez/metadata-quality-react-frontend`
+
+**Quick Deploy:**
 ```bash
-# Pull latest stable version
-docker pull ghcr.io/mjanez/metadata-quality-react:latest
+# Pull latest stable versions
+docker pull ghcr.io/mjanez/metadata-quality-react-backend:latest
+docker pull ghcr.io/mjanez/metadata-quality-react-frontend:latest
 
-# Run with docker
-docker run -d -p 3000:3000 -p 3001:3001 \
-  ghcr.io/mjanez/metadata-quality-react:latest
-
-# Or with docker compose
+# Or use docker-compose (recommended)
 cat > docker-compose.yml << EOF
 services:
-  mqa-app:
-    image: ghcr.io/mjanez/metadata-quality-react:latest
-    ports:
-      - "3000:3000"
-      - "3001:3001"
+  mqa-backend:
+    image: ghcr.io/mjanez/metadata-quality-react-backend:latest
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+    restart: unless-stopped
+    networks:
+      - mqa-network
+
+  mqa-frontend:
+    image: ghcr.io/mjanez/metadata-quality-react-frontend:latest
     environment:
       - NODE_ENV=production
     restart: unless-stopped
+    networks:
+      - mqa-network
+    depends_on:
+      - mqa-backend
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - mqa-frontend
+      - mqa-backend
+    restart: unless-stopped
+    networks:
+      - mqa-network
+
+networks:
+  mqa-network:
+    driver: bridge
 EOF
 
 docker compose up -d
 ```
 
-**Available Tags**:
+**Available Tags:**
 - `latest` - Latest stable version (main branch)
 - `develop` - Development version (develop branch)
-- `pr-<number>` - Pull request specific image
+- `pr-<number>` - Pull request specific images
 - `v1.2.3` - Semantic versioning tags
 
 **Multi-Architecture Support**: Images built for `linux/amd64` and `linux/arm64` (Apple Silicon/ARM servers)
@@ -758,28 +840,87 @@ POST /api/download-data             # Download and proxy data
 
 ---
 
+## Backend API
+
+The backend provides a REST API for programmatic access to quality assessment and SHACL validation. Full documentation available in [backend/API.md](backend/API.md).
+
+### Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/v1/profiles` | List available validation profiles |
+| POST | `/api/v1/quality` | Quality assessment (JSON, JSON-LD, DQV) |
+| POST | `/api/v1/shacl` | SHACL validation (JSON, Turtle, CSV) |
+| POST | `/api/v1/validate` | Combined quality + SHACL validation |
+| POST | `/api/v1/syntax` | RDF syntax validation |
+
+### Quick Examples
+
+```bash
+# Quality assessment
+curl -X POST http://localhost:3001/api/v1/quality \
+  -H "Content-Type: application/json" \
+  -d '{"url": "https://example.org/catalog.ttl", "profile": "dcat_ap_es"}'
+
+# SHACL validation with Turtle output
+curl -X POST http://localhost:3001/api/v1/shacl \
+  -H "Content-Type: application/json" \
+  -d '{"url": "https://example.org/catalog.ttl", "outputFormat": "turtle"}'
+
+# DQV format (W3C Data Quality Vocabulary)
+curl -X POST http://localhost:3001/api/v1/quality \
+  -H "Content-Type: application/json" \
+  -d '{"url": "https://example.org/catalog.ttl", "outputFormat": "dqv"}'
+```
+
+### Dashboard Integration
+
+The JSON output from the API can be loaded directly into the Dashboard. The frontend auto-detects the API format and converts it:
+
+1. Call `/api/v1/validate` and save the response
+2. Go to Dashboard > Upload Data
+3. Upload the JSON file - both metrics and SHACL data load automatically
+
+---
+
 ## Architecture
 
 ### Component Overview
 ```mermaid
 flowchart TB
-  subgraph App ["App.tsx"]
-    direction LR
-    VF["ValidationForm\n(SPARQL Queries)"]
-    VR["ValidationResults\n(Chart + Metrics)"]
-    TT["ThemeToggle"]
-    LS["LanguageSelector"]
-    VF --> VR
+  subgraph Client ["Browser"]
+    App["React App\n(Frontend)"]
   end
 
-  App --> MQA["MQAService\n(Metrics Evaluation)"]
-  App --> SPARQL["SPARQLService\n(Queries Execution)"]
+  subgraph Nginx ["Nginx Reverse Proxy"]
+    RP["/:443\n(HTTPS)"]
+  end
 
-  MQA --> RDF["RDFService\n(Parsing & Validation)"]
-  SPARQL --> CONFIG["mqa-config.json\n(Profiles & Metrics)"]
+  subgraph Frontend ["Frontend Container"]
+    VF["ValidationForm"]
+    VR["ValidationResults"]
+    MQA["MQAService"]
+    RDF["RDFService"]
+  end
 
-  RDF --> CONFIG
+  subgraph Backend ["Backend Container"]
+    API["Express API\n:3001"]
+    VAL["URL Validation"]
+    PROXY["Data Download"]
+    QAPI["Quality API v1"]
+  end
+
+  Client --> Nginx
+  Nginx -->|/| Frontend
+  Nginx -->|/api| Backend
+  Frontend -->|API Calls| Backend
+  Backend -->|External RDF| Internet((Internet))
 ```
+
+**Service Architecture:**
+- **Frontend**: Static React app with quality assessment logic
+- **Backend**: Node.js API for data fetching, validation, and SHACL
+- **Nginx**: Routes traffic between services, handles SSL/TLS
 
 ### Data Flow
 

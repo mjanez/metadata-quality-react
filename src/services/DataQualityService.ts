@@ -448,7 +448,7 @@ export class DataQualityService {
     const datePatterns = [
       /\b\d{4}-\d{2}-\d{2}\b/, // YYYY-MM-DD
       /\b\d{2}\/\d{2}\/\d{4}\b/, // DD/MM/YYYY
-      /\b\d{4}\b/ // Just year
+      /\b(19\d{2}|20\d{2}|21\d{2})\b/ // Valid year range: 1900-2199
     ];
     
     return columns.filter(col => {
@@ -457,12 +457,43 @@ export class DataQualityService {
         colLower.includes(keyword)
       );
       
-      if (hasDateKeyword) return true;
+      if (hasDateKeyword) {
+        // Even with keywords, verify actual data contains valid dates
+        const sample = data.slice(0, 50).map(row => String(row[col] || '')).filter(val => val.length > 0);
+        if (sample.length === 0) return false;
+        
+        const validDates = sample.filter(val => {
+          const parsed = this.parseDate(val);
+          return parsed !== null && this.isValidYearRange(parsed);
+        });
+        
+        // Require at least 70% of samples to be valid dates
+        return validDates.length / sample.length >= 0.7;
+      }
       
-      // Check data patterns
+      // For columns without date keywords, require strong evidence
       const sample = data.slice(0, 50).map(row => String(row[col] || '')).filter(val => val.length > 0);
-      return sample.some(val => datePatterns.some(pattern => pattern.test(val)));
+      if (sample.length === 0) return false;
+      
+      const matchingPatterns = sample.filter(val => {
+        if (!datePatterns.some(pattern => pattern.test(val))) return false;
+        
+        // Validate parsed date is in reasonable range
+        const parsed = this.parseDate(val);
+        return parsed !== null && this.isValidYearRange(parsed);
+      });
+      
+      // Require at least 80% of non-keyword samples to match date patterns
+      return matchingPatterns.length / sample.length >= 0.8;
     });
+  }
+
+  /**
+   * Check if date is within a reasonable year range (1900-2100)
+   */
+  private isValidYearRange(date: Date): boolean {
+    const year = date.getFullYear();
+    return year >= 1900 && year <= 2100;
   }
 
   private calculateMissingValues(data: any[], columns: string[]): Record<string, number> {
@@ -583,7 +614,8 @@ export class DataQualityService {
         const dateStr = String(row[col] || '').trim();
         if (dateStr) {
           const date = this.parseDate(dateStr);
-          if (date && (!mostRecent || date > mostRecent)) {
+          // Only consider dates in valid year range
+          if (date && this.isValidYearRange(date) && (!mostRecent || date > mostRecent)) {
             mostRecent = date;
           }
         }
@@ -606,7 +638,8 @@ export class DataQualityService {
         const dateStr = String(row[col] || '').trim();
         if (dateStr) {
           const date = this.parseDate(dateStr);
-          if (date && (!oldest || date < oldest)) {
+          // Only consider dates in valid year range
+          if (date && this.isValidYearRange(date) && (!oldest || date < oldest)) {
             oldest = date;
           }
         }
@@ -631,24 +664,50 @@ export class DataQualityService {
   }
 
   private parseDate(dateStr: string): Date | null {
-    // Try different date formats
+    // Try different date formats with strict validation
     const formats = [
       /^(\d{4})-(\d{2})-(\d{2})$/, // YYYY-MM-DD
       /^(\d{2})\/(\d{2})\/(\d{4})$/, // DD/MM/YYYY
-      /^(\d{4})$/ // YYYY
+      /^(19\d{2}|20\d{2}|21\d{2})$/ // YYYY (valid range only: 1900-2199)
     ];
     
     for (const format of formats) {
       const match = dateStr.match(format);
       if (match) {
+        let date: Date | null = null;
+        
         if (match.length === 2) { // Year only
-          return new Date(parseInt(match[1]), 0, 1);
+          const year = parseInt(match[1]);
+          date = new Date(year, 0, 1);
         } else if (match.length === 4) {
           if (format === formats[0]) { // YYYY-MM-DD
-            return new Date(parseInt(match[1]), parseInt(match[2]) - 1, parseInt(match[3]));
+            const year = parseInt(match[1]);
+            const month = parseInt(match[2]);
+            const day = parseInt(match[3]);
+            
+            // Validate month and day ranges
+            if (month < 1 || month > 12 || day < 1 || day > 31) {
+              continue;
+            }
+            
+            date = new Date(year, month - 1, day);
           } else { // DD/MM/YYYY
-            return new Date(parseInt(match[3]), parseInt(match[2]) - 1, parseInt(match[1]));
+            const day = parseInt(match[1]);
+            const month = parseInt(match[2]);
+            const year = parseInt(match[3]);
+            
+            // Validate month and day ranges
+            if (month < 1 || month > 12 || day < 1 || day > 31) {
+              continue;
+            }
+            
+            date = new Date(year, month - 1, day);
           }
+        }
+        
+        // Verify date was created successfully and is valid
+        if (date && !isNaN(date.getTime())) {
+          return date;
         }
       }
     }
