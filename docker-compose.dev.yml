@@ -1,0 +1,46 @@
+# Docker Compose override for development environment
+# Usage: docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
+version: '3.8'
+
+services:
+  mqa-backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+      target: base
+    volumes:
+      # Mount source code for hot-reload in development
+      - ./backend:/app/backend
+      - /app/backend/node_modules
+    environment:
+      - NODE_ENV=development
+      - NODE_TLS_REJECT_UNAUTHORIZED=0
+    command: npm run dev
+    ports:
+      # Expose backend directly for debugging
+      - "3001:3001"
+
+  mqa-frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+      target: builder
+    volumes:
+      # Mount source code for hot-reload
+      - ./src:/app/src
+      - ./public:/app/public
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+      - REACT_APP_BACKEND_URL=http://localhost:3001/api
+    command: npm start
+    ports:
+      # Expose frontend directly for development
+      - "3000:3000"
+    stdin_open: true
+    tty: true
+
+  nginx:
+    # Disable nginx in development mode (optional)
+    profiles:
+      - production
