@@ -132,6 +132,7 @@ Validate RDF against SHACL shapes.
 | `format` | string | No | `auto` | RDF format |
 | `outputFormat` | string | No | `json` | Output: `json`, `turtle`, `csv` |
 | `language` | string | No | `es` | Messages language |
+| `shapesGraphBranch` | string | No | default | Git branch for SHACL files (e.g., `develop`, `main`) |
 
 **Response (JSON):**
 ```json
@@ -301,6 +302,17 @@ curl -X POST http://localhost:3001/api/v1/shacl \
   -H "Content-Type: application/json" \
   -d '{"url":"https://example.org/catalog.ttl","outputFormat":"turtle"}' \
   -o shacl-report.ttl
+
+# SHACL validation with custom branch
+curl -X POST http://localhost:3001/api/v1/shacl \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url":"https://example.org/catalog.ttl",
+    "profile":"dcat_ap_es",
+    "shapesGraphBranch":"develop",
+    "outputFormat":"json"
+  }' \
+  -o shacl-report.json
 
 # DQV format
 curl -X POST http://localhost:3001/api/v1/quality \

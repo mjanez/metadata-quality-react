@@ -224,8 +224,8 @@ router.post('/shacl', async (req, res) => {
     }
     
     // Perform SHACL validation
-    console.log(`🔍 SHACL validation for profile: ${profile}`);
-    const report = await validateWithSHACL(content, profile, format, version, language);
+    console.log(`🔍 SHACL validation for profile: ${profile}${shapesGraphBranch ? ` (branch: ${shapesGraphBranch})` : ''}`);
+    const report = await validateWithSHACL(content, profile, format, version, language, shapesGraphBranch);
     
     // Return in requested format
     if (outputFormat === 'turtle') {
@@ -303,7 +303,8 @@ router.post('/validate', async (req, res) => {
       profile = 'dcat_ap_es',
       version,
       format = 'auto',
-      language = 'es'
+      language = 'es',
+      shapesGraphBranch
     } = req.body;
     
     // Get content from URL if provided
@@ -333,10 +334,10 @@ router.post('/validate', async (req, res) => {
     const detectedFormat = format === 'auto' ? detectFormat(content) : format;
     
     // Run both validations in parallel
-    console.log(`📊 Running combined validation for profile: ${profile}`);
+    console.log(`📊 Running combined validation for profile: ${profile}${shapesGraphBranch ? ` (branch: ${shapesGraphBranch})` : ''}`);
     const [quality, shaclReport] = await Promise.all([
       calculateQuality(content, profile, detectedFormat, version),
-      validateWithSHACL(content, profile, detectedFormat, version, language)
+      validateWithSHACL(content, profile, detectedFormat, version, language, shapesGraphBranch)
     ]);
     
     // Update compliance metric based on SHACL result

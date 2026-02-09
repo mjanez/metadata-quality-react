@@ -90,9 +90,37 @@ async function loadMQAConfig() {
 }
 
 /**
- * Get SHACL files for a profile
+ * Replace branch in GitHub raw content URLs
+ * Supports URLs like: https://raw.githubusercontent.com/owner/repo/refs/heads/{branch}/path
  */
-async function getSHACLFilesForProfile(profile, version) {
+function replaceBranchInSHACLUrls(shaclFiles, targetBranch) {
+  if (!targetBranch) {
+    return shaclFiles;
+  }
+  
+  return shaclFiles.map(url => {
+    // Pattern: https://raw.githubusercontent.com/{owner}/{repo}/refs/heads/{currentBranch}/{path}
+    const githubRawPattern = /(https:\/\/raw\.githubusercontent\.com\/[^\/]+\/[^\/]+\/refs\/heads\/)([^\/]+)(\/.*)/;
+    const match = url.match(githubRawPattern);
+    
+    if (match) {
+      const [, prefix, currentBranch, path] = match;
+      console.log(`🔀 Replacing branch '${currentBranch}' with '${targetBranch}' in SHACL URL`);
+      return `${prefix}${targetBranch}${path}`;
+    }
+    
+    // Return unchanged if not a GitHub raw URL
+    return url;
+  });
+}
+
+/**
+ * Get SHACL files for a profile
+ * @param {string} profile - Profile ID
+ * @param {string} version - Profile version (optional)
+ * @param {string} shapesGraphBranch - Git branch for SHACL files (optional)
+ */
+async function getSHACLFilesForProfile(profile, version, shapesGraphBranch) {
   const config = await loadMQAConfig();
   const profileConfig = config.profiles[profile];
   
@@ -107,11 +135,18 @@ async function getSHACLFilesForProfile(profile, version) {
     throw new Error(`Version '${targetVersion}' not found for profile '${profile}'`);
   }
   
+  // Get SHACL files and optionally replace branch
+  let shaclFiles = versionConfig.shaclFiles || [];
+  if (shapesGraphBranch) {
+    shaclFiles = replaceBranchInSHACLUrls(shaclFiles, shapesGraphBranch);
+  }
+  
   return {
-    shaclFiles: versionConfig.shaclFiles || [],
+    shaclFiles,
     profileName: versionConfig.name,
     profileUrl: versionConfig.url,
-    version: targetVersion
+    version: targetVersion,
+    branch: shapesGraphBranch || 'default'
   };
 }
 
@@ -228,18 +263,21 @@ async function parseWithFormat(content, format, rdfFactory) {
 /**
  * Load SHACL shapes from remote URLs
  * Returns a dataset compatible with shacl-engine
+ * @param {string} profile - Profile ID
+ * @param {string} version - Profile version (optional)
+ * @param {string} shapesGraphBranch - Git branch for SHACL files (optional)
  */
-async function loadSHACLShapes(profile, version) {
+async function loadSHACLShapes(profile, version, shapesGraphBranch) {
   const { rdfFactory, datasetFactory } = await loadESModules();
   
-  const cacheKey = `${profile}-${version || 'default'}`;
+  const cacheKey = `${profile}-${version || 'default'}-${shapesGraphBranch || 'default'}`;
   
   if (shapesCache.has(cacheKey)) {
     console.log(`✅ Using cached SHACL shapes for ${cacheKey}`);
     return shapesCache.get(cacheKey);
   }
   
-  const { shaclFiles, profileName, version: actualVersion } = await getSHACLFilesForProfile(profile, version);
+  const { shaclFiles, profileName, version: actualVersion, branch } = await getSHACLFilesForProfile(profile, version, shapesGraphBranch);
   
   if (shaclFiles.length === 0) {
     throw new Error(`No SHACL files configured for profile '${profile}'`);
@@ -301,8 +339,14 @@ async function loadSHACLShapes(profile, version) {
 
 /**
  * Perform SHACL validation using shacl-engine
+ * @param {string} content - RDF content to validate
+ * @param {string} profile - Profile ID
+ * @param {string} format - RDF format (turtle, rdfxml, etc.)
+ * @param {string} version - Profile version (optional)
+ * @param {string} language - Language for messages (default: 'es')
+ * @param {string} shapesGraphBranch - Git branch for SHACL files (optional)
  */
-async function validateWithSHACL(content, profile, format, version, language = 'es') {
+async function validateWithSHACL(content, profile, format, version, language = 'es', shapesGraphBranch = null) {
   // Load ES modules first
   const { rdfFactory, datasetFactory, Validator } = await loadESModules();
   
@@ -367,7 +411,7 @@ async function validateWithSHACL(content, profile, format, version, language = '
   // Load SHACL shapes
   let shapesInfo;
   try {
-    shapesInfo = await loadSHACLShapes(profile, version);
+    shapesInfo = await loadSHACLShapes(profile, version, shapesGraphBranch);
   } catch (error) {
     return {
       profile,

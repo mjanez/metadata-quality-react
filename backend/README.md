@@ -78,6 +78,18 @@ curl -X POST http://localhost:3001/api/v1/shacl \
   }'
 ```
 
+**SHACL Validation with Custom Branch:**
+```bash
+curl -X POST http://localhost:3001/api/v1/shacl \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url": "https://example.org/catalog.ttl",
+    "profile": "dcat_ap_es",
+    "outputFormat": "json",
+    "shapesGraphBranch": "develop"
+  }'
+```
+
 **Get DQV (JSON-LD) Report:**
 ```bash
 curl -X POST http://localhost:3001/api/v1/quality \

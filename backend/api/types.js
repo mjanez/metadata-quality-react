@@ -138,6 +138,13 @@ function validateSHACLRequest(body) {
     }
   }
 
+  // Validate shapesGraphBranch (optional, alphanumeric with hyphens/underscores/dots)
+  if (body.shapesGraphBranch) {
+    if (typeof body.shapesGraphBranch !== 'string' || !/^[a-zA-Z0-9._-]+$/.test(body.shapesGraphBranch)) {
+      errors.push('Invalid shapesGraphBranch. Must be alphanumeric with hyphens, underscores, or dots');
+    }
+  }
+
   return errors;
 }
 
