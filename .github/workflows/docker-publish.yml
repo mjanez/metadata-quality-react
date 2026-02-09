@@ -132,16 +132,11 @@ jobs:
         with:
           image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}
           format: 'sarif'
-          output: 'trivy-results.sarif'
+          output: 'trivy-${{ matrix.service }}-results.sarif'
 
-      - name: Upload Trivy results to GitHub Security
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: 'trivy-results.sarif'
-
-  comment-pr:
+  pr-comment:
     name: Comment on PR
-    needs: build-and-push
+    needs: test
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     permissions:
