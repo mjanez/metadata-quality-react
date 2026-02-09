@@ -221,13 +221,21 @@ jobs:
             image_name: ${{ github.repository }}-frontend
 
     steps:
-      - name: Run Trivy vulnerability scanner on ${{ matrix.service }}
+      - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: ${{ env.REGISTRY }}/${{ matrix.image_name }}:${{ github.ref_name }}
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}
           format: 'sarif'
-          output: 'trivy-${{ matrix.service }}-results.sarif'
-test
+          output: 'trivy-results.sarif'
+
+      - name: Upload Trivy results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+  pr-comment:
+    name: Comment on PR
+    needs: test
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     permissions:
