@@ -732,7 +732,7 @@
       "title": "No hay datos de validación disponibles",
       "description": "Para usar el análisis de calidad de datos, primero necesitas validar un catálogo RDF en la pestaña de Validación.",
       "step1": "Ve a la pestaña 'Validación'",
-      "step2": "Carga un catálogo RDF (URL o texto directo)",
+      "step2": "Carga un catálogo RDF (URL o texto directo) que incluya una distribución con dcat:downloadURL a datos CSV o JSON.",
       "step3": "Ejecuta la validación",
       "step4": "Regresa aquí para analizar la calidad de las distribuciones",
       "goToValidation": "Ir a Validación"

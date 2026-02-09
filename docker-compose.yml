@@ -1,31 +1,20 @@
 services:
-  # MQA React Application (Frontend + Backend)
-  mqa-app:
-    image: ghcr.io/mjanez/metadata-quality-react:${IMAGE_TAG:-latest}
+  # MQA Backend API Service
+  mqa-backend:
+    image: ghcr.io/mjanez/metadata-quality-react-backend:${IMAGE_TAG:-latest}
     build:
       context: .
-      dockerfile: Dockerfile
-      args:
-        - NODE_ENV=production
-        - PUBLIC_URL=${PUBLIC_URL:-/}
-    container_name: mqa-react-app
+      dockerfile: Dockerfile.backend
+    container_name: mqa-backend
     environment:
-      - NODE_ENV=production
-      - REACT_APP_BACKEND_URL=${REACT_APP_BACKEND_URL:-/api}
-      - PUBLIC_URL=${PUBLIC_URL:-/}
-      - FRONTEND_PORT=${FRONTEND_PORT:-3000}
-      - BACKEND_PORT=${BACKEND_PORT:-3001}
+      - NODE_ENV=${NODE_ENV:-production}
+      - PORT=${BACKEND_PORT:-3001}
       # Security configuration
       - NODE_TLS_REJECT_UNAUTHORIZED=${NODE_TLS_REJECT_UNAUTHORIZED:-1}
       - ALLOWED_DOMAINS=${ALLOWED_DOMAINS:-}
-    volumes:
-      # Optional: Mount config for runtime changes
-      - ./mqa-config.json:/app/build/config/mqa-config.json:ro
-      # Optional: Mount custom data files
-      - ./public/data:/app/build/data:ro
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/", "&&", "curl", "-f", "http://localhost:3001/api/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:3001/api/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -33,10 +22,43 @@ services:
     networks:
       - mqa-network
     labels:
-      - "com.mqa.service=react-app"
-      - "com.mqa.description=Metadata Quality Assessment Tool"
+      - "com.mqa.service=backend-api"
+      - "com.mqa.description=MQA Backend API Service"
 
-  # (HTTPS enabled by default)
+  # MQA Frontend React Application
+  mqa-frontend:
+    image: ghcr.io/mjanez/metadata-quality-react-frontend:${IMAGE_TAG:-latest}
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+      args:
+        - NODE_ENV=production
+        - PUBLIC_URL=${PUBLIC_URL:-/}
+        - REACT_APP_BACKEND_URL=${REACT_APP_BACKEND_URL:-/api}
+    container_name: mqa-frontend
+    environment:
+      - NODE_ENV=production
+    volumes:
+      # Optional: Mount config for runtime changes
+      - ./mqa-config.json:/app/build/config/mqa-config.json:ro
+      # Optional: Mount custom data files
+      - ./public/data:/app/build/data:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    networks:
+      - mqa-network
+    depends_on:
+      - mqa-backend
+    labels:
+      - "com.mqa.service=frontend"
+      - "com.mqa.description=MQA React Frontend Application"
+
+  # Nginx Reverse Proxy (HTTPS enabled by default)
   nginx:
     image: nginx:alpine
     container_name: mqa-nginx
@@ -46,6 +68,8 @@ services:
     environment:
       - BACKEND_PORT=${BACKEND_PORT:-3001}
       - FRONTEND_PORT=${FRONTEND_PORT:-3000}
+      - BACKEND_HOST=${BACKEND_HOST:-mqa-backend}
+      - FRONTEND_HOST=${FRONTEND_HOST:-mqa-frontend}
     volumes:
       - ./docker/nginx/nginx.conf.template:/etc/nginx/nginx.conf.template:ro
       - ./docker/nginx/entrypoint.sh:/docker-entrypoint.sh:ro
@@ -53,7 +77,8 @@ services:
       - nginx-cache:/var/cache/nginx
     entrypoint: ["/bin/sh", "/docker-entrypoint.sh"]
     depends_on:
-      - mqa-app
+      - mqa-frontend
+      - mqa-backend
     restart: unless-stopped
     networks:
       - mqa-network

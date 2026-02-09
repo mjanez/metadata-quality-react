@@ -732,7 +732,7 @@
       "title": "No validation data available",
       "description": "To use data quality analysis, you first need to validate an RDF catalog in the Validation tab.",
       "step1": "Go to the 'Validation' tab",
-      "step2": "Load an RDF catalog (URL or direct text)",
+      "step2": "Load an RDF catalog (URL or direct text) that includes a distribution with dcat:downloadURL to CSV or JSON data.",
       "step3": "Run the validation",
       "step4": "Return here to analyze the quality of distributions",
       "goToValidation": "Go to Validation"
