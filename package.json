@@ -89,6 +89,7 @@
     "@types/n3": "^1.26.1",
     "cross-env": "^10.1.0",
     "gh-pages": "^6.3.0",
-    "source-map-explorer": "^2.5.3"
+    "source-map-explorer": "^2.5.3",
+    "yaml": "^2.9.0"
   }
 }
