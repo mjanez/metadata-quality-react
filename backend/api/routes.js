@@ -17,7 +17,7 @@ const {
   validateQualityRequest,
   validateSHACLRequest
 } = require('./types');
-const { calculateQuality, convertToDQV, loadMQAConfig } = require('./quality-service');
+const { calculateQuality, convertToDQV, loadMQAConfig, updateComplianceMetricFromSHACL } = require('./quality-service');
 const { validateWithSHACL, exportReportAsTurtle, exportReportAsCSV, clearCache } = require('./shacl-service');
 const { detectFormat, validateRDFSyntax } = require('./rdf-utils');
 const axios = require('axios');
@@ -339,13 +339,9 @@ router.post('/validate', async (req, res) => {
       calculateQuality(content, profile, detectedFormat, version),
       validateWithSHACL(content, profile, detectedFormat, version, language, shapesGraphBranch)
     ]);
-    
+
     // Update compliance metric based on SHACL result
-    const complianceMetric = quality.metrics.find(m => m.id.includes('compliance'));
-    if (complianceMetric && !shaclReport.conforms) {
-      complianceMetric.score = 0;
-      complianceMetric.compliancePercentage = 0;
-    }
+    updateComplianceMetricFromSHACL(quality, shaclReport);
     
     res.json({
       success: true,

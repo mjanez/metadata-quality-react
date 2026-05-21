@@ -588,10 +588,47 @@ function convertToDQV(quality, baseUri = 'http://example.org/quality-assessment/
   return dqv;
 }
 
+/**
+ * Update compliance metric based on SHACL validation result and recalculate totals.
+ * Binary scoring: full weight if conforms with no violations, 0 otherwise.
+ */
+function updateComplianceMetricFromSHACL(quality, shaclReport) {
+  const complianceMetric = quality.metrics.find(m => m.id.includes('compliance'));
+  if (!complianceMetric) {
+    return quality;
+  }
+
+  const isCompliant = shaclReport.conforms && shaclReport.totalViolations === 0;
+
+  complianceMetric.score = isCompliant ? complianceMetric.maxScore : 0;
+  complianceMetric.totalEntities = 1;
+  complianceMetric.compliantEntities = isCompliant ? 1 : 0;
+  complianceMetric.compliancePercentage = isCompliant ? 100.0 : 0.0;
+  complianceMetric.entityType = 'Catalog';
+  complianceMetric.found = true;
+
+  const totalScore = quality.metrics.reduce((sum, m) => sum + m.score, 0);
+  const maxScore = quality.metrics.reduce((sum, m) => sum + m.maxScore, 0);
+  quality.totalScore = Math.round(totalScore * 1000) / 1000;
+  quality.percentage = maxScore > 0 ? Math.round((totalScore / maxScore) * 1000) / 10 : 0;
+
+  for (const categoryData of Object.values(quality.byCategory)) {
+    const categoryMetrics = categoryData.metrics;
+    const categoryScore = categoryMetrics.reduce((sum, m) => sum + m.score, 0);
+    const categoryMaxScore = categoryMetrics.reduce((sum, m) => sum + m.maxScore, 0);
+
+    categoryData.score = Math.round(categoryScore * 1000) / 1000;
+    categoryData.percentage = categoryMaxScore > 0 ? (categoryScore / categoryMaxScore) * 100 : 0;
+  }
+
+  return quality;
+}
+
 module.exports = {
   calculateQuality,
   convertToDQV,
   loadVocabulary,
   loadMQAConfig,
-  getProfileInfo
+  getProfileInfo,
+  updateComplianceMetricFromSHACL
 };
