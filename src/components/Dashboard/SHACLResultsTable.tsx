@@ -470,7 +470,18 @@ const SHACLResultsTable: React.FC<SHACLResultsTableProps> = ({ shaclData, showPr
         </div>
       </div>
 
-      {/* Controls */}
+      {/* Empty / passed state when SHACL ran with zero issues */}
+      {parsedResults.length === 0 ? (
+        <div className="card mb-4">
+          <div className="card-body text-center py-5">
+            <i className="bi bi-check-circle-fill text-success display-1" aria-hidden="true"></i>
+            <h4 className="mt-3 text-success">{t('dashboard.shacl.empty_title')}</h4>
+            <p className="text-muted mb-0">
+              {t('dashboard.shacl.empty_description')}
+            </p>
+          </div>
+        </div>
+      ) : (
       <div className="card mb-4">
         <div className="card-header d-flex justify-content-between align-items-center">
           <h6 className="card-title mb-0">
@@ -629,6 +640,7 @@ const SHACLResultsTable: React.FC<SHACLResultsTableProps> = ({ shaclData, showPr
           )}
         </div>
       </div>
+      )}
     </div>
   );
 };

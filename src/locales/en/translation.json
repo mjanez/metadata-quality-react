@@ -392,6 +392,13 @@
       "validation_profile": "Validation profile",
       "version": "Version",
       "profile_description": "Validation profile used for quality assessment"
+    },
+
+    "shacl": {
+      "passed": "Passed",
+      "issues": "Issues",
+      "empty_title": "No SHACL issues",
+      "empty_description": "SHACL validation ran successfully. No violations, warnings, or info messages were found."
     }
   },
 
