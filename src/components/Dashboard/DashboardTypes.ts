@@ -44,6 +44,8 @@ export interface DashboardSHACLData {
   ttlContent: string;
   fileName: string;
   profile?: Profile;
+  /** Present when the source report includes a SHACL conformance flag */
+  conforms?: boolean;
 }
 
 export interface DashboardData {

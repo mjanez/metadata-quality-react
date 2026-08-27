@@ -101,19 +101,31 @@ const Dashboard: React.FC = () => {
         isMetricsLoaded: true
       };
 
-      // Also load SHACL data if available
+      // Also load SHACL data if SHACL ran (including a clean/empty report)
       if (lastValidationResult.shaclReport && !dashboardData.isShaclLoaded) {
+        const report = lastValidationResult.shaclReport;
+        const issueCount =
+          (report.violations?.length || 0) +
+          (report.warnings?.length || 0) +
+          (report.infos?.length || 0);
+        const emptyReportTtl = `@prefix sh: <http://www.w3.org/ns/shacl#> .
+
+[] a sh:ValidationReport ;
+    sh:conforms ${report.conforms} .`;
         updateData.shaclData = {
-          ttlContent: `# SHACL Report for ${lastValidationResult.profile}
+          ttlContent: issueCount === 0
+            ? emptyReportTtl
+            : `# SHACL Report for ${lastValidationResult.profile}
 # Generated: ${new Date().toISOString()}
 # Profile: ${lastValidationResult.profile}
-# Conforms: ${lastValidationResult.shaclReport.conforms}
-# Total violations: ${lastValidationResult.shaclReport.totalViolations}
+# Conforms: ${report.conforms}
+# Total violations: ${report.totalViolations}
 
 ${lastValidationResult.content || '# No TTL content available'}`,
           fileName: `shacl-report-${lastValidationResult.profile}-${new Date().toISOString().split('T')[0]}.ttl`,
           profile: lastValidationResult.profile,
-          profileVersion: 'latest'
+          profileVersion: 'latest',
+          conforms: report.conforms
         };
         updateData.isShaclLoaded = true;
       }
@@ -369,7 +381,8 @@ ${lastValidationResult.content || '# No TTL content available'}`,
         name: "DCAT-AP-ES",
         version: "1.0.0",
         url: "https://datos.gob.es/es/documentacion/dcat-ap-es"
-      }
+      },
+      conforms: false
     });
   };
 
@@ -505,6 +518,16 @@ ${lastValidationResult.content || '# No TTL content available'}`,
                   >
                     <i className="bi bi-shield-check me-2"></i>
                     {t('dashboard.tabs.shacl')}
+                    {dashboardData.shaclData.conforms === true && (
+                      <span className="badge bg-success ms-2">
+                        {t('dashboard.shacl.passed')}
+                      </span>
+                    )}
+                    {dashboardData.shaclData.conforms === false && (
+                      <span className="badge bg-danger ms-2">
+                        {t('dashboard.shacl.issues')}
+                      </span>
+                    )}
                   </button>
                 </li>
               )}

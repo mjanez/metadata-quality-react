@@ -392,6 +392,13 @@
       "validation_profile": "Perfil de validación",
       "version": "Versión",
       "profile_description": "Perfil de validación utilizado para la evaluación de calidad"
+    },
+
+    "shacl": {
+      "passed": "Correcto",
+      "issues": "Incidencias",
+      "empty_title": "Sin incidencias SHACL",
+      "empty_description": "La validación SHACL se ejecutó correctamente. No se encontraron violaciones, advertencias ni mensajes informativos."
     }
   },
 

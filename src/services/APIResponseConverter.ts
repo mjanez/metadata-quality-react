@@ -251,12 +251,22 @@ export function convertAPIToDashboardMetrics(apiResponse: APIQualityResponse): D
  * Convert API SHACL results to TTL format for Dashboard
  */
 export function convertAPIToSHACLData(apiResponse: APIQualityResponse): DashboardSHACLData | null {
-  const { shaclViolations, shaclWarnings, shacl, profile, version } = apiResponse;
-  
-  // If no SHACL data, return null
-  if (!shacl || (shaclViolations.length === 0 && shaclWarnings.length === 0)) {
+  const { shacl, profile, version } = apiResponse;
+  const shaclViolations = apiResponse.shaclViolations ?? [];
+  const shaclWarnings = apiResponse.shaclWarnings ?? [];
+
+  // Hide the SHACL tab only when SHACL did not run. A clean report
+  // (conforms / zero violations) must still produce dashboard data so
+  // a successful quality+SHACL run is distinguishable from quality-only.
+  if (!shacl) {
     return null;
   }
+
+  const normalizedResponse: APIQualityResponse = {
+    ...apiResponse,
+    shaclViolations,
+    shaclWarnings
+  };
 
   // Build profile object - handle both string and object formats
   let profileObj: Profile;
@@ -279,13 +289,14 @@ export function convertAPIToSHACLData(apiResponse: APIQualityResponse): Dashboar
     };
   }
 
-  // Generate synthetic TTL content from SHACL results
-  const ttlContent = generateSHACLTTL(apiResponse);
+  // Generate synthetic TTL content from SHACL results (including empty reports)
+  const ttlContent = generateSHACLTTL(normalizedResponse);
 
   return {
     ttlContent,
     fileName: `api-shacl-report-${new Date().toISOString().split('T')[0]}.ttl`,
-    profile: profileObj
+    profile: profileObj,
+    conforms: shacl.conforms
   };
 }
 
